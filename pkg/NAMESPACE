@@ -7,5 +7,9 @@ S3method(print, summary.riley)
 S3method(vcov, riley)
 S3method(logLik, riley)
 S3method(plot, riley)
-S3method(reitsma, riley)
+S3method(riley, default)
+
+S3method(print, uvmeta)
+S3method(summary, uvmeta)
+S3method(uvmeta, default)
 
