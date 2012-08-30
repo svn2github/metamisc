@@ -20,7 +20,12 @@ Thomas Debray <thomas.debray@gmail.com>
 Maintainer: Thomas Debray <thomas.debray@gmail.com>
 }
 \references{
-~~ Literature or other references for background information ~~
+Reitsma, J., Glas, A., Rutjes, A., Scholten, R., Bossuyt, P., & Zwinderman, A. (2005).
+\dQuote{Bivariate analysis of sensitivity and specificity produces informative summary
+measures in diagnostic reviews.} \emph{Journal of Clinical Epidemiology}, \bold{58}, 982--990.
+
+Riley, RD., Thompson, JR., & Abrams, KR. (2008).
+\dQuote{An alternative model for bivariate random-effects meta-analysis when the within-study correlations are unknown.} \emph{Biostatistics}, \bold{9}, 172--186.
 }
 ~~ Optionally other standard keywords, one per line, from file KEYWORDS in the R documentation ~~
 ~~ directory ~~
