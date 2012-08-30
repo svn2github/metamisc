@@ -63,9 +63,5 @@ Riley, RD., Thompson, JR., & Abrams, KR. (2008).
 Thomas Debray <thomas.debray@gmail.com>
 }
 
-\seealso{
-\code{\link{riley-class}}
-}
-
 \keyword{regression}
 \keyword{multivariate}
