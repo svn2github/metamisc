@@ -2,10 +2,10 @@
 \alias{summary.riley}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-%%  ~~function to do ... ~~
+Parameter summaries of \code{\link{riley}} models.
 }
 \description{
-%%  ~~ A concise (1-5 lines) description of what the function does. ~~
+Provides the summary estimtes of the alternative model for bivariate random-effects meta-analysis by Riley et al. (2008) with their corresponding confidence intervals. The model parameters are given as mu1 (logit sensitivity), mu2 (logit FPR), psi1, psi2 and rho; the summary sensitivity and false positive rate are added for completeness. Confidence intervals are derived from the inverse Hessian. 
 }
 \usage{
 summary.riley(object, level = 0.95, ...)
@@ -13,13 +13,13 @@ summary.riley(object, level = 0.95, ...)
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{object}{
-%%     ~~Describe \code{object} here~~
+a \code{riley} object.
 }
   \item{level}{
-%%     ~~Describe \code{level} here~~
+numeric, the level for calculations of confidence intervals
 }
   \item{\dots}{
-%%     ~~Describe \code{\dots} here~~
+arguments to be passed on to other functions
 }
 }
 \details{
@@ -33,7 +33,8 @@ summary.riley(object, level = 0.95, ...)
 %% ...
 }
 \references{
-%% ~put references to the literature/web site here ~
+Riley, RD., Thompson, JR., & Abrams, KR. (2008).
+\dQuote{An alternative model for bivariate random-effects meta-analysis when the within-study correlations are unknown.} \emph{Biostatistics}, \bold{9}, 172--186.
 }
 \author{
 Thomas Debray <thomas.debray@gmail.com>
@@ -45,7 +46,8 @@ Thomas Debray <thomas.debray@gmail.com>
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-%% ~~objects to See Also as \code{\link{help}}, ~~~
+\code{\link{riley}}
+\code{\link{plot.riley}}
 }
 \examples{
 ##---- Should be DIRECTLY executable !! ----
@@ -68,5 +70,5 @@ function (object, level = 0.95, ...)
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
-\keyword{ ~kwd1 }
-\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
+\keyword{riley}
+\keyword{confidence}
