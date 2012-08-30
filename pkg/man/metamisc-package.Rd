@@ -3,28 +3,25 @@
 \alias{riley}
 \docType{package}
 \title{
-What the package does (short line)
-~~ package title ~~
+ Diagnostic and prognostic meta-analysis
 }
 \description{
-More about what it does (maybe more than one line)
-~~ A concise (1-5 lines) description of the package ~~
+This package provides functions for diagnostic and prognostic meta-analyses. It estimates univariate, bivariate and multivariate models, and allows the aggregation of previously published prediction models with new data.
 }
 \details{
 \tabular{ll}{
-Package: \tab riley\cr
+Package: \tab metamisc\cr
 Type: \tab Package\cr
-Version: \tab 1.0\cr
-Date: \tab 2012-08-15\cr
-License: \tab What license is it under?\cr
+Version: \tab 0.0.2\cr
+Date: \tab 2012-08-30\cr
+License: \tab GPL-2 \cr
 }
 ~~ An overview of how to use the package, including the most important functions ~~
 }
 \author{
-Who wrote it
+Thomas Debray <thomas.debray@gmail.com>
 
-Maintainer: Who to complain to <yourfault@somewhere.net>
-~~ The author and/or maintainer of the package ~~
+Maintainer: Thomas Debray <thomas.debray@gmail.com>
 }
 \references{
 ~~ Literature or other references for background information ~~
