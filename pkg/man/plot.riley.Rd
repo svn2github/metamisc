@@ -2,10 +2,10 @@
 \alias{plot.riley}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-%%  ~~function to do ... ~~
+Plot the summary of the bivariate model from Riley et al. (2008).
 }
 \description{
-%%  ~~ A concise (1-5 lines) description of what the function does. ~~
+This function plots the summary sensitivity and false positive rate with their corresponding confidence regions.
 }
 \usage{
 plot.riley(x, plotsumm = TRUE, plotnumerics = TRUE, level = 0.95, main = "", ylim = c(0, 1), xlim = c(0, 1), pch = 1, lty = 1, lwd = 1, cex.numerics = 0.45, add = F, ...)
@@ -13,43 +13,43 @@ plot.riley(x, plotsumm = TRUE, plotnumerics = TRUE, level = 0.95, main = "", yli
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{x}{
-%%     ~~Describe \code{x} here~~
+a \code{riley} object.
 }
   \item{plotsumm}{
-%%     ~~Describe \code{plotsumm} here~~
+logical, should the plot draw the summary pair of sensitivity and false positive rate?
 }
   \item{plotnumerics}{
-%%     ~~Describe \code{plotnumerics} here~~
+logical, should the plot contain a summary table of sensitivity and false positive rate?
 }
   \item{level}{
-%%     ~~Describe \code{level} here~~
+numeric, the level for calculations of confidence intervals
 }
   \item{main}{
-%%     ~~Describe \code{main} here~~
+string, title of the plot
 }
   \item{ylim}{
-%%     ~~Describe \code{ylim} here~~
+numeric of length 2, which section of the sensitivities to plot?
 }
   \item{xlim}{
-%%     ~~Describe \code{xlim} here~~
+numeric of length 2, which section of the false positive rates to plot?
 }
   \item{pch}{
-%%     ~~Describe \code{pch} here~~
+integer, symbol for the pair of mean sensitivity and false positive rate
 }
   \item{lty}{
-%%     ~~Describe \code{lty} here~~
+integer, line type of confidence curve
 }
   \item{lwd}{
-%%     ~~Describe \code{lwd} here~~
+integer, line width of the confidence curve
 }
   \item{cex.numerics}{
-%%     ~~Describe \code{cex.numerics} here~~
+numeric, text size
 }
   \item{add}{
-%%     ~~Describe \code{add} here~~
+logical, should the confidence region be added to the current plot?
 }
   \item{\dots}{
-%%     ~~Describe \code{\dots} here~~
+arguments to be passed on to other functions
 }
 }
 \details{
@@ -66,7 +66,7 @@ plot.riley(x, plotsumm = TRUE, plotnumerics = TRUE, level = 0.95, main = "", yli
 %% ~put references to the literature/web site here ~
 }
 \author{
-%%  ~~who you are~~
+Thomas Debray <thomas.debray@gmail.com>
 }
 \note{
 %%  ~~further notes~~
@@ -75,7 +75,7 @@ plot.riley(x, plotsumm = TRUE, plotnumerics = TRUE, level = 0.95, main = "", yli
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-%% ~~objects to See Also as \code{\link{help}}, ~~~
+\code{\link{riley}}
 }
 \examples{
 ##---- Should be DIRECTLY executable !! ----
@@ -127,5 +127,4 @@ function (x, plotsumm = TRUE, plotnumerics = TRUE, level = 0.95,
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
-\keyword{ ~kwd1 }
-\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
+\keyword{regression}
