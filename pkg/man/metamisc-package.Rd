@@ -19,6 +19,9 @@ Thomas Debray <thomas.debray@gmail.com>
 Maintainer: Thomas Debray <thomas.debray@gmail.com>
 }
 \references{
+DerSimonian, R., & Laird, N. (1986). 
+\dQuote{Meta-analysis in clinical trials.} \emph{Controlled Clinical Trials}, \bold{7}, 177--188.
+
 Reitsma, J., Glas, A., Rutjes, A., Scholten, R., Bossuyt, P., & Zwinderman, A. (2005).
 \dQuote{Bivariate analysis of sensitivity and specificity produces informative summary
 measures in diagnostic reviews.} \emph{Journal of Clinical Epidemiology}, \bold{58}, 982--990.
