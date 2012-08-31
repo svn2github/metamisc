@@ -63,5 +63,9 @@ Riley, RD., Thompson, JR., & Abrams, KR. (2008).
 Thomas Debray <thomas.debray@gmail.com>
 }
 
+\seealso{
+\code{\link{loglik.riley}} \code{\link{plot.riley}} \code{\link{summary.riley}}
+}
+
 \keyword{regression}
 \keyword{multivariate}
