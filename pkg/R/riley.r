@@ -113,9 +113,9 @@ riley.default <-
       rownames(Sigma) = c("mu1","mu2","psi1","psi2","rhoT")
       
       iterations <- fit$iterations
-      logLik <- fit$value
+      logLik <- -fit$value
       
-      output <- list(coefficients = coefficients, vcov = Sigma, df = df, nobs = 2*numstudies, logLik = logLik,
+      output <- list(coefficients = coefficients, vcov = Sigma, df = df, nobs = 2*numstudies, logLik = -logLik,
                    iterations = (iterations+1), call = match.call(), data = origdata)
       class(output) <- "riley"
       return(output)
