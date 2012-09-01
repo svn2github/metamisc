@@ -2,7 +2,6 @@
 \alias{summary.riley}
 \alias{print.summary.riley}
 
-%- Also NEED an '\alias' for EACH other topic documented here.
 \title{
 Parameter summaries of \code{\link{riley}} models.
 }
@@ -12,65 +11,28 @@ Provides the summary estimtes of the alternative model for bivariate random-effe
 \usage{
 summary.riley(object, level = 0.95, ...)
 }
-%- maybe also 'usage' for other objects documented here.
+
 \arguments{
-  \item{object}{
-a \code{riley} object.
+  \item{object}{a \code{riley} object}
+  \item{level}{numeric, the level for calculations of confidence intervals}
+  \item{\dots}{arguments to be passed on to other functions}
 }
-  \item{level}{
-numeric, the level for calculations of confidence intervals
-}
-  \item{\dots}{
-arguments to be passed on to other functions
-}
-}
-\details{
-%%  ~~ If necessary, more details than the description above ~~
-}
-\value{
-%%  ~Describe the value returned
-%%  If it is a LIST, use
-%%  \item{comp1 }{Description of 'comp1'}
-%%  \item{comp2 }{Description of 'comp2'}
-%% ...
-}
+
+\value{ array with confidence intervals for the estimated model parameters, as well for the resulting mean sensitivity (Sens) and false positive rate (FPR).}
+
 \references{
 Riley, RD., Thompson, JR., & Abrams, KR. (2008).
 \dQuote{An alternative model for bivariate random-effects meta-analysis when the within-study correlations are unknown.} \emph{Biostatistics}, \bold{9}, 172--186.
 }
-\author{
-Thomas Debray <thomas.debray@gmail.com>
-}
-\note{
-%%  ~~further notes~~
-}
 
-%% ~Make other sections like Warning with \section{Warning }{....} ~
+\author{Thomas Debray <thomas.debray@gmail.com>}
+
 
 \seealso{
 \code{\link{riley}}
 \code{\link{plot.riley}}
 }
-\examples{
-##---- Should be DIRECTLY executable !! ----
-##-- ==>  Define data, use random,
-##--	or do  help(data=index)  for the standard data sets.
 
-## The function is currently defined as
-function (object, level = 0.95, ...) 
-{
-    confints <- cbind(object$coefficients, confint(object, level = level))
-    colnames(confints)[1] <- "Estimate"
-    confints <- rbind(inv.logit(confints[1:2, ]), confints)
-    rownames(confints)[1:2] <- c("Sens", "FPR")
-    confints[7, ] = inv.logit(confints[7, ]) * 2 - 1
-    rownames(confints)[7] = "rho"
-    res <- list(call = object$call, confints = confints)
-    class(res) <- "summary.riley"
-    res
-  }
-}
-% Add one or more standard keywords, see file 'KEYWORDS' in the
-% R documentation directory.
 \keyword{riley}
 \keyword{confidence}
+\keyword{bivariate}

@@ -65,5 +65,22 @@ Thomas Debray <thomas.debray@gmail.com>
 \code{\link{riley}}
 }
 
+\examples{
+data(Scheidler)
+
+ds1 <- Scheidler[which(Scheidler$modality==1),]
+ds2 <- Scheidler[which(Scheidler$modality==2),]
+ds3 <- Scheidler[which(Scheidler$modality==3),]
+
+#Perform the analyses
+fit1 <- riley(ds1)
+fit2 <- riley(ds2)
+fit3 <- riley(ds3)
+
+plot(fit1,plotnumerics=F,pch=0) #CT
+plot(fit2,plotnumerics=F,add=T,pch=1) #LAG
+plot(fit3,plotnumerics=F,add=T,pch=2) #MRI
+}
+
 \keyword{riley}
 \keyword{bivariate}
