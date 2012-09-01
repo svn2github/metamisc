@@ -30,7 +30,7 @@ The \code{Scheidler} data comprises the results from a meta-analysis where three
 
 \source{
 Scheidler, J., Hricak, H., Yu, K.K., Subak, L., & Segal M.R. (1997).
-\dQuote{Radiological evaluation of lymph node metastases in patients with cervical cancer. A meta-analysis.} \emph{JAMA}, \bold{278}, 1096--1101.
+\dQuote{Radiological evaluation of lymph node metastases in patients with cervical cancer. A meta-analysis.} \emph{Journal of the American Medical Association}, \bold{278}, 1096--1101.
 
 Reitsma, J., Glas, A., Rutjes, A., Scholten, R., Bossuyt, P., & Zwinderman, A. (2005).
 \dQuote{Bivariate analysis of sensitivity and specificity produces informative summary
