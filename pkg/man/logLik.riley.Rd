@@ -28,6 +28,13 @@ The log-likelihood of a fitted \code{riley} model
 Thomas Debray <thomas.debray@gmail.com>
 }
 
+\examples{
+data(Scheidler)
+ds <- Scheidler[which(Scheidler$modality==1),]
+fit <- riley(ds,correction.control="single")
+logLik(fit)
+}
+
 \keyword{ likelihood }
 \keyword{ riley }
 \keyword{ bivariate }
