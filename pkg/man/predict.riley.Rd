@@ -12,15 +12,9 @@ predict.riley(object, level = 0.95, ...)
 }
 
 \arguments{
-  \item{object}{
-   a \code{riley} object.
-}
-  \item{level}{
-   numeric, the level for calculations of confidence intervals
-}
-  \item{\dots}{
-   arguments to be passed on to other functions
-}
+  \item{object}{ a \code{riley} object.}
+  \item{level}{ numeric, the level for calculations of confidence intervals }
+  \item{\dots}{ arguments to be passed on to other functions }
 }
 
 \details{
