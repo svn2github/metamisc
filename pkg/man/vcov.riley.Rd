@@ -1,61 +1,31 @@
 \name{vcov.riley}
 \alias{vcov.riley}
-%- Also NEED an '\alias' for EACH other topic documented here.
-\title{
-%%  ~~function to do ... ~~
-}
-\description{
-%%  ~~ A concise (1-5 lines) description of what the function does. ~~
-}
-\usage{
-vcov.riley(object, ...)
-}
-%- maybe also 'usage' for other objects documented here.
+
+\title{Calculate Variance-Covariance Matrix for a Fitted Riley Model Object }
+
+\description{ Returns the variance-covariance matrix of the main parameters of a fitted model object.}
+\usage{vcov.riley(object, ...)}
+
 \arguments{
-  \item{object}{
-%%     ~~Describe \code{object} here~~
-}
-  \item{\dots}{
-%%     ~~Describe \code{\dots} here~~
-}
-}
-\details{
-%%  ~~ If necessary, more details than the description above ~~
-}
-\value{
-%%  ~Describe the value returned
-%%  If it is a LIST, use
-%%  \item{comp1 }{Description of 'comp1'}
-%%  \item{comp2 }{Description of 'comp2'}
-%% ...
-}
-\references{
-%% ~put references to the literature/web site here ~
-}
-\author{
-%%  ~~who you are~~
-}
-\note{
-%%  ~~further notes~~
+  \item{object}{a \code{riley} object.}
+  \item{\dots}{arguments to be passed on to other functions}
 }
 
-%% ~Make other sections like Warning with \section{Warning }{....} ~
+\details{The variance-covariance matrix is obtained from the inverse Hessian as provided by \code{optim}.}
+
+\value{A matrix of the estimated covariances between the parameter estimates in the Riley model: logit of sensitivity (mu1), logit of false positive rate (mu2), additional variation of mu1 beyond sampling error (psi1), additional variation of mu2 beyond sampling error (psi2) and a transformation of the correlation between psi1 and psi2 (rhoT). The original correlation is given as inv.logit(rhoT)*2-1.}
+
+\references{
+Riley, RD., Thompson, JR., & Abrams, KR. (2008). \dQuote{An alternative model for bivariate random-effects meta-analysis when the within-study correlations are unknown.} \emph{Biostatistics}, \bold{9}, 172--186.
+}
+
+\author{Thomas Debray <thomas.debray@gmail.com>}
+
+
 
 \seealso{
-%% ~~objects to See Also as \code{\link{help}}, ~~~
+\code{\link{riley}}
 }
-\examples{
-##---- Should be DIRECTLY executable !! ----
-##-- ==>  Define data, use random,
-##--	or do  help(data=index)  for the standard data sets.
 
-## The function is currently defined as
-function (object, ...) 
-{
-    object$vcov
-  }
-}
-% Add one or more standard keywords, see file 'KEYWORDS' in the
-% R documentation directory.
-\keyword{ ~kwd1 }
-\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
+\keyword{riley}
+\keyword{bivariate}
