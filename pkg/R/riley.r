@@ -208,9 +208,9 @@ plot.riley <- function(x, plotsumm = TRUE, plotnumerics = TRUE, level = 0.95, ma
     text(0.8,0.10,labels=paste("",formatC(round( ci["Sens",1],2),2,format="f",flag="0")),pos=2, cex=cex.numerics)
     text(0.9,0.10,labels=paste("",formatC(round( ci["Sens",2],2),2,format="f",flag="0")),pos=2, cex=cex.numerics)
     text(1.0,0.10,labels=paste("",formatC(round( ci["Sens",3],2),2,format="f",flag="0")),pos=2, cex=cex.numerics)
-    text(0.5,0.05,labels= "1-Specificity",pos=4, cex=cex.numerics)
-    text(0.8,0.05,labels=paste("",formatC(round( ci["FPR",1],2),2,format="f",flag="0")),pos=2, cex=cex.numerics)
-    text(0.9,0.05,labels=paste("",formatC(round( ci["FPR",2],2),2,format="f",flag="0")),pos=2, cex=cex.numerics)
-    text(1.0,0.05,labels=paste("",formatC(round( ci["FPR",3],2),2,format="f",flag="0")),pos=2, cex=cex.numerics)
+    text(0.5,0.05,labels= "Specificity",pos=4, cex=cex.numerics)
+    text(0.8,0.05,labels=paste("",formatC(round( 1-ci["FPR",1],2),2,format="f",flag="0")),pos=2, cex=cex.numerics)
+    text(0.9,0.05,labels=paste("",formatC(round( 1-ci["FPR",3],2),2,format="f",flag="0")),pos=2, cex=cex.numerics)
+    text(1.0,0.05,labels=paste("",formatC(round( 1-ci["FPR",2],2),2,format="f",flag="0")),pos=2, cex=cex.numerics)
   }
 }
