@@ -1,5 +1,7 @@
 \name{summary.riley}
 \alias{summary.riley}
+\alias{print.summary.riley}
+
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
 Parameter summaries of \code{\link{riley}} models.

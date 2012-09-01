@@ -1,6 +1,7 @@
 \name{riley}
 \alias{riley}
 \alias{riley.default}
+\alias{print.riley}
 
 \concept{random effects model}
 \concept{diagnostic meta-analysis}
@@ -29,7 +30,7 @@ riley(X, ...)
   \item{...}{arguments to be passed on to other functions, currently ignored}
 }
 \details{
-The following parameters are estimated: logit of sensitivity (mu1), logit of false positive rate (mu2), additional variation of mu1 beyond sampling error (psi1), additional variation of mu2 beyond sampling error (psi2) and a transformation of the correlation between psi1 and psi2 (rhoT). The original correlation is given as inv.logit(rhoT)*2-1. The results from a univariate random-effects meta-analysis with a method-of-moments estimator are used as starting values for mu1, mu2, psi1 and psi2 in the \code{optim} command. The starting value for rhoT is zero. Standard errors for all parameters are obtained from the inverse Hessian matrix.
+The following parameters are estimated: logit of sensitivity (mu1), logit of false positive rate (mu2), additional variation of mu1 beyond sampling error (psi1), additional variation of mu2 beyond sampling error (psi2) and a transformation of the correlation between psi1 and psi2 (rhoT). The original correlation is given as inv.logit(rhoT)*2-1. The results from a univariate random-effects meta-analysis with a method-of-moments estimator are used as starting values for mu1, mu2, psi1 and psi2 in the \code{optim} command. The starting value for rhoT is 0. Standard errors for all parameters are obtained from the inverse Hessian matrix.
 }
 \value{
 An object of the class \code{riley} for which many standard methods are available. See \code{\link{riley-class}} for details.

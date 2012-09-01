@@ -1,5 +1,7 @@
 \name{uvmeta}
 \alias{uvmeta}
+\alias{print.uvmeta}
+
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
 %%  ~~function to do ... ~~
