@@ -115,7 +115,7 @@ riley.default <-
       iterations <- fit$iterations
       logLik <- -fit$value
       
-      output <- list(coefficients = coefficients, vcov = Sigma, df = df, nobs = 2*numstudies, logLik = -logLik,
+      output <- list(coefficients = coefficients, vcov = Sigma, df = df, nobs = 2*numstudies, logLik = logLik,
                    iterations = (iterations+1), call = match.call(), data = origdata)
       class(output) <- "riley"
       return(output)
