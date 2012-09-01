@@ -2,7 +2,7 @@
 \alias{inv.logit}
 
 \title{
-  Applies the inverse logit tranformation
+  Apply the inverse logit tranformation
 }
 \description{
   Transforms a linear predictor into a probability.

@@ -1,9 +1,7 @@
 \name{logit}
 \alias{logit}
 
-\title{
-Apply logit tranformation
-}
+\title{ Apply logit tranformation }
 \description{
  Transforms values between 0 and 1 to values between -Inf and Inf.
 }
