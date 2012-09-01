@@ -74,7 +74,7 @@ data(Scheidler)
 ds <- Scheidler[which(Scheidler$modality==1),]
 
 #Perform the analysis
-fit <- riley(ds)
+fit <- riley(ds,correction.control="single")
 summary(fit)
 plot(fit)
 }
