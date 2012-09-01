@@ -67,5 +67,18 @@ Thomas Debray <thomas.debray@gmail.com>
 \code{\link{loglik.riley}} \code{\link{plot.riley}} \code{\link{summary.riley}}
 }
 
+\examples{
+data(Scheidler)
+
+#Select computed tomography data
+ds <- Scheidler[which(Scheidler$modality==1),]
+
+#Perform the analysis
+fit <- riley(ds)
+summary(fit)
+plot(fit)
+}
+
 \keyword{regression}
 \keyword{multivariate}
+\keyword{bivariate}
