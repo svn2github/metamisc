@@ -25,8 +25,7 @@ data("Scheidler")
 
 
 \details{
-The \code{Scheidler} data comprises the results from a meta-analysis where three imaging techniques for the diagnosis of lymph node metastasis in women with cervical cancer are compared. Forty-four studies in total were included: 17 studies evaluated lymphangiography, another 17 studies
-examined computed tomography and the remaining 10 studies focused on magnetic resonance imaging. Diagnosis of metastatic disease by lymphangiography (LAG) is based on the presence of nodal-filling defects, whereas computed tomography (CT) and magnetic resonance imaging (MRI) rely on nodal enlargement.
+The \code{Scheidler} data comprises the results from a meta-analysis where three imaging techniques for the diagnosis of lymph node metastasis in women with cervical cancer are compared. Forty-four studies in total were included: 17 studies evaluated lymphangiography, another 17 studies examined computed tomography and the remaining 10 studies focused on magnetic resonance imaging. Diagnosis of metastatic disease by lymphangiography (LAG) is based on the presence of nodal-filling defects, whereas computed tomography (CT) and magnetic resonance imaging (MRI) rely on nodal enlargement.
 }
 
 \source{
