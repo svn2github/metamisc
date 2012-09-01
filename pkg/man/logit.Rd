@@ -5,7 +5,7 @@
 Apply logit tranformation
 }
 \description{
- Transforms values between 0 and 1 to values in the range of -Inf and Inf.
+ Transforms values between 0 and 1 to values between -Inf and Inf.
 }
 \usage{
 logit(x)
@@ -18,7 +18,7 @@ logit(x)
 }
 
 \value{
- A vector of numerics between -Inf and Inf.
+ A vector of numerics (between -Inf and Inf).
 }
 
 \author{
