@@ -1,60 +1,37 @@
 \name{logit}
 \alias{logit}
-%- Also NEED an '\alias' for EACH other topic documented here.
+
 \title{
-%%  ~~function to do ... ~~
+Apply logit tranformation
 }
 \description{
-%%  ~~ A concise (1-5 lines) description of what the function does. ~~
+ Transforms values between 0 and 1 to values in the range of -Inf and Inf.
 }
 \usage{
 logit(x)
 }
-%- maybe also 'usage' for other objects documented here.
+
 \arguments{
   \item{x}{
-%%     ~~Describe \code{x} here~~
+   A vector of numerics (between 0 and 1)
 }
-}
-\details{
-%%  ~~ If necessary, more details than the description above ~~
-}
-\value{
-%%  ~Describe the value returned
-%%  If it is a LIST, use
-%%  \item{comp1 }{Description of 'comp1'}
-%%  \item{comp2 }{Description of 'comp2'}
-%% ...
-}
-\references{
-%% ~put references to the literature/web site here ~
-}
-\author{
-%%  ~~who you are~~
-}
-\note{
-%%  ~~further notes~~
 }
 
-%% ~Make other sections like Warning with \section{Warning }{....} ~
+\value{
+ A vector of numerics between -Inf and Inf.
+}
+
+\author{
+  Thomas Debray <thomas.debray@gmail.com>
+}
 
 \seealso{
-%% ~~objects to See Also as \code{\link{help}}, ~~~
+  \code{\link{inv.logit}}
 }
-\examples{
-##---- Should be DIRECTLY executable !! ----
-##-- ==>  Define data, use random,
-##--	or do  help(data=index)  for the standard data sets.
 
-## The function is currently defined as
-function (x) 
-{
-    if (is.numeric(x)) 
-        log(x/(1 - x))
-    else stop("x is not numeric!")
-  }
+\examples{
+  inv.logit(0.50) #A probability of 50% corresponds to a linear predictor of 0.
 }
-% Add one or more standard keywords, see file 'KEYWORDS' in the
-% R documentation directory.
-\keyword{ ~kwd1 }
-\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
+
+\keyword{logit}
+\keyword{transformation}

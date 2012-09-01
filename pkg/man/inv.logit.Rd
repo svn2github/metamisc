@@ -2,7 +2,7 @@
 \alias{inv.logit}
 
 \title{
-  Inverse of logistic tranformation
+  Applies the inverse logit tranformation
 }
 \description{
   Transforms a linear predictor into a probability.
@@ -23,9 +23,15 @@
   Thomas Debray <thomas.debray@gmail.com>
 }
 
+\seealso{
+  \code{\link{logit}}
+}
+
+
 \examples{
   inv.logit(0) #A linear predictor of 0 corresponds to a probability of 50%
 }
 
-\keyword{logistic}
+\keyword{logit}
 \keyword{inverse}
+\keyword{transformation}
