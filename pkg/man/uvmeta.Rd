@@ -1,5 +1,6 @@
 \name{uvmeta}
 \alias{uvmeta}
+\alias{uvmeta.default}
 \alias{print.uvmeta}
 
 %- Also NEED an '\alias' for EACH other topic documented here.
