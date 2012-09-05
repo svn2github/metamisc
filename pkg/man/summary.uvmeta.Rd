@@ -1,74 +1,46 @@
 \name{summary.uvmeta}
 \alias{summary.uvmeta}
-%- Also NEED an '\alias' for EACH other topic documented here.
-\title{
-%%  ~~function to do ... ~~
-}
-\description{
-%%  ~~ A concise (1-5 lines) description of what the function does. ~~
-}
-\usage{
-summary.uvmeta(object, ...)
-}
-%- maybe also 'usage' for other objects documented here.
+
+\title{Parameter summaries of \code{\link{uvmeta}} models.}
+
+\description{This function provides summary estimates of univariate random-effects models with their corresponding confidence intervals. The model parameters are given as mu (overall treatment effect) and tau squared (between-study variance).}
+
+\usage{ summary.uvmeta(object, level = 0.95, ...)}
+
 \arguments{
-  \item{object}{
-%%     ~~Describe \code{object} here~~
-}
-  \item{\dots}{
-%%     ~~Describe \code{\dots} here~~
-}
-}
-\details{
-%%  ~~ If necessary, more details than the description above ~~
-}
-\value{
-%%  ~Describe the value returned
-%%  If it is a LIST, use
-%%  \item{comp1 }{Description of 'comp1'}
-%%  \item{comp2 }{Description of 'comp2'}
-%% ...
-}
-\references{
-%% ~put references to the literature/web site here ~
-}
-\author{
-%%  ~~who you are~~
-}
-\note{
-%%  ~~further notes~~
+  \item{object}{ a \code{uvmeta} object.}
+  \item{level}{ numeric, the level for calculations of confidence intervals }
+  \item{\dots}{ arguments to be passed on to other functions }
 }
 
-%% ~Make other sections like Warning with \section{Warning }{....} ~
+\value{ Array containing confidence regions for the overall treatment effect and heterogeneity measures.}
+
+\references{
+DerSimonian, R., & Laird, N. (1986). 
+\dQuote{Meta-analysis in clinical trials.} \emph{Controlled Clinical Trials}, \bold{7}, 177--188.
+
+Biggerstaff, BJ., & Tweedie, RL. (1997). 
+\dQuote{Incorporating variability in estimates of heterogeneity in the random effects model in meta-analysis.} \emph{Statistics in Medicine}, \bold{16},  753--768.
+
+Higgins, JPT., & Thompson, SG. (2002). 
+\dQuote{Quantifying heterogeneity in a meta-analysis.} \emph{Statistics in Medicine}, \bold{21}, 1539--1558.
+
+Riley, RD., Higgins, JPT., & Deeks, JJ. (2011). 
+\dQuote{Interpretation of random effects meta-analyses.} \emph{British Medical Journal}, \bold{342}, d549.
+}
+
+\author{ Thomas Debray <thomas.debray@gmail.com> }
+
+\note{ There are no confidence intervals for the tau-parameter, as it is considered fixed. }
 
 \seealso{
-%% ~~objects to See Also as \code{\link{help}}, ~~~
+\code{\link{uvmeta}}
 }
-\examples{
-##---- Should be DIRECTLY executable !! ----
-##-- ==>  Define data, use random,
-##--	or do  help(data=index)  for the standard data sets.
 
-## The function is currently defined as
-function (object, ...) 
-{
-    se <- c(sqrt(object$fixef$var), sqrt(object$ranef$var), NA, 
-        NA, NA)
-    lower.conf = c(object$fixef$lowerconf, object$ranef$lowerconf, 
-        NA, object$H2$H2.lowerconf, object$I2$I2.lowerconf)
-    upper.conf = c(object$fixef$upperconf, object$ranef$upperconf, 
-        NA, object$H2$H2.upperconf, object$I2$I2.upperconf)
-    TAB = cbind(Estimate = c(object$fixef$mean, object$ranef$mean, 
-        object$Q$Q, object$H2$H2, object$I2$I2), StdErr = se, 
-        lower.conf = lower.conf, upper.conf = upper.conf)
-    rownames(TAB) = c("Fixed Effects", "Random Effects", "Cochran Q", 
-        "H-square index", "I-square index")
-    res = list(call = object$call, estimates = TAB)
-    class(res) = "summary.macc"
-    res
-  }
-}
-% Add one or more standard keywords, see file 'KEYWORDS' in the
-% R documentation directory.
-\keyword{ ~kwd1 }
-\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
+
+\keyword{ DerSimonian }
+\keyword{ Laird }
+\keyword{ univariate }
+\keyword{ random-effects }
+\keyword{ meta-analysis }
+

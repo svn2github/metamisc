@@ -21,7 +21,7 @@ predict.riley(object, level = 0.95, ...)
    Prediction intervals are based on Student's t-distribution with (numstudies - 5) degrees of freedom.
 }
 \value{
-   Array containing confidence regions for the sensitivity and FPR.
+   Array containing prediction intervals for the sensitivity and FPR.
 }
 
 \author{
