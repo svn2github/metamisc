@@ -1,5 +1,6 @@
 export("riley")
 export("uvmeta")
+export("basics")
 
 S3method(print, riley)
 S3method(summary, riley)
