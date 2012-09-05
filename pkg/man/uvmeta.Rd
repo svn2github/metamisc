@@ -4,17 +4,21 @@
 \alias{uvmetaMOM}
 \alias{print.uvmeta}
 
-\title{Parameter summaries of \code{\link{uvmeta}} models.}
+\title{Perform a univariate meta-analysis.}
 
 \description{
 %%  ~~ A concise (1-5 lines) description of what the function does. ~~
 }
-\usage{
-uvmeta(x, ...)
-}
+\usage{ uvmeta(r, v, method="MOM", ...)}
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{x}{
+  \item{r}{
+%%     ~~Describe \code{x} here~~
+}
+item{v}{
+%%     ~~Describe \code{x} here~~
+}
+item{method}{
 %%     ~~Describe \code{x} here~~
 }
   \item{\dots}{
