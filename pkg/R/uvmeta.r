@@ -24,6 +24,9 @@
 uvmeta <- function(x, ...) UseMethod("uvmeta")
 
 uvmetaMOM <- function(r,vars) {
+    # Degrees of freedom
+    dfr = length(r)-1
+
     ############################################################################
     # FIXED EFFECTS MODEL
     ############################################################################
@@ -56,8 +59,7 @@ uvmetaMOM <- function(r,vars) {
     H_sq = 0    #H2
     se_lnH = 0 #SE(ln(H2))
 
-    # Degrees of freedom
-    dfr = length(r)-1
+   
 
     # Between-study variance
     if (Q > dfr) {
@@ -70,6 +72,8 @@ uvmetaMOM <- function(r,vars) {
         between_study_var = 0
         se_lnH = sqrt((1/(2*(length(r)-2)))*(1-(1/(3*((length(r)-2)**2)))))
     }
+    varQ = 2*dfr + 4*(sum(w)-sum(w**2)/sum(w))*between_study_var + 2*(sum(w**2)-2*((sum(w**3)/sum(w))+(sum(w**2)**2)/sum(w)**2))*between_study_var**2
+    varTauSq = varQ/(sum(w)-sum(w**2)/sum(w))**2
 
     # Within-study plus between-study variance
     re_v = vars + between_study_var
@@ -94,40 +98,26 @@ uvmetaMOM <- function(r,vars) {
     ############################################################################
     fe_p1t = pnorm(weighted_Tbar/sqrt(var_T),lower=F)
     fe_p2t = 2*pnorm(weighted_Tbar/sqrt(var_T),lower=F)
-    fe.lowerconf =  weighted_Tbar + qnorm(0.025)*sqrt(var_T)
-    fe.upperconf =  weighted_Tbar + qnorm(0.975)*sqrt(var_T)
-    fixef.results = list(mean=weighted_Tbar,var=var_T,p2t=fe_p2t,
-        lowerconf=fe.lowerconf,upperconf=fe.upperconf)
+    fixef.results = list(mean=weighted_Tbar,var=var_T,p2t=fe_p2t)
 
     ############################################################################
     # Random effect statistics (2-tailed)
     ############################################################################
     re_p1t = pnorm(re_weighted_Tbar/sqrt(re_var_T),lower=F)
     re_p2t = 2*pnorm(re_weighted_Tbar/sqrt(re_var_T),lower=F)
-    re.lowerconf = re_weighted_Tbar + qnorm(0.025)*sqrt(re_var_T)
-    re.upperconf = re_weighted_Tbar + qnorm(0.975)*sqrt(re_var_T)
-    ranef.results = list(mean=re_weighted_Tbar,var=re_var_T,p2t=re_p2t,
-        lowerconf=re.lowerconf,upperconf=re.upperconf)
+    ranef.results = list(mean=re_weighted_Tbar,var=re_var_T,tauSq=between_study_var,varTauSq=varTauSq,p2t=re_p2t)
     
     ############################################################################
     # H statistics
     ############################################################################
     lnH = log(sqrt(H_sq))
     lnH_p2t = 2*pnorm(lnH/se_lnH,lower=F) # P-value of ln(H)
-    lnH.lowerconf = lnH + qnorm(0.025)*se_lnH
-    lnH.upperconf = lnH + qnorm(0.975)*se_lnH
-    H2.lowerconf = (exp(lnH.lowerconf))**2 #95% CI
-    H2.upperconf = (exp(lnH.upperconf))**2
-    
-    H2.results =  list(H2=H_sq,lnH=lnH,lnH_p2t=lnH_p2t,lnH.lowerconf=lnH.lowerconf,
-        lnH.upperconf=lnH.upperconf,H2.lowerconf=H2.lowerconf,H2.upperconf=H2.upperconf)
+    H2.results =  list(H2=H_sq,lnH=lnH,se_lnH=se_lnH,lnH_p2t=lnH_p2t)
 
     ############################################################################
     # I square statistics
     ############################################################################
-    I2.lowerconf = (H2.lowerconf-1)/H2.lowerconf
-    I2.upperconf = (H2.upperconf-1)/H2.upperconf
-    I2.results = list(I2=I_sq,I2.lowerconf=I2.lowerconf,I2.upperconf=I2.upperconf)
+    I2.results = list(I2=I_sq)
     
     ############################################################################
     # Q statistics
@@ -139,7 +129,7 @@ uvmetaMOM <- function(r,vars) {
     # between-study variation
     Q.critical = qchisq(0.95,df=(length(r)-1))
     Q_p = 1-pchisq(Q,df=(length(r)-1))
-    Q.results = list(Q=Q,critical=Q.critical,p.value=Q_p)
+    Q.results = list(Q=Q,var=varQ,critical=Q.critical,p.value=Q_p)
     
     ############################################################################
     # Output
@@ -175,18 +165,35 @@ print.uvmeta <- function(x, ...)
     print(fe,quote=F)
     cat(paste("\nTau squared: \t\t",round(x$tau_sq,5),sep=""))
     cat(paste("\nCochran's Q statistic: \t",round(x$Q$Q,5)," (p.value: ",round(x$Q$p.value,5),")",sep=""))
-    cat(paste("\nH-square index: \t", round(x$H2$H2,5)," (95% CI: ",round(x$H2$H2.lowerconf,5),"; ",round(x$H2$H2.upperconf,5),")",sep=""))
-    cat(paste("\nI-square index: \t", round(x$I2$I2*100,5),"% (95% CI: ",round(x$I2$I2.lowerconf*100,5),"% ; ",round(x$I2$I2.upperconf*100,5),"%)\n",sep=""))
+    cat(paste("\nH-square index: \t", round(x$H2$H2,5),sep=""))
+    cat(paste("\nI-square index: \t", round(x$I2$I2*100,5),"%\n",sep=""))
 }
 
-summary.uvmeta <- function(object, ...)
+summary.uvmeta <- function(object, level = 0.95, ...)
 {
+    alpha = (1-level)/2
     se <- c(sqrt(object$fixef$var),sqrt(object$ranef$var),NA,NA,NA)
-    lower.conf = c(object$fixef$lowerconf,object$ranef$lowerconf,NA,object$H2$H2.lowerconf,object$I2$I2.lowerconf)
-    upper.conf = c(object$fixef$upperconf,object$ranef$upperconf,NA,object$H2$H2.upperconf,object$I2$I2.upperconf)
+
+    fe.lowerconf =  object$fixef$mean + qnorm(alpha)*sqrt(object$fixef$var)
+    fe.upperconf =  object$fixef$mean + qnorm(1-alpha)*sqrt(object$fixef$var)
+    re.lowerconf =  object$ranef$mean + qnorm(alpha)*sqrt(object$ranef$var)
+    re.upperconf =  object$ranef$mean + qnorm(1-alpha)*sqrt(object$ranef$var)
+    lnH.lowerconf = object$H2$lnH + qnorm(alpha)*object$H2$se_lnH
+    lnH.upperconf = object$H2$lnH + qnorm(1-alpha)*object$H2$se_lnH
+    H2.lowerconf = (exp(lnH.lowerconf))**2 #95% CI
+    H2.upperconf = (exp(lnH.upperconf))**2
+    I2.lowerconf = max(c(0,(H2.lowerconf-1)/H2.lowerconf))
+    I2.upperconf = min(c(1,(H2.upperconf-1)/H2.upperconf))
+    Q.lowerconf = object$Q$Q  + qnorm(alpha)*sqrt(object$Q$var)
+    Q.upperconf = object$Q$Q  + qnorm(1-alpha)*sqrt(object$Q$var)
+    tauSq.lowerconf = object$ranef$tauSq + qnorm(alpha)*sqrt(object$ranef$varTauSq)
+    tauSq.upperconf = object$ranef$tauSq + qnorm(1-alpha)*sqrt(object$ranef$varTauSq)
+    lower.conf = c(fe.lowerconf,re.lowerconf,tauSq.lowerconf,Q.lowerconf,H2.lowerconf,I2.lowerconf)
+    upper.conf = c(fe.upperconf,re.upperconf,tauSq.upperconf,Q.upperconf,H2.upperconf,I2.upperconf)
     
-    TAB = cbind(Estimate = c(object$fixef$mean,object$ranef$mean,object$Q$Q,object$H2$H2,object$I2$I2),StdErr=se,lower.conf=lower.conf,upper.conf=upper.conf)
-    rownames(TAB) = c("Fixed Effects","Random Effects","Cochran Q","H-square index","I-square index")
+    TAB = cbind(c(object$fixef$mean,object$ranef$mean,object$ranef$tauSq,object$Q$Q,object$H2$H2,object$I2$I2),lower.conf=lower.conf,upper.conf=upper.conf)
+    rownames(TAB) = c("mu (fixed)","mu (random)","Tau squared","Cochran Q","H-square index","I-square index")
+    colnames(TAB) = c("Estimate",paste((alpha*100),"%"),paste(((1-alpha)*100),"%"))
     res = list(call=object$call,estimates=TAB)
     class(res) = "summary.macc"
     res
