@@ -1,6 +1,5 @@
 \name{riley-package}
 \alias{riley-package}
-\alias{riley}
 \docType{package}
 \title{Diagnostic and prognostic meta-analysis}
 \description{This package provides functions for diagnostic and prognostic meta-analyses. It estimates univariate, bivariate and multivariate models, and allows the aggregation of previously published prediction models with new data.}
