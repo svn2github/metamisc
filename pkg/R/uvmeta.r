@@ -21,7 +21,7 @@
 #   Fixed effect vs. random effects" (2007) . www.Meta-Analysis.com
 ################################################################################
 
-uvmeta <- function(x, ...) UseMethod("uvmeta")
+uvmeta <- function(r, ...) UseMethod("uvmeta")
 
 uvmetaMOM <- function(r,vars) {
     # Degrees of freedom
