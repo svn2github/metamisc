@@ -96,22 +96,22 @@ uvmetaMOM <- function(r,vars) {
     ############################################################################
     # Fixed effect statistics  (2-tailed)
     ############################################################################
-    fe_p1t = pnorm(weighted_Tbar/sqrt(var_T),lower=F)
-    fe_p2t = 2*pnorm(weighted_Tbar/sqrt(var_T),lower=F)
+    fe_p1t = pnorm(weighted_Tbar/sqrt(var_T),lower.tail=F)
+    fe_p2t = 2*pnorm(weighted_Tbar/sqrt(var_T),lower.tail=F)
     fixef.results = list(mean=weighted_Tbar,var=var_T,p2t=fe_p2t)
 
     ############################################################################
     # Random effect statistics (2-tailed)
     ############################################################################
-    re_p1t = pnorm(re_weighted_Tbar/sqrt(re_var_T),lower=F)
-    re_p2t = 2*pnorm(re_weighted_Tbar/sqrt(re_var_T),lower=F)
+    re_p1t = pnorm(re_weighted_Tbar/sqrt(re_var_T),lower.tail=F)
+    re_p2t = 2*pnorm(re_weighted_Tbar/sqrt(re_var_T),lower.tail=F)
     ranef.results = list(mean=re_weighted_Tbar,var=re_var_T,tauSq=between_study_var,varTauSq=varTauSq,p2t=re_p2t)
     
     ############################################################################
     # H statistics
     ############################################################################
     lnH = log(sqrt(H_sq))
-    lnH_p2t = 2*pnorm(lnH/se_lnH,lower=F) # P-value of ln(H)
+    lnH_p2t = 2*pnorm(lnH/se_lnH,lower.tail=F) # P-value of ln(H)
     H2.results =  list(H2=H_sq,lnH=lnH,se_lnH=se_lnH,lnH_p2t=lnH_p2t)
 
     ############################################################################

@@ -144,8 +144,8 @@ predict.riley <- function(object, level = 0.95, ...)
     predint[1,] = inv.logit(c(coefficients(object)["mu1"],(qt(alpha,df=df)*sqrt((coefficients(object)["psi1"]**2)+diag(vcov(object))[1])+coefficients(object)["mu1"]),(qt((1-alpha),df=df)*sqrt((coefficients(object)["psi1"]**2)+diag(vcov(object))[1])+coefficients(object)["mu1"])))
     predint[2,] = inv.logit(c(coefficients(object)["mu2"],(qt(alpha,df=df)*sqrt((coefficients(object)["psi2"]**2)+diag(vcov(object))[2])+coefficients(object)["mu2"]),(qt((1-alpha),df=df)*sqrt((coefficients(object)["psi2"]**2)+diag(vcov(object))[2])+coefficients(object)["mu2"])))
   } else {
-    predint[1,] = c(inv.logit(mu1),0,1)
-    predint[2,] = c(inv.logit(mu2),0,1)
+    predint[1,] = c(inv.logit(coefficients(object)["mu1"]),0,1)
+    predint[2,] = c(inv.logit(coefficients(object)["mu2"]),0,1)
   }
   predint
 }
