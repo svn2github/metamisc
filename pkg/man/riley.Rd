@@ -62,7 +62,7 @@ Thomas Debray <thomas.debray@gmail.com>
 }
 
 \seealso{
-\code{\link{loglik.riley}} \code{\link{plot.riley}} \code{\link{summary.riley}}
+\code{\link{logLik.riley}} \code{\link{plot.riley}} \code{\link{summary.riley}}
 }
 
 \examples{

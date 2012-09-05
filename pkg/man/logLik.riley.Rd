@@ -1,32 +1,20 @@
 \name{logLik.riley}
 \alias{logLik.riley}
-%- Also NEED an '\alias' for EACH other topic documented here.
-\title{
-Print the log-likelihood
-}
-\description{
-This function provides the (restricted) log-likelihood of the fitted model.
-}
-\usage{
-logLik.riley(object, ...)
-}
+
+\title{Print the log-likelihood}
+
+\description{This function provides the (restricted) log-likelihood of the fitted model.}
+
+\usage{logLik.riley(object, ...)}
 
 \arguments{
-  \item{object}{
-   a \code{riley} object.
-}
-  \item{\dots}{
-   arguments to be passed on to other functions, currently ignored
-}
+  \item{object}{a \code{riley} object.}
+  \item{\dots}{arguments to be passed on to other functions, currently ignored}
 }
 
-\value{
-The log-likelihood of a fitted \code{riley} model
-}
+\value{The log-likelihood of a fitted \code{riley} model}
 
-\author{
-Thomas Debray <thomas.debray@gmail.com>
-}
+\author{Thomas Debray <thomas.debray@gmail.com>}
 
 \examples{
 data(Scheidler)
