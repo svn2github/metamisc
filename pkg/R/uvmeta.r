@@ -132,14 +132,14 @@ uvmetaMOM <- function(r,vars) {
 
 uvmeta.default <- function(r,v, method="MOM", ...)
 {
-    x = as.vector(r)
-    y = as.vector(v)
-    est <- NA
-    if (method == "MOM") {
-	est <- uvmetaMOM(x, y)
-	est$call <- match.call()
-        class(est) <- "uvmeta"
-    }
+    x <- as.vector(r)
+    y <- as.vector(v)
+    est <- NA    
+    if (length(x)!=length(y)) {warning("The vectors 'r' and 'v' have a different size!")}
+    if (method == "MOM") { est <- uvmetaMOM(x, y) }
+
+    est$call <- match.call()
+    class(est) <- "uvmeta"
     est
 }
 
@@ -163,7 +163,6 @@ print.uvmeta <- function(x, ...)
 summary.uvmeta <- function(object, level = 0.95, ...)
 {
     alpha = (1-level)/2
-    se <- c(sqrt(object$fixef$var),sqrt(object$ranef$var),NA,NA,NA)
 
     fe.lowerconf =  object$fixef$mean + qnorm(alpha)*sqrt(object$fixef$var)
     fe.upperconf =  object$fixef$mean + qnorm(1-alpha)*sqrt(object$fixef$var)
