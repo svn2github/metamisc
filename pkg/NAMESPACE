@@ -14,5 +14,3 @@ S3method(print, uvmeta)
 S3method(summary, uvmeta)
 S3method(uvmeta, default)
 
-S3method(inv.logit,basics)
-S3method(logit,basics)
