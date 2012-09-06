@@ -113,20 +113,19 @@ uvmetaMOM <- function(r,vars) {
     ############################################################################
     # Q statistics
     ############################################################################
-    # The Q statistic has a chi-square distribution with k ? 1 degrees of
+    # The Q statistic has a chi-square distribution with k - 1 degrees of
     # freedom, k being the number of studies. Thus, Q values higher than the
     # critical point for a given significance level alfa enable us to reject the
     # null hypothesis and conclude that there is statistically significant
     # between-study variation
-    Q.critical = qchisq(0.95,df=(length(r)-1))
+    #Q.critical = qchisq(0.95,df=(length(r)-1))
     Q_p = 1-pchisq(Q,df=(length(r)-1))
-    Q.results = list(Q=Q,var=varQ,critical=Q.critical,p.value=Q_p)
+    Q.results = list(Q=Q,var=varQ,,p.value=Q_p)
     
     ############################################################################
     # Output
     ############################################################################
-    out <- list(fixef=fixef.results,ranef=ranef.results,Q=Q.results,H2=H2.results,
-        I2=I2.results,tau_sq=between_study_var)
+    out <- list(fixef=fixef.results,ranef=ranef.results,Q=Q.results,H2=H2.results,I2=I2.results)
     return (out)
 }
 
