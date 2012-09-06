@@ -27,9 +27,6 @@ logit(x)
   \code{\link{inv.logit}}
 }
 
-\examples{
-  inv.logit(0.50) #A probability of 50% corresponds to a linear predictor of 0.
-}
 
 \keyword{logit}
 \keyword{transformation}
