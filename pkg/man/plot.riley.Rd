@@ -51,7 +51,7 @@ fit2 <- riley(ds2)
 fit3 <- riley(ds3)
 
 plot(fit1,plotnumerics=FALSE,pch=0) #CT
-plot(fit2,plotnumerics=FALSE,add=T,pch=1) #LAG
+plot(fit2,plotnumerics=FALSE,add=TRUE,pch=1) #LAG
 plot(fit3,plotnumerics=FALSE,add=TRUE,pch=2) #MRI
 }
 
