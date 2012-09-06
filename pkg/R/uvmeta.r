@@ -12,7 +12,7 @@
 # example.var = c(0.03,0.03,0.05,0.01,0.05,0.02)
 # macc(example.r,example.var)
 ################################################################################
-uvmeta <- function(r, ...) UseMethod("uvmeta")
+uvmeta <- function(r, vars, method="MOM", ...) UseMethod("uvmeta")
 
 uvmetaMOM <- function(r,vars) {
     # Degrees of freedom
@@ -129,12 +129,12 @@ uvmetaMOM <- function(r,vars) {
     return (out)
 }
 
-uvmeta.default <- function(r,v, method="MOM", ...)
+uvmeta.default <- function(r,vars, method="MOM", ...)
 {
     x <- as.vector(r)
-    y <- as.vector(v)
+    y <- as.vector(vars)
     est <- NA    
-    if (length(x)!=length(y)) {warning("The vectors 'r' and 'v' have a different size!")}
+    if (length(x)!=length(y)) {warning("The vectors 'r' and 'vars' have a different size!")}
     if (method == "MOM") { est <- uvmetaMOM(x, y) }
 
     est$call <- match.call()
