@@ -6,41 +6,40 @@
 
 \title{Perform a univariate meta-analysis.}
 
-\description{
-%%  ~~ A concise (1-5 lines) description of what the function does. ~~
-}
+\description{This function performs a univariate meta-analysis with fixed or random effects. }
+
 \usage{ uvmeta(r, v, method="MOM", ...)}
-%- maybe also 'usage' for other objects documented here.
+
 \arguments{
-  \item{r}{
-%%     ~~Describe \code{x} here~~
+  \item{r}{vector of numerics containg the sample means}
+  \item{v}{vector of numerics containing the error variance of a sample mean}
+  \item{method}{estimation method, where \code{MOM} implements the method-of-moment estimator proposed by DerSimonian and Laird.}
+  \item{\dots}{arguments to be passed on to other functions}
 }
-item{v}{
-%%     ~~Describe \code{x} here~~
-}
-item{method}{
-%%     ~~Describe \code{x} here~~
-}
-  \item{\dots}{
-%%     ~~Describe \code{\dots} here~~
-}
-}
-\details{
-%%  ~~ If necessary, more details than the description above ~~
-}
-\value{
-%%  ~Describe the value returned
-%%  If it is a LIST, use
-%%  \item{comp1 }{Description of 'comp1'}
-%%  \item{comp2 }{Description of 'comp2'}
-%% ...
-}
+
+\details{ The defining feature of the fixed-effect model is that all studies in the analysis share a common effect size. Conversely, the random-effects model assumes a distribution of true effect sizes and estimates the mean of this distribution. Concretely, if we move from fixed-effect weights to random-effects weights, large studies lose influence and small studies gain influence (Borenstein 2010). }
+
+\value{ Returns estimates for the fixed and random effects models, between-study variance and several heterogeneity indexes.}
+
 \references{
-%% ~put references to the literature/web site here ~
+DerSimonian, R., & Laird, N. (1986). 
+\dQuote{Meta-analysis in clinical trials.} \emph{Controlled Clinical Trials}, \bold{7}, 177--188.
+
+Biggerstaff, BJ., & Tweedie, RL. (1997). 
+\dQuote{Incorporating variability in estimates of heterogeneity in the random effects model in meta-analysis.} \emph{Statistics in Medicine}, \bold{16},  753--768.
+
+Higgins, JPT., & Thompson, SG. (2002). 
+\dQuote{Quantifying heterogeneity in a meta-analysis.} \emph{Statistics in Medicine}, \bold{21}, 1539--1558.
+
+Borenstein, M., Hedges, LV., Higgins, JPT., & Rothstein HR. (2010). 
+\dQuote{A basic introduction to fixed-effect and random-effects models for meta-analysis.} \emph{Research Synthesis Methods}, \bold{1}, 97--111.
+
+Riley, RD., Higgins, JPT., & Deeks, JJ. (2011). 
+\dQuote{Interpretation of random effects meta-analyses.} \emph{British Medical Journal}, \bold{342}, d549.
 }
-\author{
-%%  ~~who you are~~
-}
+
+\author{ Thomas Debray <thomas.debray@gmail.com> }
+
 \note{
 %%  ~~further notes~~
 }
@@ -59,7 +58,14 @@ item{method}{
 function (x, ...) 
 UseMethod("uvmeta")
 }
-% Add one or more standard keywords, see file 'KEYWORDS' in the
-% R documentation directory.
-\keyword{ ~kwd1 }
-\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
+
+\seealso{
+\code{\link{summary.uvmeta}}
+}
+
+\keyword{ DerSimonian }
+\keyword{ Laird }
+\keyword{ univariate }
+\keyword{ random-effects }
+\keyword{ meta-analysis }
+

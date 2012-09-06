@@ -25,6 +25,9 @@ Biggerstaff, BJ., & Tweedie, RL. (1997).
 Higgins, JPT., & Thompson, SG. (2002). 
 \dQuote{Quantifying heterogeneity in a meta-analysis.} \emph{Statistics in Medicine}, \bold{21}, 1539--1558.
 
+Borenstein, M., Hedges, LV., Higgins, JPT., & Rothstein HR. (2010). 
+\dQuote{A basic introduction to fixed-effect and random-effects models for meta-analysis.} \emph{Research Synthesis Methods}, \bold{1}, 97--111.
+
 Riley, RD., Higgins, JPT., & Deeks, JJ. (2011). 
 \dQuote{Interpretation of random effects meta-analyses.} \emph{British Medical Journal}, \bold{342}, d549.
 }
