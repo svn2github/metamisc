@@ -120,7 +120,7 @@ uvmetaMOM <- function(r,vars) {
     # between-study variation
     #Q.critical = qchisq(0.95,df=(length(r)-1))
     Q_p = 1-pchisq(Q,df=(length(r)-1))
-    Q.results = list(Q=Q,var=varQ,,p.value=Q_p)
+    Q.results = list(Q=Q,var=varQ,p.value=Q_p)
     
     ############################################################################
     # Output
