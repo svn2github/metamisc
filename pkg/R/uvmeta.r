@@ -12,15 +12,6 @@
 # example.var = c(0.03,0.03,0.05,0.01,0.05,0.02)
 # macc(example.r,example.var)
 ################################################################################
-# References
-# * Tania Huedo-Medina; Julio Sanchez-Meca; Fulgencio Marin-Martinez;
-#   Juan Botella,"Assessing heterogeneity in meta-analysis: Q statistci
-#   or I2 index?" (2006). CHIP Documents . Paper 19
-#   http://digitalcommons.uconn.edu/chip_docs/19
-# * Michael Borenstein; Larry Hedges; Hahhah Rothstein, "Meta-Analysis .
-#   Fixed effect vs. random effects" (2007) . www.Meta-Analysis.com
-################################################################################
-
 uvmeta <- function(r, ...) UseMethod("uvmeta")
 
 uvmetaMOM <- function(r,vars) {
@@ -180,7 +171,7 @@ summary.uvmeta <- function(object, level = 0.95, ...)
     re.upperconf =  object$ranef$mean + qnorm(1-alpha)*sqrt(object$ranef$var)
     lnH.lowerconf = object$H2$lnH + qnorm(alpha)*object$H2$se_lnH
     lnH.upperconf = object$H2$lnH + qnorm(1-alpha)*object$H2$se_lnH
-    H2.lowerconf = (exp(lnH.lowerconf))**2 #95% CI
+    H2.lowerconf = (exp(lnH.lowerconf))**2 
     H2.upperconf = (exp(lnH.upperconf))**2
     I2.lowerconf = max(c(0,(H2.lowerconf-1)/H2.lowerconf))
     I2.upperconf = min(c(1,(H2.upperconf-1)/H2.upperconf))
