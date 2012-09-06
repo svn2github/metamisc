@@ -8,11 +8,11 @@
 
 \description{This function performs a univariate meta-analysis with fixed or random effects. }
 
-\usage{ uvmeta(r, v, method="MOM", ...)}
+\usage{ uvmeta(r, vars, method="MOM", ...)}
 
 \arguments{
   \item{r}{vector of numerics containg the sample means}
-  \item{v}{vector of numerics containing the error variance of a sample mean}
+  \item{vars}{vector of numerics containing the error variance of a sample mean}
   \item{method}{estimation method, where \code{MOM} implements the method-of-moment estimator proposed by DerSimonian and Laird.}
   \item{\dots}{arguments to be passed on to other functions}
 }
@@ -39,25 +39,6 @@ Riley, RD., Higgins, JPT., & Deeks, JJ. (2011).
 }
 
 \author{ Thomas Debray <thomas.debray@gmail.com> }
-
-\note{
-%%  ~~further notes~~
-}
-
-%% ~Make other sections like Warning with \section{Warning }{....} ~
-
-\seealso{
-%% ~~objects to See Also as \code{\link{help}}, ~~~
-}
-\examples{
-##---- Should be DIRECTLY executable !! ----
-##-- ==>  Define data, use random,
-##--	or do  help(data=index)  for the standard data sets.
-
-## The function is currently defined as
-function (x, ...) 
-UseMethod("uvmeta")
-}
 
 \seealso{
 \code{\link{summary.uvmeta}}
