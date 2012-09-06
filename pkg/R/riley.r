@@ -61,8 +61,8 @@ riley.default <-
       }
 
       #Calculate starting values for optim
-      sumlsens <- uvmeta(r=logit.sens, v=var.logit.sens, method="MOM")
-      sumlfpr  <- uvmeta(r=logit.fpr, v=var.logit.fpr, method="MOM")
+      sumlsens <- uvmeta(r=logit.sens, vars=var.logit.sens, method="MOM")
+      sumlfpr  <- uvmeta(r=logit.fpr, vars=var.logit.fpr, method="MOM")
 
       negfullloglik <- function(pars,Y,vars)
       {
