@@ -111,6 +111,8 @@ riley.default <-
       hessian = fit$hessian
       colnames(hessian) = c("mu1","mu2","psi1","psi2","rhoT")
       rownames(hessian) = c("mu1","mu2","psi1","psi2","rhoT")
+	  
+	  if (length(which(eigen(fit$hessian,symmetric=TRUE)$values<0))>0) warning("The Hessian contains negative eigenvalues!")
       
       iterations <- fit$iterations
       logLik <- -fit$value
@@ -127,7 +129,7 @@ print.riley <- function(x, ...)
   print(x$call)
   cat("\nCoefficients:\n")
   print(x$coefficients)
-  if (length(which(eigen(fit$hessian,symmetric=TRUE)$values<0))>0) warning("The Hessian contains negative eigenvalues!")
+  if (length(which(eigen(x$hessian,symmetric=TRUE)$values<0))>0) cat("\nWarning: the Hessian matrix contains negative eigenvalues, parameter estimates are thus not optimally fitted!\n")
 }
 
 # Calculate prediction interval (not identical interpretation to random effects!)
@@ -158,6 +160,7 @@ summary.riley <- function(object, level = 0.95, ...)
   colnames(confints)[1] <- "Estimate"
   confints <- rbind(inv.logit(confints[1:2,]),confints)
   rownames(confints)[1:2] <-  c("Sens", "FPR") 
+  
   #Transform last parameter back to rho
   confints[7,] =  inv.logit(confints[7,])*2-1
   rownames(confints)[7] = "rho"
@@ -176,7 +179,7 @@ print.summary.riley <- function(x, ...)
 }
 
 vcov.riley <- function(object, ...){
-  if (length(which(eigen(fit$hessian,symmetric=TRUE)$values<0))>0) warning("The Hessian contains negative eigenvalues!")
+  if (length(which(eigen(object$hessian,symmetric=TRUE)$values<0))>0) warning("The Hessian contains negative eigenvalues!")
  
   # It is known that 'optim' has problems.  Perhaps the simplest thing to do is to call 'optim' with each of the 'methods' in sequence, using the 'optim' found by each 'method' as the starting value for the next.  When I do this, I often skip 'SANN', because it typically takes so much more time than the other methods.  However, if there might be multiple local minima, then SANN may be the best way to find a global minimum, though you may want to call 'optim' again with another method, starting from optimal solution returned by 'SANN'. 
 
