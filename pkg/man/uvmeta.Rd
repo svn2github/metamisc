@@ -6,13 +6,13 @@
 
 \title{Perform a univariate meta-analysis.}
 
-\description{This function performs a univariate meta-analysis with fixed or random effects. }
+\description{This function performs a univariate meta-analysis by assuming fixed or random effects. }
 
 \usage{ uvmeta(r, vars, method="MOM", ...)}
 
 \arguments{
-  \item{r}{vector of numerics containg the sample means}
-  \item{vars}{vector of numerics containing the error variance of a sample mean}
+  \item{r}{vector of numerics containing the effect sizes}
+  \item{vars}{vector of numerics containing the error variance of the effect sizes}
   \item{method}{estimation method, where \code{MOM} implements the method-of-moment estimator proposed by DerSimonian and Laird.}
   \item{\dots}{arguments to be passed on to other functions}
 }
