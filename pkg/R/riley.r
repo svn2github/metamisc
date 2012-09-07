@@ -8,7 +8,7 @@ riley <- function(X, ...) UseMethod("riley")
 # rhoT : (logit(rho+1)/2) where rho is the correlation between mu1 and mu2
 riley.default <-
   function(X = NULL, TP, FN, FP, TN, correction = 0.5, 
-           correction.control = "all", ...)
+           correction.control = "all", optimization = "Nelder-Mead", ...)
   {
       if(!is.null(X)){
         X <- as.data.frame(X)
@@ -96,7 +96,7 @@ riley.default <-
       }
       
       pars.start = c(sumlsens$ranef$mean,sumlfpr$ranef$mean,sqrt(sumlsens$ranef$var),sqrt(sumlfpr$ranef$var),0)
-      fit = optim(pars.start,negfullloglik,Y=Y,vars=vars,hessian=T)
+      fit = optim(pars.start,negfullloglik,Y=Y,vars=vars,method=optimization,hessian=T)
       
       mu1 = fit$par[1]
       mu2 = fit$par[2]
