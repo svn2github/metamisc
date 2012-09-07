@@ -108,14 +108,14 @@ riley.default <-
       coefficients = c(mu1,mu2,psi1,psi2,rhoT)
       names(coefficients) = c("mu1","mu2","psi1","psi2","rhoT")
       
-      Sigma = solve(fit$hessian)
-      colnames(Sigma) = c("mu1","mu2","psi1","psi2","rhoT")
-      rownames(Sigma) = c("mu1","mu2","psi1","psi2","rhoT")
+      hessian = fit$hessian
+      colnames(hessian) = c("mu1","mu2","psi1","psi2","rhoT")
+      rownames(hessian) = c("mu1","mu2","psi1","psi2","rhoT")
       
       iterations <- fit$iterations
       logLik <- -fit$value
       
-      output <- list(coefficients = coefficients, vcov = Sigma, df = df, nobs = 2*numstudies, logLik = logLik,
+      output <- list(coefficients = coefficients, hessian = hessian, df = df, nobs = 2*numstudies, logLik = logLik,
                    iterations = (iterations+1), call = match.call(), data = origdata)
       class(output) <- "riley"
       return(output)
@@ -175,7 +175,10 @@ print.summary.riley <- function(x, ...)
 }
 
 vcov.riley <- function(object, ...){
-  object$vcov
+  if (length(which(eigen(fit$hessian)$values<0))>0) warning("The Hessian contains negative eigenvalues!")
+
+  Sigma = solve(object$hessian)
+  Sigma
   }
 
 logLik.riley <- function(object, ...){object$logLik}
