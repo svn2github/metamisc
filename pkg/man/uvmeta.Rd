@@ -19,7 +19,7 @@
 
 \details{ The defining feature of the fixed-effect model is that all studies in the analysis share a common effect size. Conversely, the random-effects model assumes a distribution of true effect sizes and estimates the mean of this distribution. Concretely, if we move from fixed-effect weights to random-effects weights, large studies lose influence and small studies gain influence (Borenstein 2010). }
 
-\value{ Returns estimates for the fixed and random effects models, between-study variance and several heterogeneity indexes.}
+\value{ An object of the class \code{uvmeta} for which many standard methods are available. }
 
 \references{
 DerSimonian, R., & Laird, N. (1986). 
