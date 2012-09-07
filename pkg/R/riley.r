@@ -175,7 +175,9 @@ print.summary.riley <- function(x, ...)
 }
 
 vcov.riley <- function(object, ...){
-  if (length(which(eigen(fit$hessian)$values<0))>0) warning("The Hessian contains negative eigenvalues!")
+  if (length(which(eigen(fit$hessian,symmetric=TRUE)$values<0))>0) warning("The Hessian contains negative eigenvalues!")
+ 
+  # It is known that 'optim' has problems.  Perhaps the simplest thing to do is to call 'optim' with each of the 'methods' in sequence, using the 'optim' found by each 'method' as the starting value for the next.  When I do this, I often skip 'SANN', because it typically takes so much more time than the other methods.  However, if there might be multiple local minima, then SANN may be the best way to find a global minimum, though you may want to call 'optim' again with another method, starting from optimal solution returned by 'SANN'. 
 
   Sigma = solve(object$hessian)
   Sigma
