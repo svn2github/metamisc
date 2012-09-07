@@ -3,7 +3,7 @@
 
 \title{Print the log-likelihood}
 
-\description{This function provides the (restricted) log-likelihood of the fitted model.}
+\description{This function provides the (restricted) log-likelihood of a fitted model.}
 
 \usage{logLik.riley(object, ...)}
 
@@ -12,7 +12,7 @@
   \item{\dots}{arguments to be passed on to other functions, currently ignored}
 }
 
-\value{The log-likelihood of a fitted \code{riley} model}
+\value{The (restricted) log-likelihood of a fitted \code{riley} model}
 
 \author{Thomas Debray <thomas.debray@gmail.com>}
 
@@ -21,6 +21,10 @@ data(Scheidler)
 ds <- Scheidler[which(Scheidler$modality==1),]
 fit <- riley(ds,correction.control="single")
 logLik(fit)
+}
+
+\seealso{
+\code{\link{riley}} \code{\link{plot.riley}} \code{\link{summary.riley}}
 }
 
 \keyword{ likelihood }

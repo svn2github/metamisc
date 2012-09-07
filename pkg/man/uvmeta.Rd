@@ -41,7 +41,7 @@ Riley, RD., Higgins, JPT., & Deeks, JJ. (2011).
 \author{ Thomas Debray <thomas.debray@gmail.com> }
 
 \seealso{
-\code{\link{summary.uvmeta}}
+\code{\link{summary.uvmeta}} \code{\link{predict.uvmeta}}
 }
 
 \keyword{ DerSimonian }
