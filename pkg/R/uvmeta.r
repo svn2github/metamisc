@@ -46,12 +46,10 @@ uvmetaMOM <- function(r,vars) {
     # Higgins and Thompson (2002) have also developed a confidence interval for
     # I2. The interval is formulated by calculating another of their proposed
     # measures of heterogeneity, the H2 index obtained by
-    # (Higgins & Thompson, 2002, p. 1545, eq. 6) also known as Birge?s
+    # (Higgins & Thompson, 2002, p. 1545, eq. 6) also known as Birges
     # ratio (Birge, 1932)
-    H_sq = 0    #H2
-    se_lnH = 0 #SE(ln(H2))
-
-   
+    H_sq = 1    #H2
+    se_lnH = 0  #SE(ln(H2))
 
     # Between-study variance
     if (Q > dfr) {
@@ -87,18 +85,8 @@ uvmetaMOM <- function(r,vars) {
     
     fixef.results = list(mean=weighted_Tbar,var=var_T)
     ranef.results = list(mean=re_weighted_Tbar,var=re_var_T,tauSq=between_study_var,varTauSq=varTauSq)
-    
-    ############################################################################
-    # H statistics
-    ############################################################################
-    lnH = log(sqrt(H_sq))
-    lnH_p2t = 2*pnorm(lnH/se_lnH,lower.tail=F) # P-value of ln(H)
-    H2.results =  list(H2=H_sq,lnH=lnH,se_lnH=se_lnH,lnH_p2t=lnH_p2t)
-
-    ############################################################################
-    # I square statistics
-    ############################################################################
-    I2.results = list(I2=I_sq)
+    H2.results    = list(H2=H_sq,se_lnH=se_lnH)
+    I2.results    = list(I2=I_sq)
     
     ############################################################################
     # Q statistics
@@ -115,7 +103,7 @@ uvmetaMOM <- function(r,vars) {
     ############################################################################
     # Output
     ############################################################################
-    out <- list(fixef=fixef.results,ranef=ranef.results,Q=Q.results,H2=H2.results,I2=I2.results,numstudies=numstudies)
+    out <- list(fixef=fixef.results,ranef=ranef.results,Q=Q.results,H2=H2.results,I2=I2.results,df=dfr,numstudies=numstudies)
     return (out)
 }
 
@@ -147,15 +135,16 @@ print.uvmeta <- function(x, ...)
     cat(paste("\nTau squared: \t\t",round(x$ranef$tauSq,5),sep=""))
     cat(paste("\nCochran's Q statistic: \t",round(x$Q$Q,5)," (p.value: ",round(x$Q$p.value,5),")",sep=""))
     cat(paste("\nH-square index: \t", round(x$H2$H2,5),sep=""))
-    cat(paste("\nI-square index: \t", round(x$I2$I2*100,5),"%\n",sep=""))
+    cat(paste("\nI-square index: \t", round(x$I2$I2*100,3)," %\n",sep=""))
 }
 
 predict.uvmeta <- function(object, level = 0.95, ...)
 {
   alpha = (1-level)/2
+
+  #The correct number of degrees of freedom for this t distribution is complex, and we use a value of k–2 largely for pragmatic reasons. (Riley 2011)
   df = 2 
   
-  #Prediction interval
   pred.mean  <- object$ranef$mean
   pred.lower <- object$ranef$mean + qt(alpha,df=(object$numstudies-df))*sqrt(object$ranef$tauSq+object$ranef$var)
   pred.upper <- object$ranef$mean + qt((1-alpha),df=(object$numstudies-df))*sqrt(object$ranef$tauSq+object$ranef$var)
@@ -172,8 +161,8 @@ summary.uvmeta <- function(object, level = 0.95, ...)
     fe.upperconf =  object$fixef$mean + qnorm(1-alpha)*sqrt(object$fixef$var)
     re.lowerconf =  object$ranef$mean + qnorm(alpha)*sqrt(object$ranef$var)
     re.upperconf =  object$ranef$mean + qnorm(1-alpha)*sqrt(object$ranef$var)
-    lnH.lowerconf = object$H2$lnH + qnorm(alpha)*object$H2$se_lnH
-    lnH.upperconf = object$H2$lnH + qnorm(1-alpha)*object$H2$se_lnH
+    lnH.lowerconf = log(sqrt(object$H2$H2)) + qnorm(alpha)*object$H2$se_lnH
+    lnH.upperconf = log(sqrt(object$H2$H2)) + qnorm(1-alpha)*object$H2$se_lnH
     H2.lowerconf = (exp(lnH.lowerconf))**2 
     H2.upperconf = (exp(lnH.upperconf))**2
     I2.lowerconf = max(c(0,(H2.lowerconf-1)/H2.lowerconf))
