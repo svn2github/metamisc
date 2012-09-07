@@ -85,19 +85,8 @@ uvmetaMOM <- function(r,vars) {
     # The Z-value
     re_z_T = re_weighted_Tbar/re_se_T
     
-    ############################################################################
-    # Fixed effect statistics  (2-tailed)
-    ############################################################################
-    fe_p1t = pnorm(weighted_Tbar/sqrt(var_T),lower.tail=F)
-    fe_p2t = 2*pnorm(weighted_Tbar/sqrt(var_T),lower.tail=F)
-    fixef.results = list(mean=weighted_Tbar,var=var_T,p2t=fe_p2t)
-
-    ############################################################################
-    # Random effect statistics (2-tailed)
-    ############################################################################
-    re_p1t = pnorm(re_weighted_Tbar/sqrt(re_var_T),lower.tail=F)
-    re_p2t = 2*pnorm(re_weighted_Tbar/sqrt(re_var_T),lower.tail=F)
-    ranef.results = list(mean=re_weighted_Tbar,var=re_var_T,tauSq=between_study_var,varTauSq=varTauSq,p2t=re_p2t)
+    fixef.results = list(mean=weighted_Tbar,var=var_T)
+    ranef.results = list(mean=re_weighted_Tbar,var=re_var_T,tauSq=between_study_var,varTauSq=varTauSq)
     
     ############################################################################
     # H statistics
@@ -148,10 +137,10 @@ print.uvmeta <- function(x, ...)
     cat("Call:\n")
     print(x$call)
     cat("\nCoefficients:\n\n")
-    fe = array(NA,dim=c(2,3))
-    fe[1,] = cbind(round(x$fixef$mean,5),round(sqrt(x$fixef$var),5),x$fixef$p2t)
-    fe[2,] = cbind(round(x$ranef$mean,5),round(sqrt(x$ranef$var),5),x$ranef$p2t)
-    colnames(fe) = c("Estimate","StdErr","p.value (2-tailed)")
+    fe = array(NA,dim=c(2,2))
+    fe[1,] = cbind(round(x$fixef$mean,5),round(sqrt(x$fixef$var),5))
+    fe[2,] = cbind(round(x$ranef$mean,5),round(sqrt(x$ranef$var),5))
+    colnames(fe) = c("Estimate","StdErr")
     rownames(fe) = c("Fixed Effects","Random Effects")
     print(fe,quote=F)
     cat(paste("\nTau squared: \t\t",round(x$ranef$tauSq,5),sep=""))
