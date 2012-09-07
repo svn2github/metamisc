@@ -30,7 +30,7 @@ riley(X, ...)
 
 \details{ The following parameters are estimated by iteratively maximizing the restriced log-likelihood using the Newton-Raphson procedure: logit of sensitivity (\code{mu1}), logit of false positive rate (\code{mu2}), additional variation of \code{mu1} beyond sampling error (\code{psi1}), additional variation of \code{mu2} beyond sampling error (\code{psi2}) and a transformation of the correlation between \code{psi1} and \code{psi2} (\code{rhoT}). The original correlation is given as \code{inv.logit(rhoT)*2-1}. The results from a univariate random-effects meta-analysis with a method-of-moments estimator are used as starting values for \code{mu1}, \code{mu2}, \code{psi1} and \code{psi2} in the \code{optim} command. The starting value for \code{rhoT} is 0. Standard errors for all parameters are obtained from the inverse Hessian matrix. }
 
-\value{ An object of the class \code{riley} for which many standard methods are available. }
+\value{ An object of the class \code{riley} for which many standard methods are available. A warning message is casted when the Hessian matrix contains negative eigenvalues, which implies that the identified solution is not optimal.}
 
 \references{
 Daniels, MJ., & Hughes, MD. (1997). 
