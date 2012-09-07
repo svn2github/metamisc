@@ -13,7 +13,7 @@
 
 \details{The variance-covariance matrix is obtained from the inverse Hessian as provided by \code{optim}.}
 
-\value{A matrix of the estimated covariances between the parameter estimates in the Riley model: logit of sensitivity (mu1), logit of false positive rate (mu2), additional variation of mu1 beyond sampling error (psi1), additional variation of mu2 beyond sampling error (psi2) and a transformation of the correlation between psi1 and psi2 (rhoT). The original correlation is given as inv.logit(rhoT)*2-1.}
+\value{A matrix of the estimated covariances between the parameter estimates in the Riley model: logit of sensitivity (mu1), logit of false positive rate (\code{mu2}), additional variation of \code{mu1} beyond sampling error (\code{psi1}), additional variation of \code{mu2} beyond sampling error (\code{psi2}) and a transformation of the correlation between \code{psi1} and \code{psi2} (\code{rhoT}). The original correlation is given as \code{inv.logit(rhoT)*2-1}.}
 
 \references{
 Riley, RD., Thompson, JR., & Abrams, KR. (2008). \dQuote{An alternative model for bivariate random-effects meta-analysis when the within-study correlations are unknown.} \emph{Biostatistics}, \bold{9}, 172--186.
