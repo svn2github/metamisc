@@ -15,7 +15,7 @@
 
 \details{ Prediction intervals are based on Student's t-distribution with (numstudies - 2) degrees of freedom. }
 
-\value{ Vector containing the prediction interval for the effect size. }
+\value{ Vector containing the prediction interval of the effect size. }
 
 \author{ Thomas Debray <thomas.debray@gmail.com> }
 
