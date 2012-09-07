@@ -16,7 +16,8 @@ uvmeta <- function(r, vars, method="MOM", ...) UseMethod("uvmeta")
 
 uvmetaMOM <- function(r,vars) {
     # Degrees of freedom
-    dfr = length(r)-1
+    numstudies = length(r)
+    dfr = numstudies-1
 
     ############################################################################
     # FIXED EFFECTS MODEL
@@ -125,7 +126,7 @@ uvmetaMOM <- function(r,vars) {
     ############################################################################
     # Output
     ############################################################################
-    out <- list(fixef=fixef.results,ranef=ranef.results,Q=Q.results,H2=H2.results,I2=I2.results)
+    out <- list(fixef=fixef.results,ranef=ranef.results,Q=Q.results,H2=H2.results,I2=I2.results,numstudies=numstudies)
     return (out)
 }
 
@@ -153,10 +154,24 @@ print.uvmeta <- function(x, ...)
     colnames(fe) = c("Estimate","StdErr","p.value (2-tailed)")
     rownames(fe) = c("Fixed Effects","Random Effects")
     print(fe,quote=F)
-    cat(paste("\nTau squared: \t\t",round(x$tau_sq,5),sep=""))
+    cat(paste("\nTau squared: \t\t",round(x$ranef$tauSq,5),sep=""))
     cat(paste("\nCochran's Q statistic: \t",round(x$Q$Q,5)," (p.value: ",round(x$Q$p.value,5),")",sep=""))
     cat(paste("\nH-square index: \t", round(x$H2$H2,5),sep=""))
     cat(paste("\nI-square index: \t", round(x$I2$I2*100,5),"%\n",sep=""))
+}
+
+predict.uvmeta <- function(object, level = 0.95, ...)
+{
+  alpha = (1-level)/2
+  df = 2 
+  
+  #Prediction interval
+  pred.mean  <- object$ranef$mean
+  pred.lower <- object$ranef$mean + qt(alpha,df=(object$numstudies-df))*sqrt(object$ranef$tauSq+object$ranef$var)
+  pred.upper <- object$ranef$mean + qt((1-alpha),df=(object$numstudies-df))*sqrt(object$ranef$tauSq+object$ranef$var)
+  predint <- c(pred.mean,pred.lower,pred.upper)
+  names(predint) <- c("Estimate", paste((alpha*100),"%"),paste(((1-alpha)*100),"%"))
+  predint
 }
 
 summary.uvmeta <- function(object, level = 0.95, ...)
