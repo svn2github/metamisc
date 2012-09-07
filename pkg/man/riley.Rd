@@ -34,6 +34,10 @@ riley(X, ...)
 \value{ An object of the class \code{riley} for which many standard methods are available. A warning message is casted when the Hessian matrix contains negative eigenvalues, which implies that the identified solution is not optimal.}
 
 \references{
+Nelder, JA., & Mead, R. (1965) 
+\dQuote{A simplex algorithm for function minimization.} 
+\emph{Computer Journal}, \bold{7}, 308--313. 
+
 Daniels, MJ., & Hughes, MD. (1997). 
 \dQuote{Meta-analysis for the evaluation of potential surrogate markers.} 
 \emph{Statistics in Medicine}, \bold{16}, 1965--1982.
