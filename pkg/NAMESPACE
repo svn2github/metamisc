@@ -10,6 +10,7 @@ S3method(plot, riley)
 S3method(riley, default)
 
 S3method(print, uvmeta)
+S3method(predict, uvmeta)
 S3method(summary, uvmeta)
 S3method(uvmeta, default)
 
