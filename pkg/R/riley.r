@@ -127,6 +127,7 @@ print.riley <- function(x, ...)
   print(x$call)
   cat("\nCoefficients:\n")
   print(x$coefficients)
+  if (length(which(eigen(fit$hessian,symmetric=TRUE)$values<0))>0) warning("The Hessian contains negative eigenvalues!")
 }
 
 # Calculate prediction interval (not identical interpretation to random effects!)
