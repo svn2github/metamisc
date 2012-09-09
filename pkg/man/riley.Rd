@@ -14,7 +14,7 @@
 \usage{
 riley(X, ...)
 \method{riley}{default}(X = NULL, TP, FN, FP, TN, correction = 0.5, 
-    correction.control = "all", ...)
+    correction.control = "all", optimization = "Nelder-Mead", control = list(), ...)
 }
 
 \arguments{
@@ -26,6 +26,7 @@ riley(X, ...)
   \item{correction}{numeric, continuity correction applied if zero cells}
   \item{correction.control}{character, if set to \code{"all"} (the default) the continuity correction is added to the whole data if only one cell in one study is zero. If set to \code{"single"} the correction is only applied to rows of the data which have a zero.}
   \item{optimization}{The optimization method that should be used for minimizing the negative (restricted) log-likelihood function. The default method is an implementation of that of Nelder and Mead (1965), that uses only function values and is robust but relatively slow. It will work reasonably well for non-differentiable functions. Other methods are described in \code{\link{optim}}.}
+  \item{control}{ A list of control parameters to pass to \code{optim}.}
   \item{\dots}{arguments to be passed on to other functions, currently ignored}
 }
 
