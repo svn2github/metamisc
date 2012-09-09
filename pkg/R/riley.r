@@ -65,7 +65,7 @@ riley.default <-
 	  if (numstudies >= 2) {
 		sumlsens <- uvmeta(r=logit.sens, vars=var.logit.sens, method="MOM")
 		sumlfpr  <- uvmeta(r=logit.fpr, vars=var.logit.fpr, method="MOM")
-		pars.start = c(logit(sumlsens$ranef$mean),logit(sumlfpr$ranef$mean),0,0,0)
+		pars.start = c(sumlsens$ranef$mean,sumlfpr$ranef$mean,abs(sqrt(sumlsens$ranef$var)),abs(sqrt(sumlsens$ranef$var)),0)
 	  }
 
       negfullloglik <- function(pars,Y,vars)
