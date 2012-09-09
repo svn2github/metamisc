@@ -61,12 +61,11 @@ riley.default <-
       }
 
       #Calculate starting values for optim
+	  pars.start = c(0,0,0,0,0)
 	  if (numstudies >= 2) {
 		sumlsens <- uvmeta(r=logit.sens, vars=var.logit.sens, method="MOM")
 		sumlfpr  <- uvmeta(r=logit.fpr, vars=var.logit.fpr, method="MOM")
 		pars.start = c(logit(sumlsens$ranef$mean),logit(sumlfpr$ranef$mean),0,0,0)
-	  } else {
-		pars.start = c(0,0,0,0,0)
 	  }
 
       negfullloglik <- function(pars,Y,vars)
