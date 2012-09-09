@@ -8,7 +8,8 @@ riley <- function(X, ...) UseMethod("riley")
 # rhoT : (logit(rho+1)/2) where rho is the correlation between mu1 and mu2
 riley.default <-
   function(X = NULL, TP, FN, FP, TN, correction = 0.5, 
-           correction.control = "all", optimization = "Nelder-Mead", ...)
+           correction.control = "all", optimization = "Nelder-Mead", 
+		   control = list(), ...)
   {
       if(!is.null(X)){
         X <- as.data.frame(X)
@@ -36,7 +37,6 @@ riley.default <-
       numstudies = length(TP)
       df <- numstudies - 5  
       if(df < 0){warning("There are very few primary studies!")}
-      
      
       #Calculate sensitivities and specificities (original scale)
       number.of.pos <- TP + FN
@@ -61,8 +61,13 @@ riley.default <-
       }
 
       #Calculate starting values for optim
-      sumlsens <- uvmeta(r=logit.sens, vars=var.logit.sens, method="MOM")
-      sumlfpr  <- uvmeta(r=logit.fpr, vars=var.logit.fpr, method="MOM")
+	  if (numstudies >= 2) {
+		sumlsens <- uvmeta(r=logit.sens, vars=var.logit.sens, method="MOM")
+		sumlfpr  <- uvmeta(r=logit.fpr, vars=var.logit.fpr, method="MOM")
+		pars.start = c(sumlsens$ranef$mean,sumlfpr$ranef$mean,sqrt(sumlsens$ranef$var),sqrt(sumlfpr$ranef$var),0)
+	  } else {
+		pars.start = c(0.50,0.50,0,0,0)
+	  }
 
       negfullloglik <- function(pars,Y,vars)
       {
@@ -95,8 +100,13 @@ riley.default <-
         0.5*((n-k)*log(2*pi)-log(det(t(X)%*%X))+log(det(Phi))+log(det(t(X)%*%solve(Phi)%*%X))+(t(Y-X%*%Beta)%*%solve(Phi)%*%(Y-X%*%Beta)))
       }
       
-      pars.start = c(sumlsens$ranef$mean,sumlfpr$ranef$mean,sqrt(sumlsens$ranef$var),sqrt(sumlfpr$ranef$var),0)
-      fit = optim(pars.start,negfullloglik,Y=Y,vars=vars,method=optimization,hessian=T)
+      fit = optim(pars.start,negfullloglik,Y=Y,vars=vars,method=optimization,hessian=T,control=control)
+	  
+	  if(fit$convergence != 0) { 
+		if(fit$convergence == 1) warning ("Iteration limit had been reached.")
+		else if (fit$convergence == 10) warning("Degeneracy of the Nelder–Mead simplex.")
+		else if (fit$convergence == 51 | fit$convergence == 52) warning(fit$message)
+	  }
       
       mu1 = fit$par[1]
       mu2 = fit$par[2]
