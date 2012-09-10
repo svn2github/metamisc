@@ -103,7 +103,7 @@ riley.default <-
 	  
 	  if(fit$convergence != 0) { 
 		if(fit$convergence == 1) warning ("Iteration limit had been reached.")
-		else if (fit$convergence == 10) warning("Degeneracy of the Nelder–Mead simplex.")
+		else if (fit$convergence == 10) warning("Degeneracy of the Nelder-Mead simplex.")
 		else if (fit$convergence == 51 | fit$convergence == 52) warning(fit$message)
 	  }
       
