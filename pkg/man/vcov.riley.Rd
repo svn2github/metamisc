@@ -4,7 +4,7 @@
 \title{Calculate Variance-Covariance Matrix for a Fitted Riley Model Object }
 
 \description{ Returns the variance-covariance matrix of the main parameters of a fitted model object.}
-\usage{vcov.riley(object, ...)}
+\usage{\method{vcov}{riley}(object, \ldots)}
 
 \arguments{
   \item{object}{a \code{riley} object.}

@@ -2,15 +2,11 @@
 \alias{summary.riley}
 \alias{print.summary.riley}
 
-\title{
-Parameter summaries of \code{\link{riley}} models.
-}
-\description{
-Provides the summary estimtes of the alternative model for bivariate random-effects meta-analysis by Riley et al. (2008) with their corresponding confidence intervals. The model parameters are given as mu1 (logit sensitivity), mu2 (logit FPR), psi1, psi2 and rho; the summary sensitivity and false positive rate are added for completeness. Confidence intervals are derived from the inverse Hessian. 
-}
-\usage{
-summary.riley(object, level = 0.95, ...)
-}
+\title{Parameter summaries}
+
+\description{Provides the summary estimtes of the alternative model for bivariate random-effects meta-analysis by Riley et al. (2008) with their corresponding confidence intervals. The model parameters are given as mu1 (logit sensitivity), mu2 (logit FPR), psi1, psi2 and rho; the summary sensitivity and false positive rate are added for completeness. Confidence intervals are derived from the inverse Hessian. }
+
+\usage{\method{summary}{riley}(object, level = 0.95, \ldots)}
 
 \arguments{
   \item{object}{a \code{riley} object}

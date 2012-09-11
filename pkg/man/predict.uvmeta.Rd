@@ -5,7 +5,7 @@
 
 \description{ Calculates a prediction interval for the effect size. This interval predicts in what range future effect sizes will fall given what has already been observed. }
 
-\usage{ predict.uvmeta(object, level = 0.95, ...) }
+\usage{ \method{predict}{uvmeta}(object, level = 0.95, \ldots) }
 
 \arguments{
   \item{object}{ an \code{uvmeta} object.}

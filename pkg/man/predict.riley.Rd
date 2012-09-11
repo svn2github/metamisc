@@ -1,15 +1,11 @@
 \name{predict.riley}
 \alias{predict.riley}
 
-\title{
-Prediction Interval
-}
-\description{
-Calculates a prediction interval for the sensitivity and FPR. This interval predicts in what range future observations will fall given what has already been observed. 
-}
-\usage{
-predict.riley(object, level = 0.95, ...)
-}
+\title{Prediction Interval}
+
+\description{Calculates a prediction interval for the sensitivity and FPR. This interval predicts in what range future observations will fall given what has already been observed.}
+
+\usage{\method{predict}{riley}(object, level = 0.95, \ldots)}
 
 \arguments{
   \item{object}{ a \code{riley} object.}

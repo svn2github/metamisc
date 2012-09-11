@@ -1,11 +1,11 @@
 \name{summary.uvmeta}
 \alias{summary.uvmeta}
 
-\title{Parameter summaries of \code{\link{uvmeta}} models.}
+\title{Parameter summaries}
 
 \description{This function provides summary estimates of univariate random-effects models with their corresponding confidence intervals. The model parameters are given as mu (overall treatment effect) and tau squared (between-study variance).}
 
-\usage{ summary.uvmeta(object, level = 0.95, ...)}
+\usage{ \method{summary}{uvmeta}(object, level = 0.95, \ldots)}
 
 \arguments{
   \item{object}{ a \code{uvmeta} object.}

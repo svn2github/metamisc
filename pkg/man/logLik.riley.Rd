@@ -5,7 +5,7 @@
 
 \description{This function provides the (restricted) log-likelihood of a fitted model.}
 
-\usage{logLik.riley(object, ...)}
+\usage{\method{logLik}{riley}(object, \ldots)}
 
 \arguments{
   \item{object}{a \code{riley} object.}
