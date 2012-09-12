@@ -26,6 +26,10 @@ rileyES <- function(X = NULL, Y1, Y2, vars1, vars2, optimization = "Nelder-Mead"
 	}
   
 	numstudies = length(Y1)
+	nobs <- length(which(!is.na(Y1)))+length(which(!is.na(Y2)))
+	
+	if(nobs != numstudies*2){warning("There are missing observations in the data!")}
+	
 	df <- numstudies - 5  
 	if(df < 0){warning("There are very few primary studies!")}
 	
@@ -101,7 +105,7 @@ rileyES <- function(X = NULL, Y1, Y2, vars1, vars2, optimization = "Nelder-Mead"
 	iterations <- fit$iterations
 	logLik <- -fit$value
 	
-	output <- list(coefficients = coefficients, hessian = hessian, df = df, nobs = 2*numstudies, logLik = logLik,
+	output <- list(coefficients = coefficients, hessian = hessian, df = df, nobs = nobs, logLik = logLik,
 			   iterations = (iterations+1), call = match.call(), data = origdata, type="effect.size")  
 	return(output)
 }
