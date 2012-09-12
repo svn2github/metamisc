@@ -24,7 +24,7 @@ riley(X, type="effect.size", optimization = "Nelder-Mead", control = list(), ...
   \item{\dots}{arguments to be passed on to other functions.}
 }
 
-\details{ Parameters are estimated by iteratively maximizing the restriced log-likelihood using the Newton-Raphson procedure. }
+\details{ Parameters are estimated by iteratively maximizing the restriced log-likelihood using the Newton-Raphson procedure. Algorithms for dealing with missing data are currently not implemented, but Bayesian approaches will become available in later versions. }
 
 \value{ An object of the class \code{riley} for which many standard methods are available. A warning message is casted when the Hessian matrix contains negative eigenvalues, which implies that the identified solution is not optimal.}
 
@@ -70,6 +70,9 @@ data(Daniels)
 
 #Select evaluation of potential surrogate markers data
 fit1 <- riley(Daniels)
+
+#Maxit reached, try again with more iterations
+fit1 <- riley(Daniels,control=list(maxit=10000))
 summary(fit1)
 
 #Select computed tomography data
