@@ -27,7 +27,5 @@ Riley, RD., Thompson, JR., & Abrams, KR. (2008).
 \keyword{ package }
 \keyword{regression}
 \keyword{meta-analysis}
-\seealso{
-\code{\link{riley}}
-\code{\link{uvmeta}}
-}
+
+\seealso{\code{\link{riley}} \code{\link{uvmeta}} \code{\link{Scheidler}} \code{\link{Daniels}} }
