@@ -18,7 +18,7 @@ riley(X, type="effect.size", optimization = "Nelder-Mead", control = list(), ...
 
 \arguments{
   \item{X}{data frame containing integer variables \code{TP}, \code{FN}, \code{FP} and \code{TN} (for diagnostic test accuracy data, cfr. \code{\link{rileyDA}}) or numeric variables \code{Y1}, \code{vars1}, \code{Y2} and \code{vars2} (for effect size data, cfr. \code{\link{rileyES}}).}
-  \item{type}{a character string defining the type of data that is being summarized. Defaults to \code{effect.size} for summarizing effect sizes for which the normality assumption holds (for more details see \code{\link{rileyES}}). Diagnostic test accuracy data (i.e. sensitivities and specificities) can be pooled by choosing \code{test.accuracy} (for more details see \code{\link{rileyDA}}).
+  \item{type}{a character string defining the type of data that is being summarized. Defaults to \code{effect.size} for summarizing effect sizes for which the normality assumption holds (for more details see \code{\link{rileyES}}). Diagnostic test accuracy data (i.e. sensitivities and specificities) can be pooled by choosing \code{test.accuracy} (for more details see \code{\link{rileyDA}}).}
   \item{optimization}{The optimization method that should be used for minimizing the negative (restricted) log-likelihood function. The default method is an implementation of that of Nelder and Mead (1965), that uses only function values and is robust but relatively slow. It will work reasonably well for non-differentiable functions. Other methods are described in \code{\link{optim}}.}
   \item{control}{ A list of control parameters to pass to \code{optim}.}
   \item{\dots}{arguments to be passed on to other functions.}
