@@ -30,8 +30,8 @@ rileyES <- function(X = NULL, Y1, Y2, vars1, vars2, optimization = "Nelder-Mead"
 	
 	if(nobs != numstudies*2){warning("There are missing observations in the data!")}
 	
-	df <- numstudies - 5  
-	if(df < 0){warning("There are very few primary studies!")}
+	df <- 5 #There are 5 parameters to estimate
+	if(numstudies-df < 0){warning("There are very few primary studies!")}
 	
 	vars = cbind(vars1, vars2)
 	Y = array(NA,dim=c((length(Y1)*2),1))
@@ -105,7 +105,7 @@ rileyES <- function(X = NULL, Y1, Y2, vars1, vars2, optimization = "Nelder-Mead"
 	iterations <- fit$iterations
 	logLik <- -fit$value
 	
-	output <- list(coefficients = coefficients, hessian = hessian, df = df, nobs = nobs, logLik = logLik,
+	output <- list(coefficients = coefficients, hessian = hessian, df = df, numstudies = numstudies, nobs = nobs, logLik = logLik,
 			   iterations = (iterations+1), call = match.call(), data = origdata, type="effect.size")  
 	return(output)
 }
@@ -173,23 +173,24 @@ predict.riley <- function(object, level = 0.95, ...)
   
   predint=array(NA,dim=c(2,3))
   colnames(predint) = c("Estimate", paste((alpha*100),"%"),paste(((1-alpha)*100),"%"))
-  df = object$df
+  df <- object$df
+  numstudies <- object$numstudies
   
   if (object$type=="test.accuracy")
   {
 	rownames(predint) = c("Sens","FPR")
-	if (df > 0)
+	if (numstudies - df > 0)
 	{
-		predint[1,] = inv.logit(c(coefficients(object)["beta1"],(qt(alpha,df=df)*sqrt((coefficients(object)["psi1"]**2)+diag(vcov(object))[1])+coefficients(object)["beta1"]),(qt((1-alpha),df=df)*sqrt((coefficients(object)["psi1"]**2)+diag(vcov(object))[1])+coefficients(object)["beta1"])))
-		predint[2,] = inv.logit(c(coefficients(object)["beta2"],(qt(alpha,df=df)*sqrt((coefficients(object)["psi2"]**2)+diag(vcov(object))[2])+coefficients(object)["beta2"]),(qt((1-alpha),df=df)*sqrt((coefficients(object)["psi2"]**2)+diag(vcov(object))[2])+coefficients(object)["beta2"])))
+		predint[1,] = inv.logit(c(coefficients(object)["beta1"],(qt(alpha,df=(numstudies-df))*sqrt((coefficients(object)["psi1"]**2)+diag(vcov(object))[1])+coefficients(object)["beta1"]),(qt((1-alpha),df=(numstudies-df))*sqrt((coefficients(object)["psi1"]**2)+diag(vcov(object))[1])+coefficients(object)["beta1"])))
+		predint[2,] = inv.logit(c(coefficients(object)["beta2"],(qt(alpha,df=(numstudies-df))*sqrt((coefficients(object)["psi2"]**2)+diag(vcov(object))[2])+coefficients(object)["beta2"]),(qt((1-alpha),df=(numstudies-df))*sqrt((coefficients(object)["psi2"]**2)+diag(vcov(object))[2])+coefficients(object)["beta2"])))
 	} else {
 		predint[1,] = c(inv.logit(coefficients(object)["beta1"]),0,1)
 		predint[2,] = c(inv.logit(coefficients(object)["beta2"]),0,1)
 	}
   } else {
 	rownames(predint) = c("beta1","beta2")
-	predint[1,] = c(coefficients(object)["beta1"],(qt(alpha,df=df)*sqrt((coefficients(object)["psi1"]**2)+diag(vcov(object))[1])+coefficients(object)["beta1"]),(qt((1-alpha),df=df)*sqrt((coefficients(object)["psi1"]**2)+diag(vcov(object))[1])+coefficients(object)["beta1"]))
-	predint[2,] = c(coefficients(object)["beta2"],(qt(alpha,df=df)*sqrt((coefficients(object)["psi2"]**2)+diag(vcov(object))[2])+coefficients(object)["beta2"]),(qt((1-alpha),df=df)*sqrt((coefficients(object)["psi2"]**2)+diag(vcov(object))[2])+coefficients(object)["beta2"]))
+	predint[1,] = c(coefficients(object)["beta1"],(qt(alpha,df=(numstudies-df))*sqrt((coefficients(object)["psi1"]**2)+diag(vcov(object))[1])+coefficients(object)["beta1"]),(qt((1-alpha),df=(numstudies-df))*sqrt((coefficients(object)["psi1"]**2)+diag(vcov(object))[1])+coefficients(object)["beta1"]))
+	predint[2,] = c(coefficients(object)["beta2"],(qt(alpha,df=(numstudies-df))*sqrt((coefficients(object)["psi2"]**2)+diag(vcov(object))[2])+coefficients(object)["beta2"]),(qt((1-alpha),df=(numstudies-df))*sqrt((coefficients(object)["psi2"]**2)+diag(vcov(object))[2])+coefficients(object)["beta2"]))
   }
   predint
 }
@@ -231,12 +232,18 @@ vcov.riley <- function(object, ...){
   Sigma
   }
 
-logLik.riley <- function(object, ...){object$logLik}
+logLik.riley <- function(object, ...){
+	val <- object$logLik
+	attr(val, "nobs") <- object$nobs
+    	attr(val, "df") <- object$df
+	class(val) <- "logLik"
+	val
+}
 
 
 plot.riley <- function(object, plotsumm = TRUE, plotnumerics = TRUE, level = 0.95, main="",
                        ylim = c(0,1), xlim = c(0,1), pch = 1, lty = 1, lwd = 1, cex.numerics=0.45,
-                       add=F, ...)
+                       add=FALSE, ...)
 {
 	alpha = (1-level)/2
 	
