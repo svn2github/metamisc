@@ -44,9 +44,9 @@ ds2 <- Scheidler[which(Scheidler$modality==2),]
 ds3 <- Scheidler[which(Scheidler$modality==3),]
 
 #Perform the analyses
-fit1 <- riley(ds1)
-fit2 <- riley(ds2)
-fit3 <- riley(ds3)
+fit1 <- riley(ds1, type="test.accuracy")
+fit2 <- riley(ds2, type="test.accuracy")
+fit3 <- riley(ds3, type="test.accuracy")
 
 plot(fit1,plotnumerics=FALSE,pch=0) #CT
 plot(fit2,plotnumerics=FALSE,add=TRUE,pch=1) #LAG
