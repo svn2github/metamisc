@@ -2,12 +2,13 @@ riley <- function(X, type="effect.size", optimization = "Nelder-Mead", control =
 
 riley.default <- function(X, type="effect.size", optimization = "Nelder-Mead", control = list(), ...)
 {
-    est <- NA    
-    if (type=="test.accuracy") { est <- rileyDA(X, optimization = optimization, control=control, ...) }
-    else { est <- rileyES(X, optimization = optimization, control=control, ...)}
+	est <- NA    
+	if (type=="test.accuracy") { est <- rileyDA(X, optimization = optimization, control=control, ...) }
+	else if (type=="effect.size") { est <- rileyES(X, optimization = optimization, control=control, ...)}
+	else stop(paste("Unknown type '",type,"' of meta-analysis",sep="")) 
 
-    class(est) <- "riley"
-    est
+	class(est) <- "riley"
+	est
 }
 
 # effect sizes data meta-analysis
