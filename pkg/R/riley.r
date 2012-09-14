@@ -170,17 +170,17 @@ print.riley <- function(x, ...)
 # Calculate prediction interval (not identical interpretation to random effects!)
 predict.riley <- function(object, level = 0.95, ...)
 {
-  alpha = (1-level)/2
+  alpha <- (1-level)/2
   
-  predint=array(NA,dim=c(2,3))
-  colnames(predint) = c("Estimate", paste((alpha*100),"%"),paste(((1-alpha)*100),"%"))
-  df <- object$df
-  numstudies <- object$numstudies
+  predint			<- array(NA,dim=c(2,3))
+  colnames(predint) <- c("Estimate", paste((alpha*100),"%"),paste(((1-alpha)*100),"%"))
+  df 				<- object$df
+  numstudies 		<- object$numstudies
   
   if (object$type=="test.accuracy")
   {
 	rownames(predint) = c("Sens","FPR")
-	if (numstudies - df > 0)
+	if ((numstudies - df) > 0)
 	{
 		predint[1,] = inv.logit(c(coefficients(object)["beta1"],(qt(alpha,df=(numstudies-df))*sqrt((coefficients(object)["psi1"]**2)+diag(vcov(object))[1])+coefficients(object)["beta1"]),(qt((1-alpha),df=(numstudies-df))*sqrt((coefficients(object)["psi1"]**2)+diag(vcov(object))[1])+coefficients(object)["beta1"])))
 		predint[2,] = inv.logit(c(coefficients(object)["beta2"],(qt(alpha,df=(numstudies-df))*sqrt((coefficients(object)["psi2"]**2)+diag(vcov(object))[2])+coefficients(object)["beta2"]),(qt((1-alpha),df=(numstudies-df))*sqrt((coefficients(object)["psi2"]**2)+diag(vcov(object))[2])+coefficients(object)["beta2"])))
@@ -234,10 +234,10 @@ vcov.riley <- function(object, ...){
   }
 
 logLik.riley <- function(object, ...){
-	val <- object$logLik
-	attr(val, "nobs") <- object$nobs
-    	attr(val, "df") <- object$df
-	class(val) <- "logLik"
+	val 				<- object$logLik
+	attr(val, "nobs") 	<- object$nobs
+	attr(val, "df") 	<- object$df
+	class(val) 			<- "logLik"
 	val
 }
 
