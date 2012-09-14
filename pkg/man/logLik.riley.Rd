@@ -12,7 +12,7 @@
   \item{\dots}{arguments to be passed on to other functions, currently ignored}
 }
 
-\value{The (restricted) log-likelihood of a fitted \code{riley} model}
+\value{ Returns an object of class \code{logLik}. This is a number with at least one attribute, "\code{df}" (degrees of freedom), giving the number of (estimated) parameters in the model.}
 
 \author{Thomas Debray <thomas.debray@gmail.com>}
 
