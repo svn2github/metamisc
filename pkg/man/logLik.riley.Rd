@@ -19,7 +19,7 @@
 \examples{
 data(Scheidler)
 ds <- Scheidler[which(Scheidler$modality==1),]
-fit <- riley(ds,correction.control="single")
+fit <- riley(ds, type="test.accuracy")
 logLik(fit)
 }
 
