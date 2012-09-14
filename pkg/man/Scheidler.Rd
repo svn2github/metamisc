@@ -1,4 +1,5 @@
 \name{Scheidler}
+\alias{Scheidler}
 \docType{data}
 
 \title{Diagnostic accuracy data}

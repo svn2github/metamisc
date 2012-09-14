@@ -1,4 +1,5 @@
 \name{Daniels}
+\alias{Daniels}
 \docType{data}
 
 \title{Daniels and Hughes data}
