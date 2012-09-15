@@ -26,7 +26,7 @@ riley(X, type="effect.size", optimization = "Nelder-Mead", control = list(), ...
 
 \details{ Parameters are estimated by iteratively maximizing the restriced log-likelihood using the Newton-Raphson procedure. Algorithms for dealing with missing data are currently not implemented, but Bayesian approaches will become available in later versions. }
 
-\value{ An object of the class \code{riley} for which many standard methods are available. A warning message is casted when the Hessian matrix contains negative eigenvalues, which implies that the identified solution is not optimal.}
+\value{ An object of the class \code{riley} for which many standard methods are available.}
 
 \references{
 Nelder, JA., & Mead, R. (1965) 
@@ -61,7 +61,7 @@ Riley, RD., Thompson, JR., & Abrams, KR. (2008).
 \author{Thomas Debray <thomas.debray@gmail.com>}
 
 \seealso{
-\code{\link{logLik.riley}} \code{\link{plot.riley}} \code{\link{predict.riley}} \code{\link{summary.riley}} \code{\link{vcov.riley}} \code{\link{rileyDA}} \code{\link{rileyES}}
+\code{\link{logLik.riley}}, \code{\link{plot.riley}}, \code{\link{predict.riley}}, \code{\link{rileyDA}}, \code{\link{rileyES}}, \code{\link{summary.riley}}, \code{\link{vcov.riley}}
 }
 
 \examples{
