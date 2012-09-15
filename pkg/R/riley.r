@@ -47,7 +47,7 @@ rileyES <- function(X = NULL, Y1, Y2, vars1, vars2, optimization = "Nelder-Mead"
 	if (numstudies >= 2) {
 		sumlY1 <- uvmeta(r=Y1, vars=vars1, method="MOM")
 		sumlY2 <- uvmeta(r=Y2, vars=vars2, method="MOM")
-		pars.start = c(sumlY1$ranef$mean,sumlY2$ranef$mean,abs(sqrt(sumlY1$ranef$var)),abs(sqrt(sumlY2$ranef$var)),0)
+		pars.start = c(sumlY1$ranef$mean,sumlY2$ranef$mean,sqrt(sumlY1$ranef$var),sqrt(sumlY2$ranef$var),0)
 	}
 	
 	negfullloglik <- function(pars,Y,vars)
@@ -125,6 +125,7 @@ rileyDA <-
         TN <- X$TN
       }
       
+	  ## The following corrections are copied from the "mada" package to facilitate comparison of results
       ## apply continuity correction to _all_ studies if one contains zero
       if(correction.control == "all"){if(any(c(TP,FN,FP,TN) == 0)){TP <- TP + correction;
                                                                    FN <- FN + correction;
@@ -141,7 +142,7 @@ rileyDA <-
       #Calculate sensitivities and specificities (original scale)
       number.of.pos <- TP + FN
       number.of.neg <- FP + TN
-      sens<-TP/number.of.pos
+      sens <-TP/number.of.pos
       fpr <- FP/number.of.neg
       var.sens = sens*(1-sens)/number.of.pos
       var.fpr = fpr*(1-fpr)/number.of.neg
@@ -151,6 +152,7 @@ rileyDA <-
       var.logit.sens <- 1/(sens*(1-sens)*number.of.pos)
       var.logit.fpr <- 1/(fpr*(1-fpr)*number.of.neg)
       
+	  #Apply ordinary bivariate meta-analysis on transformed data
       output = rileyES(Y1=logit.sens,Y2=logit.fpr,vars1=var.logit.sens,vars2=var.logit.fpr,optimization = optimization, control = control, ...)
       output$type = "test.accuracy"
       output$data = origdata
