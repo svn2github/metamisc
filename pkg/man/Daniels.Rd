@@ -21,11 +21,9 @@
 \details{The \code{Daniels} data comprises 15 phase II/III randomized clinical trials of the HIV Disease Section of the Adult AIDS Clinical Trials Group of the National Institutes of Health, which had data available as of May 1996, which had at least six months of follow-up on some patients and in which at least one patient developed AIDS or died.}
 
 \source{
-Daniels, MJ., & Hughes, MD. (1997). 
-\dQuote{Meta-analysis for the evaluation of potential surrogate markers.} \emph{Statistics in Medicine}, \bold{16}, 1965--1982.
+Daniels MJ, Hughes MD. Meta-analysis for the evaluation of potential surrogate markers. \emph{Statistics in Medicine} 1997; \bold{16}: 1965--1982.
 
-Riley, RD., Thompson, JR., & Abrams, KR. (2008).
-\dQuote{An alternative model for bivariate random-effects meta-analysis when the within-study correlations are unknown.} \emph{Biostatistics}, \bold{9}, 172--186.
+Riley RD, Thompson JR, Abrams KR. An alternative model for bivariate random-effects meta-analysis when the within-study correlations are unknown. \emph{Biostatistics} 2008; \bold{9}: 172--186.
 }
 
 \keyword{datasets}

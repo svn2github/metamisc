@@ -15,8 +15,7 @@
 \value{ Returns an object of class \code{logLik}. This is the (restricted) log-likelihood of the model represented by \code{object} evaluated at the estimated coefficients. It contains at least one attribute, "\code{df}" (degrees of freedom), giving the number of (estimated) parameters in the model. }
 
 \references{
-Riley, RD., Thompson, JR., & Abrams, KR. (2008).
-\dQuote{An alternative model for bivariate random-effects meta-analysis when the within-study correlations are unknown.} \emph{Biostatistics}, \bold{9}, 172--186.
+Riley RD, Thompson JR, Abrams KR. An alternative model for bivariate random-effects meta-analysis when the within-study correlations are unknown. \emph{Biostatistics} 2008; \bold{9}: 172--186.
 }
 
 \author{Thomas Debray <thomas.debray@gmail.com>}

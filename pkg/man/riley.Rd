@@ -29,33 +29,20 @@ riley(X, type="effect.size", optimization = "Nelder-Mead", control = list(), ...
 \value{ An object of the class \code{riley} for which many standard methods are available.}
 
 \references{
-Nelder, JA., & Mead, R. (1965) 
-\dQuote{A simplex algorithm for function minimization.} 
-\emph{Computer Journal}, \bold{7}, 308--313. 
+Nelder JA, Mead R. A simplex algorithm for function minimization. \emph{Computer Journal} (1965); \bold{7}: 308--313. 
 
-Daniels, MJ., & Hughes, MD. (1997). 
-\dQuote{Meta-analysis for the evaluation of potential surrogate markers.} 
-\emph{Statistics in Medicine}, \bold{16}, 1965--1982.
+Daniels MJ, Hughes MD. Meta-analysis for the evaluation of potential surrogate markers. \emph{Statistics in Medicine} 1997; \bold{16}: 1965--1982.
 
-van Houwelingen, HC., Arends, LR., & Stijnen, T. (2002). 
-\dQuote{Advanced methods in meta-analysis: multivariate approach and meta-regression.} 
-\emph{Statistics in Medicine}, \bold{21}, 589--624.
+van Houwelingen HC, Arends LR, Stijnen T. Advanced methods in meta-analysis: multivariate approach and meta-regression. \emph{Statistics in Medicine} 2002; \bold{21}: 589--624.
 
-Reitsma, J., Glas, A., Rutjes, A., Scholten, R., Bossuyt, P., & Zwinderman, A. (2005).
-\dQuote{Bivariate analysis of sensitivity and specificity produces informative summary
-measures in diagnostic reviews.} \emph{Journal of Clinical Epidemiology}, \bold{58}, 982--990.
+Reitsma J, Glas A, Rutjes A, Scholten R, Bossuyt P, Zwinderman A. Bivariate analysis of sensitivity and specificity produces informative summary
+measures in diagnostic reviews. \emph{Journal of Clinical Epidemiology} 2005; \bold{58}: 982--990.
 
-Korn, EL., Albert, PS., & McShane, LM. (2005). 
-\dQuote{Assessing surrogates as trial endpoints using mixed models.} 
-\emph{Statistics in Medicine}, \bold{24}, 163--182.
+Korn EL, Albert PS, McShane LM. Assessing surrogates as trial endpoints using mixed models. \emph{Statistics in Medicine} 2005; \bold{24}: 163--182.
 
-Thompson, JR., Minelli, C., Abrams, KR., Tobin, MD., & Riley, RD. (2005). 
-\dQuote{Meta-analysis of genetic studies using mendelian randomization--a multivariate approach.} 
-\emph{Statistics in Medicine}, \bold{24}, 2241-2254.
+Thompson JR, Minelli C, Abrams KR, Tobin MD, Riley RD. Meta-analysis of genetic studies using mendelian randomization--a multivariate approach. \emph{Statistics in Medicine} 2005; \bold{24}: 2241--2254.
 
-Riley, RD., Thompson, JR., & Abrams, KR. (2008).
-\dQuote{An alternative model for bivariate random-effects meta-analysis when the within-study correlations are unknown.} \emph{Biostatistics}, \bold{9}, 172--186.
-
+Riley RD, Thompson JR, Abrams KR. An alternative model for bivariate random-effects meta-analysis when the within-study correlations are unknown. \emph{Biostatistics} 2008; \bold{9}: 172--186.
 }
 
 \author{Thomas Debray <thomas.debray@gmail.com>}
@@ -68,17 +55,19 @@ Riley, RD., Thompson, JR., & Abrams, KR. (2008).
 data(Scheidler)
 data(Daniels)
 
-#Select evaluation of potential surrogate markers data
-fit1 <- riley(Daniels)
-
-#Maxit reached, try again with more iterations
+#Meta-analysis of potential surrogate markers data
+fit1 <- riley(Daniels) #Maxit reached, try again with more iterations
 fit1 <- riley(Daniels,control=list(maxit=10000))
 summary(fit1)
 
-#Select computed tomography data
-ds <- Scheidler[which(Scheidler$modality==1),]
-fit2 <- riley(ds,type="test.accuracy")
+#Meta-analysis of prognostic test studies
+fit2 <- riley(Kertai,type="test.accuracy")
 summary(fit2)
+
+#Meta-analysis of computed tomography data 
+ds <- Scheidler[which(Scheidler$modality==1),]
+fit3 <- riley(ds,type="test.accuracy")
+summary(fit3)
 }
 
 \keyword{regression}
