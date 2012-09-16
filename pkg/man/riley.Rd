@@ -54,6 +54,7 @@ Riley RD, Thompson JR, Abrams KR. An alternative model for bivariate random-effe
 \examples{
 data(Scheidler)
 data(Daniels)
+data(Kertai)
 
 #Meta-analysis of potential surrogate markers data
 fit1 <- riley(Daniels) #Maxit reached, try again with more iterations
