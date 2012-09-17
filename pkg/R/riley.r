@@ -277,8 +277,8 @@ plot.riley <- function(x, plotsumm = TRUE, plotnumerics = TRUE, level = 0.95, ma
 		ellipse2 = mu.ellipse[,2]
 	}
 	
-	#if (!add) plot(-500,-500, type = "l", xlim = xlim, ylim = ylim, xlab=xlab,ylab=ylab,main=main, ...)
-	if (!add) NextMethod("plot")	
+	if (!add) plot(-500,-500, type = "l", xlim = xlim, ylim = ylim, xlab=xlab,ylab=ylab,main=main, ...)
+	#if (!add) NextMethod("plot")	
 	polygon(ellipse1,ellipse2,lty=lty, lwd=lwd)
 	if(plotsumm) points(summary1,summary2,pch=pch) # add the point estimate of the mean
 	
