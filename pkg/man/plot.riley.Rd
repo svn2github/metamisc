@@ -12,7 +12,7 @@ This function plots the summary sensitivity and false positive rate with their c
                        add=FALSE, \ldots)}
 
 \arguments{
-  \item{object}{a \code{riley} object.}
+  \item{x}{a \code{riley} object.}
   \item{plotsumm}{logical, should the plot draw the summary pair of sensitivity and false positive rate?}
   \item{plotnumerics}{logical, should the plot contain a summary table of sensitivity and false positive rate?}
   \item{level}{numeric, the level for calculations of confidence intervals}
