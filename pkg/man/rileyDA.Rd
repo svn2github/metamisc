@@ -7,7 +7,7 @@
 
 \title{ Fit the alternative model for bivariate random-effects meta-analysis (Riley) }
 
-\description{ This function fits the alternative model for bivariate random-effects meta-analysis on diagnostic test accuracy data when the within-study correlations are unknown. A transformation is applied to the sensitivities ans false positive rates of each study, in order to meet the normality assumptions of the model.}
+\description{ This function fits the alternative model for bivariate random-effects meta-analysis on diagnostic test accuracy data when the within-study correlations are unknown assumed to be different from zero. A transformation is applied to the sensitivities ans false positive rates of each study, in order to meet the normality assumptions of the model.}
 
 \usage{
 rileyDA(X = NULL, TP, FN, FP, TN, correction = 0.5, 
