@@ -7,8 +7,8 @@
 \tabular{ll}{
 Package: \tab metamisc\cr
 Type: \tab Package\cr
-Version: \tab 0.0.3\cr
-Date: \tab 2012-09-12\cr
+Version: \tab 0.0.4\cr
+Date: \tab 2012-11-13\cr
 License: \tab GPL-2 \cr
 }
 The package provides tools for the meta-analysis of individual participant (IPD) and/or aggregate data (AD). Currently, it is possible to pool univariate summary (with \code{\link{uvmeta}}) and diagnostic accuracy (with \code{\link{riley}}) data. Whereas the former applies a univariate meta-analysis using DerSimonian and Laird's method (method-of-moment estimator), the latter implements a bivariate meta-analysis (Restricted Maximum Likelihood) using the alternative model for bivariate random-effects meta-analysis by Riley et al. (2008). For this the number true positives (TP), false negatives (FN), true negatives (TN) and false postives (FP) for each study must be known.}
