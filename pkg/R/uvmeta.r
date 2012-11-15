@@ -64,7 +64,7 @@ uvmetaMOM <- function(r,vars, model="random", pars=list(quantiles = c(0.025, 0.2
         between_study_var = 0
         se_lnH = sqrt((1/(2*(length(r)-2)))*(1-(1/(3*((length(r)-2)**2)))))
     }
-    varQ = 2*dfr + 4*(sum(w)-sum(w**2)/sum(w))*between_study_var + 2*(sum(w**2)-2*((sum(w**3)/sum(w))+(sum(w**2)**2)/sum(w)**2))*between_study_var**2
+    #varQ = 2*dfr + 4*(sum(w)-sum(w**2)/sum(w))*between_study_var + 2*(sum(w**2)-2*((sum(w**3)/sum(w))+(sum(w**2)**2)/sum(w)**2))*between_study_var**2
     varTauSq = varQ/(sum(w)-sum(w**2)/sum(w))**2
 
     # Within-study plus between-study variance
@@ -105,7 +105,7 @@ uvmetaMOM <- function(r,vars, model="random", pars=list(quantiles = c(0.025, 0.2
     results = array(NA,dim=c(4, length(pars$quantiles)+2))
     colnames(results) = c("Mean","Var",paste(pars$quantiles*100,"%",sep=""))
     rownames(results) = c("mu","tausq","Q","Isq")
-    results[3,] = c(Q,varQ,qchisq(pars$quantiles,df=dfr))
+    results[3,] = c(Q,NA,qchisq(pars$quantiles,df=dfr))
     results[4,] = c(I_sq,NA,rep(NA,length(pars$quantiles)))
 
     if (model=="random") {
