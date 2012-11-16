@@ -15,7 +15,7 @@
   \item{vars}{vector of numerics containing the error variance of the effect sizes}
   \item{model}{Specifies whether \code{random} (default) or \code{fixed} effects should be assumed}
   \item{method}{estimation method, where \code{MOM} implements the method-of-moment estimator proposed by DerSimonian and Laird. Altnernatively, \code{bayes} implements a Bayesian approach that assumes normality of the random effects.}
-  \item{pars}{A list with additional arguments. Use \code{quantiles} to specify which quantiles should be calculated for parameter estimates.)
+  \item{pars}{A list with additional arguments. Use \code{quantiles} to specify which quantiles should be calculated for parameter estimates.)}
   \item{\dots}{arguments to be passed on to other functions}
 }
 
