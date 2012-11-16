@@ -21,12 +21,7 @@
 
 \details{ The defining feature of the fixed-effect model is that all studies in the analysis share a common effect size. Conversely, the random-effects model assumes a distribution of true effect sizes and estimates the mean of this distribution. Concretely, if we move from fixed-effect weights to random-effects weights, large studies lose influence and small studies gain influence (Borenstein 2010). }
 
-\value{ An object of the class \code{uvmeta} for which many standard methods are available.
-	\item{results}{A matrix containing the estimated mean, error variance, and quantiles for \code{mu} (effect size summary), \code{tausq} (between-study variance), \code{Q} (Cochran's Q statistic) and \code{Isq} (I-square index).} 
-	\item{model}{A character string that indicates whether \code{fixed} or \code{random} effects were used}
-	\item{df}{Degrees of freedom}
-	\item{numstudies}{Amount of studies used in the analysis}
-}
+\value{ An object of the class \code{uvmeta} for which many standard methods are available.}
 
 \references{
 DerSimonian R, Laird N. Meta-analysis in clinical trials. \emph{Controlled Clinical Trials} 1986; \bold{7}: 177--188.
