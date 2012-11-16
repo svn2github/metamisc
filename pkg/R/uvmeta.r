@@ -124,11 +124,11 @@ uvmetaMOM <- function(r,vars, model="random", pars=list(quantiles = c(0.025, 0.2
     return (out)
 }
 
-uvmetaBayes <- function(r,vars, pars=list(quantiles = c(0.025, 0.25, 0.5, 0.75, 0.975))) {
+uvmetaBayes <- function(r,vars, model="random",pars=list(quantiles = c(0.025, 0.25, 0.5, 0.75, 0.975))) {
 	numstudies = length(r)	
 	dfr = numstudies-1
 
-	modelfile <- system.file(package="metamisc", "model", "uvmeta_ranef.bug")
+	modelfile <-  if (model=="random") system.file(package="metamisc", "model", "uvmeta_ranef.bug") else system.file(package="metamisc", "model", "uvmeta_fixef.bug")
 	jags <- jags.model(modelfile,
                      data = list('r' = r,
                                  'vars' = vars,
@@ -149,7 +149,7 @@ uvmetaBayes <- function(r,vars, pars=list(quantiles = c(0.025, 0.25, 0.5, 0.75, 
 		results.overview[,(i+2)] = (results[[2]])[,i]
 	}
 	
-	out <- list(results=results.overview,model="random",df=dfr,numstudies=numstudies)
+	out <- list(results=results.overview,model=model,df=dfr,numstudies=numstudies)
     	class(out) <- "uvmeta"
     	return (out)
 }
@@ -161,7 +161,7 @@ uvmeta.default <- function(r,vars, model="random", method="MOM", ...)
     est <- NA    
     if (length(x)!=length(y)) {warning("The vectors 'r' and 'vars' have a different size!")}
     if (method == "MOM") { est <- uvmetaMOM(x, y, model) }
-    else if (method == "bayes") { est <- uvmetaBayes(x,y) }
+    else if (method == "bayes") { est <- uvmetaBayes(x,y, model) }
 
     est$call <- match.call()
     class(est) <- "uvmeta"
