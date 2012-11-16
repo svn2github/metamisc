@@ -65,7 +65,7 @@ uvmetaMOM <- function(r,vars, model="random", pars=list(quantiles = c(0.025, 0.2
         se_lnH = sqrt((1/(2*(length(r)-2)))*(1-(1/(3*((length(r)-2)**2)))))
     }
     #varQ = 2*dfr + 4*(sum(w)-sum(w**2)/sum(w))*between_study_var + 2*(sum(w**2)-2*((sum(w**3)/sum(w))+(sum(w**2)**2)/sum(w)**2))*between_study_var**2
-    varTauSq = varQ/(sum(w)-sum(w**2)/sum(w))**2
+    #varTauSq = varQ/(sum(w)-sum(w**2)/sum(w))**2
 
     # Within-study plus between-study variance
     re_v = vars + between_study_var
@@ -86,7 +86,7 @@ uvmetaMOM <- function(r,vars, model="random", pars=list(quantiles = c(0.025, 0.2
     re_z_T = re_weighted_Tbar/re_se_T
     
     fixef.results = list(mean=weighted_Tbar,var=var_T)
-    ranef.results = list(mean=re_weighted_Tbar,var=re_var_T,tauSq=between_study_var,varTauSq=varTauSq)
+    ranef.results = list(mean=re_weighted_Tbar,var=re_var_T,tauSq=between_study_var)
     H2.results    = list(H2=H_sq,se_lnH=se_lnH)
     I2.results    = list(I2=I_sq)
     
@@ -100,17 +100,17 @@ uvmetaMOM <- function(r,vars, model="random", pars=list(quantiles = c(0.025, 0.2
     # between-study variation
     #Q.critical = qchisq(0.95,df=(length(r)-1))
     Q_p = 1-pchisq(Q,df=(length(r)-1))
-    Q.results = list(Q=Q,var=varQ,p.value=Q_p)
+    Q.results = list(Q=Q,p.value=Q_p)
 
     results = array(NA,dim=c(4, length(pars$quantiles)+2))
     colnames(results) = c("Mean","Var",paste(pars$quantiles*100,"%",sep=""))
     rownames(results) = c("mu","tausq","Q","Isq")
     results[3,] = c(Q,NA,qchisq(pars$quantiles,df=dfr))
-    results[4,] = c(I_sq,NA,rep(NA,length(pars$quantiles)))
-
+    
     if (model=="random") {
         results[1,] = c(re_weighted_Tbar,re_var_T,re_weighted_Tbar+qnorm(pars$quantiles)*sqrt(re_var_T))
-	results[2,] = c(between_study_var,varTauSq,rep(NA,length(pars$quantiles)))
+	results[2,] = c(between_study_var,NA,rep(NA,length(pars$quantiles)))
+	results[4,] = c(I_sq,NA,rep(NA,length(pars$quantiles)))
     } else if (model=="fixed") {
         results[1,] = c(weighted_Tbar,var_T,weighted_Tbar+qnorm(pars$quantiles)*sqrt(var_T))
 	results[2,] = c(0,0,rep(NA,length(pars$quantiles)))
