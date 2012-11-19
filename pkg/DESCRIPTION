@@ -7,5 +7,6 @@ Author: Thomas Debray
 Maintainer: Thomas Debray <thomas.debray@gmail.com>
 Description: This package provides functions for diagnostic and prognostic meta-analyses. It estimates univariate, bivariate and multivariate models, and allows the aggregation of previously published prediction models with new data.
 Depends: stats, mvtnorm, ellipse
+Imports: rjags
 License: GPL-2
 URL: http://r-forge.r-project.org/projects/metamisc/
