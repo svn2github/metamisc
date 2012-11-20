@@ -8,14 +8,14 @@
 
 \description{This function performs a univariate meta-analysis by assuming fixed or random effects. }
 
-\usage{ uvmeta(r, vars, model="random", method="MOM", pars=list(quantiles = c(0.025, 0.25, 0.5, 0.75, 0.975)), ...)}
+\usage{ uvmeta(r, vars, model="random", method="MOM", pars=list(quantiles = c(0.025, 0.25, 0.5, 0.75, 0.975), n.chains=4, n.adapt=5000, n.init=1000, n.iter=10000), ...)}
 
 \arguments{
   \item{r}{vector of numerics containing the effect sizes}
   \item{vars}{vector of numerics containing the error variance of the effect sizes}
   \item{model}{Specifies whether \code{random} (default) or \code{fixed} effects should be assumed}
   \item{method}{estimation method, where \code{MOM} implements the method-of-moment estimator proposed by DerSimonian and Laird. Altnernatively, \code{bayes} implements a Bayesian approach that assumes normality of the random effects.}
-  \item{pars}{A list with additional arguments. Use \code{quantiles} to specify which quantiles should be calculated for parameter estimates.)}
+  \item{pars}{A list with additional arguments. Use \code{quantiles} to specify which quantiles should be calculated for parameter estimates. The following parameters configure the MCMC sampling procedure and are ignored if method is \code{MOM}:  \code{n.chains} (specifies the number of parallel chains), \code{n.adapt} (specifies the number of iterations for adaptation), \code{n.init} (number of iterations to run for initializing the Markov chain) and \code{n.iter} (number of iterations to monitor).}
   \item{\dots}{arguments to be passed on to other functions}
 }
 
