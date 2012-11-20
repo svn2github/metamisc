@@ -12,7 +12,7 @@
 # example.var = c(0.03,0.03,0.05,0.01,0.05,0.02)
 # macc(example.r,example.var)
 ################################################################################
-uvmeta <- function(r, vars, model="random", method="MOM", pars=list(quantiles = c(0.025, 0.25, 0.5, 0.75, 0.975)), ...) UseMethod("uvmeta")
+uvmeta <- function(r, vars, model="random", method="MOM", pars=list(quantiles = c(0.025, 0.25, 0.5, 0.75, 0.975), n.chains=4, n.adapt=5000, n.init=1000, n.iter=10000), ...) UseMethod("uvmeta")
 
 uvmetaMOM <- function(r,vars, model="random", pars=list(quantiles = c(0.025, 0.25, 0.5, 0.75, 0.975))) {
     # Degrees of freedom
@@ -124,7 +124,7 @@ uvmetaMOM <- function(r,vars, model="random", pars=list(quantiles = c(0.025, 0.2
     return (out)
 }
 
-uvmetaBayes <- function(r,vars, model="random",pars=list(quantiles = c(0.025, 0.25, 0.5, 0.75, 0.975))) {
+uvmetaBayes <- function(r,vars, model="random",pars=list(quantiles = c(0.025, 0.25, 0.5, 0.75, 0.975), n.chains=4, n.adapt=5000, n.init=1000, n.iter=10000)) {
 	numstudies = length(r)	
 	dfr = numstudies-1
 
@@ -133,10 +133,10 @@ uvmetaBayes <- function(r,vars, model="random",pars=list(quantiles = c(0.025, 0.
                      data = list('r' = r,
                                  'vars' = vars,
                                  'k' = numstudies), #prior precision matrix
-                     n.chains = n.chains,
-                     n.adapt = n.adapt)
-	update(jags, n.init) #initialize
-	samples <- coda.samples(jags, c('mu','tausq','Q','Isq'),n.iter=n.iter)
+                     n.chains = pars$n.chains,
+                     n.adapt = pars$n.adapt)
+	update(jags, pars$n.init) #initialize
+	samples <- coda.samples(jags, c('mu','tausq','Q','Isq'),n.iter=pars$n.iter)
 
 	results <- summary(samples,quantiles=pars$quantiles)
 
