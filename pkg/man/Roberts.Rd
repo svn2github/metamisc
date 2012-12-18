@@ -10,7 +10,7 @@
 
 \format{One data frame with 2 variables.
   \describe{
-  \item{Effect size}{Effect sizes (standardized differences in means)}  
+  \item{SDM}{Effect sizes (standardized differences in means)}  
   \item{SE}{Standard error of the effect sizes}  
   }
 }
