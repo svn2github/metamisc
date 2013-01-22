@@ -138,7 +138,7 @@ uvmetaBayes <- function(r,vars, model="random",pars=list(quantiles = c(0.025, 0.
 	update(jags, pars$n.init) #initialize
 	samples <- coda.samples(jags, c('mu','tausq','Q','Isq'),n.iter=pars$n.iter)
 
-	results <- summary(samples,quantiles=pars$quantiles)
+	results <- summary.mcmc(samples,quantiles=pars$quantiles)
 
 	results.overview = array(NA,dim=c(dim(results[[1]])[1], length(pars$quantiles)+2))
 	colnames(results.overview) = c("Mean","Var",paste(pars$quantiles*100,"%",sep=""))
