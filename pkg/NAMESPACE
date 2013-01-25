@@ -1,6 +1,7 @@
 export("riley")
 export("uvmeta")
 import("rjags")
+import("coda")
 
 S3method(print, riley)
 S3method(summary, riley)
