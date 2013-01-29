@@ -19,9 +19,7 @@
   \item{\dots}{arguments to be passed on to other functions}
 }
 
-\details{ The defining feature of the fixed-effect model is that all studies in the analysis share a common effect size. Conversely, the random-effects model assumes a distribution of true effect sizes and estimates the mean of this distribution. Concretely, if we move from fixed-effect weights to random-effects weights, large studies lose influence and small studies gain influence (Borenstein 2010). The Bayesian approach uses an uninformative Normal prior for the mean of the pooled effect size (mean 0 and variance 1000). The Bayesian random-effects approach also uses an uninformative uniform prior for the variance of the pooled effect size (mininum 0 and maximum 10000).
-
- Note that JAGS need to be installed in order to run a Bayesian meta-analysis, see http://mcmc-jags.sourceforge.net/. }
+\details{ The defining feature of the fixed-effect model is that all studies in the analysis share a common effect size. Conversely, the random-effects model assumes a distribution of true effect sizes and estimates the mean of this distribution. Concretely, if we move from fixed-effect weights to random-effects weights, large studies lose influence and small studies gain influence (Borenstein 2010). The Bayesian approach uses an uninformative Normal prior for the mean of the pooled effect size (mean 0 and variance 1000). The Bayesian random-effects approach also uses an uninformative uniform prior for the variance of the pooled effect size (mininum 0 and maximum 10000). Note that JAGS need to be installed in order to run a Bayesian meta-analysis, see http://mcmc-jags.sourceforge.net/. }
 
 \value{ An object of the class \code{uvmeta} for which many standard methods are available. The results of the meta-analysis are stored in the object \code{results}.}
 
