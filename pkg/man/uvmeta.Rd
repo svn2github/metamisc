@@ -22,7 +22,7 @@
 
 \details{ The defining feature of the fixed-effect model is that all studies in the analysis share a common effect size. Conversely, the random-effects model assumes a distribution of true effect sizes and estimates the mean of this distribution. Concretely, if we move from fixed-effect weights to random-effects weights, large studies lose influence and small studies gain influence (Borenstein 2010). The Bayesian approach uses an uninformative Normal prior for the mean of the pooled effect size and an uninformative uniform prior for the variance of the pooled effect size (Higgins 2009).  Note that JAGS need to be installed in order to run a Bayesian meta-analysis, see http://mcmc-jags.sourceforge.net/. }
 
-\value{ An object of the class \code{uvmeta} for which many standard methods are available. The results of the meta-analysis are stored in the object \code{results}.}
+\value{ An object of the class \code{uvmeta} for which many standard methods are available. The results of the meta-analysis are stored in the object \code{results} where \code{Q} represents Cochran's Q statistic, \code{Isq} represents Higgins' and Thompson's I square statistic, \code{tausq} represents the between-study variability and \code{mu} represents the pooled effect size.}
 
 \references{
 DerSimonian R, Laird N. Meta-analysis in clinical trials. \emph{Controlled Clinical Trials} 1986; \bold{7}: 177--188.
