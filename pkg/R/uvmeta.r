@@ -12,9 +12,9 @@
 # example.var = c(0.03,0.03,0.05,0.01,0.05,0.02)
 # macc(example.r,example.var)
 ################################################################################
-uvmeta <- function(r, vars, model="random", method="MOM", pars=list(quantiles = c(0.025, 0.25, 0.5, 0.75, 0.975), n.chains=4, n.adapt=5000, n.init=1000, n.iter=10000), ...) UseMethod("uvmeta")
+uvmeta <- function(r, vars, model="random", method="MOM", pars=list(quantiles = c(0.025, 0.25, 0.5, 0.75, 0.975), n.chains=4, n.adapt=5000, n.init=1000, n.iter=10000), verbose=FALSE, ...) UseMethod("uvmeta")
 
-uvmetaMOM <- function(r,vars, model="random", pars=list(quantiles = c(0.025, 0.25, 0.5, 0.75, 0.975))) {
+uvmetaMOM <- function(r,vars, model="random", pars=list(quantiles = c(0.025, 0.25, 0.5, 0.75, 0.975)),verbose=FALSE) {
     # Degrees of freedom
     numstudies = length(r)
     dfr = numstudies-1
@@ -124,9 +124,10 @@ uvmetaMOM <- function(r,vars, model="random", pars=list(quantiles = c(0.025, 0.2
     return (out)
 }
 
-uvmetaBayes <- function(r,vars, model="random",pars=list(quantiles = c(0.025, 0.25, 0.5, 0.75, 0.975), n.chains=4, n.adapt=5000, n.init=1000, n.iter=10000)) {
+uvmetaBayes <- function(r,vars, model="random",pars=list(quantiles = c(0.025, 0.25, 0.5, 0.75, 0.975), n.chains=4, n.adapt=5000, n.init=1000, n.iter=10000),verbose=FALSE) {
 	numstudies = length(r)	
 	dfr = numstudies-1
+    quiet = !verbose
 
 	modelfile <-  if (model=="random") system.file(package="metamisc", "model", "uvmeta_ranef.bug") else system.file(package="metamisc", "model", "uvmeta_fixef.bug")
 	jags <- jags.model(modelfile,
@@ -134,7 +135,8 @@ uvmetaBayes <- function(r,vars, model="random",pars=list(quantiles = c(0.025, 0.
                                  'vars' = vars,
                                  'k' = numstudies), #prior precision matrix
                      n.chains = pars$n.chains,
-                     n.adapt = pars$n.adapt)
+                     n.adapt = pars$n.adapt,
+                     quiet = quiet)
 	update(jags, pars$n.init) #initialize
 	samples <- coda.samples(jags, c('mu','tausq','Q','Isq'),n.iter=pars$n.iter)
 
@@ -154,14 +156,14 @@ uvmetaBayes <- function(r,vars, model="random",pars=list(quantiles = c(0.025, 0.
     	return (out)
 }
 
-uvmeta.default <- function(r,vars, model="random", method="MOM", ...)
+uvmeta.default <- function(r,vars, model="random", method="MOM", verbose=FALSE, ...)
 {
     x <- as.vector(r)
     y <- as.vector(vars)
     est <- NA    
     if (length(x)!=length(y)) {warning("The vectors 'r' and 'vars' have a different size!")}
-    if (method == "MOM") { est <- uvmetaMOM(x, y, model) }
-    else if (method == "bayes") { est <- uvmetaBayes(x,y, model) }
+    if (method == "MOM") { est <- uvmetaMOM(x, y, model,verbose) }
+    else if (method == "bayes") { est <- uvmetaBayes(x,y, model,verbose) }
 
     est$call <- match.call()
     class(est) <- "uvmeta"
