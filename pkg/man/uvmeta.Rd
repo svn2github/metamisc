@@ -21,7 +21,7 @@
 
 \details{ The defining feature of the fixed-effect model is that all studies in the analysis share a common effect size. Conversely, the random-effects model assumes a distribution of true effect sizes and estimates the mean of this distribution. Concretely, if we move from fixed-effect weights to random-effects weights, large studies lose influence and small studies gain influence (Borenstein 2010). Note that JAGS need to be installed in order to run a Bayesian meta-analysis, see http://mcmc-jags.sourceforge.net/. }
 
-\value{ An object of the class \code{uvmeta} for which many standard methods are available.}
+\value{ An object of the class \code{uvmeta} for which many standard methods are available. The results of the meta-analysis are stored in the object \code{results}.}
 
 \references{
 DerSimonian R, Laird N. Meta-analysis in clinical trials. \emph{Controlled Clinical Trials} 1986; \bold{7}: 177--188.
