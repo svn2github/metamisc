@@ -162,8 +162,8 @@ uvmeta.default <- function(r,vars, model="random", method="MOM", pars, verbose, 
     y <- as.vector(vars)
     est <- NA    
     if (length(x)!=length(y)) {warning("The vectors 'r' and 'vars' have a different size!")}
-    if (method == "MOM") { est <- uvmetaMOM(x, y, model,verbose) }
-    else if (method == "bayes") { est <- uvmetaBayes(x,y, model,verbose) }
+    if (method == "MOM") { est <- uvmetaMOM(x, y, model, pars, verbose) }
+    else if (method == "bayes") { est <- uvmetaBayes(x,y, model, pars, verbose) }
 
     est$call <- match.call()
     class(est) <- "uvmeta"
