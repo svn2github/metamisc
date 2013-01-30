@@ -156,7 +156,7 @@ uvmetaBayes <- function(r,vars, model="random",pars=list(quantiles = c(0.025, 0.
     	return (out)
 }
 
-uvmeta.default <- function(r,vars, model="random", method="MOM", verbose=FALSE, ...)
+uvmeta.default <- function(r,vars, model="random", method="MOM", pars, verbose, ...)
 {
     x <- as.vector(r)
     y <- as.vector(vars)
