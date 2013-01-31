@@ -14,6 +14,20 @@
 ################################################################################
 uvmeta <- function(r, vars, model="random", method="MOM", pars=list(quantiles = c(0.025, 0.25, 0.5, 0.75, 0.975), n.chains=4, n.adapt=5000, n.init=1000, n.iter=10000), verbose=FALSE, ...) UseMethod("uvmeta")
 
+uvmeta.default <- function(r,vars, model="random", method="MOM", pars, verbose, ...)
+{
+    x <- as.vector(r)
+    y <- as.vector(vars)
+    est <- NA    
+    if (length(x)!=length(y)) {warning("The vectors 'r' and 'vars' have a different size!")}
+    if (method == "MOM") { est <- uvmetaMOM(x, y, model, pars, verbose) }
+    else if (method == "bayes") { est <- uvmetaBayes(x,y, model, pars, verbose) }
+
+    est$call <- match.call()
+    class(est) <- "uvmeta"
+    est
+}
+
 uvmetaMOM <- function(r,vars, model="random", pars=list(quantiles = c(0.025, 0.25, 0.5, 0.75, 0.975)),verbose=FALSE) {
     # Degrees of freedom
     numstudies = length(r)
@@ -156,19 +170,6 @@ uvmetaBayes <- function(r,vars, model="random",pars=list(quantiles = c(0.025, 0.
     	return (out)
 }
 
-uvmeta.default <- function(r,vars, model="random", method="MOM", pars, verbose, ...)
-{
-    x <- as.vector(r)
-    y <- as.vector(vars)
-    est <- NA    
-    if (length(x)!=length(y)) {warning("The vectors 'r' and 'vars' have a different size!")}
-    if (method == "MOM") { est <- uvmetaMOM(x, y, model, pars, verbose) }
-    else if (method == "bayes") { est <- uvmetaBayes(x,y, model, pars, verbose) }
-
-    est$call <- match.call()
-    class(est) <- "uvmeta"
-    est
-}
 
 print.uvmeta <- function(x, ...)
 {
