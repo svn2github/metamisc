@@ -14,7 +14,7 @@
 ################################################################################
 uvmeta <- function(r, vars, model="random", method="MOM", pars=list(quantiles = c(0.025, 0.25, 0.5, 0.75, 0.975), n.chains=4, n.adapt=5000, n.init=1000, n.iter=10000), verbose=FALSE, ...) UseMethod("uvmeta")
 
-uvmeta.default <- function(r,vars, model="random", method="MOM", pars, verbose, ...)
+uvmeta.default <- function(r,vars, model="random", method="MOM", pars=list(quantiles = c(0.025, 0.25, 0.5, 0.75, 0.975), n.chains=4, n.adapt=5000, n.init=1000, n.iter=10000), verbose=FALSE, ...)
 {
     x <- as.vector(r)
     y <- as.vector(vars)
