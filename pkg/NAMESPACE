@@ -2,7 +2,6 @@ export("riley")
 export("uvmeta")
 import("rjags")
 import("coda")
-importClassFrom("coda", "mcmc")
 
 S3method(print, riley)
 S3method(summary, riley)
