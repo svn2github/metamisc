@@ -3,17 +3,17 @@
 
 \title{ Prediction Interval }
 
-\description{ Calculates a prediction interval for the effect size. This interval predicts in what range future effect sizes will fall given what has already been observed. }
+\description{ Calculates a prediction interval for the effect size. }
 
 \usage{ \method{predict}{uvmeta}(object, level = 0.95, \ldots) }
 
 \arguments{
   \item{object}{ an \code{uvmeta} object.}
-  \item{level}{ numeric, the level for calculations of confidence intervals }
+  \item{level}{ numeric, the level for calculations of prediction intervals }
   \item{\dots}{ arguments to be passed on to other functions }
 }
 
-\details{ Prediction intervals are based on Student's t-distribution with (numstudies - 2) degrees of freedom. }
+\details{ The prediction interval predicts in what range future effect sizes will fall given what has already been observed. Prediction intervals are based on a Student's t-distribution with (numstudies - 2) degrees of freedom. }
 
 \value{ Vector containing the prediction interval of the effect size. }
 
