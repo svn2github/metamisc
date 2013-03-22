@@ -23,14 +23,13 @@ uvmeta.default <- function(r,vars, model="random", method="MOM", na.action,
                                      n.chains=4, n.adapt=5000, n.init=1000, 
                                      n.iter=10000), verbose=FALSE, ...)
 {
+  if (length(r)!=length(vars)) {
+    stop("The vectors 'r' and 'vars' have a different length!")
+  }
 
   ds <- as.data.frame(cbind(as.vector(r),as.vector(vars)))
   colnames(ds) <- c("theta","v")
   est <- NA    
-  
-  if (length(x)!=length(y)) {
-    stop("The vectors 'r' and 'vars' have a different length!")
-  }
   
   if (missing(na.action)) 
     na.action <- "na.fail"
@@ -104,7 +103,7 @@ uvmeta.default <- function(r,vars, model="random", method="MOM", na.action,
     Q_p = 1-pchisq(Q,df=dfr)
     
     results = as.data.frame(array(NA,dim=c(4, length(pars$quantiles)+2)))
-    colnames(results) = c("Mean","Var",paste(pars$quantiles*100,"%",sep=""))
+    colnames(results) = c("Estimate","Var",paste(pars$quantiles*100,"%",sep=""))
     rownames(results) = c("mu","tausq","Q","Isq")
     results[3,] = c(Q,NA,qchisq(pars$quantiles,df=dfr))
     
@@ -134,7 +133,7 @@ uvmeta.default <- function(r,vars, model="random", method="MOM", na.action,
     results <- summary(samples,quantiles=pars$quantiles) #summary.mcmc(samples,quantiles=pars$quantiles)
     
     results.overview = as.data.frame(array(NA,dim=c(dim(results[[1]])[1], length(pars$quantiles)+2)))
-    colnames(results.overview) = c("Mean","Var",paste(pars$quantiles*100,"%",sep=""))
+    colnames(results.overview) = c("Estimate","Var",paste(pars$quantiles*100,"%",sep=""))
     rownames(results.overview) = rownames(results[[2]])
     results.overview[,1] = (results[[1]])[,"Mean"]
     results.overview[,2] = (results[[1]])[,"SD"]**2
@@ -170,9 +169,9 @@ predict.uvmeta <- function(object, level = 0.95, ...)
   #The correct number of degrees of freedom for this t distribution is complex, and we use a value of k–2 largely for pragmatic reasons. (Riley 2011)
   df = 2 
   
-  pred.mean  <- object$results["mu","Mean"]
-  pred.lower <- object$results["mu","Mean"] + qt(alpha,df=(object$numstudies-df))*sqrt(object$results["tausq","Mean"]+object$results["mu","Var"])
-  pred.upper <- object$results["mu","Mean"] + qt((1-alpha),df=(object$numstudies-df))*sqrt(object$results["tausq","Mean"]+object$results["mu","Var"])
+  pred.mean  <- object$results["mu","Estimate"]
+  pred.lower <- object$results["mu","Estimate"] + qt(alpha,df=(object$numstudies-df))*sqrt(object$results["tausq","Estimate"]+object$results["mu","Var"])
+  pred.upper <- object$results["mu","Estimate"] + qt((1-alpha),df=(object$numstudies-df))*sqrt(object$results["tausq","Estimate"]+object$results["mu","Var"])
   predint <- c(pred.mean,pred.lower,pred.upper)
   names(predint) <- c("Estimate", paste((alpha*100),"%"),paste(((1-alpha)*100),"%"))
   predint
@@ -182,14 +181,14 @@ summary.uvmeta <- function(object, ...)
 {
     cat("Call:\n")
     print(object$call)
-    if (object$model=="fixed")  cat(paste("\nFixed effects summary:\t",round(object$results["mu","Mean"],5))," (SE: ",round(sqrt(object$results["mu","Var"]),5), ")",sep="")
+    if (object$model=="fixed")  cat(paste("\nFixed effects summary:\t",round(object$results["mu","Estimate"],5))," (SE: ",round(sqrt(object$results["mu","Var"]),5), ")",sep="")
     if (object$model=="random") {
-        cat(paste("\nRandom effects summary:\t",round(object$results["mu","Mean"],5))," (SE: ",round(sqrt(object$results["mu","Var"]),5), ")",sep="")
-        cat(paste("\n\nTau squared: \t\t",round(object$results["tausq","Mean"],5),sep=""))
+        cat(paste("\nRandom effects summary:\t",round(object$results["mu","Estimate"],5))," (SE: ",round(sqrt(object$results["mu","Var"]),5), ")",sep="")
+        cat(paste("\n\nTau squared: \t\t",round(object$results["tausq","Estimate"],5),sep=""))
     }
-    Q_p = 1-pchisq(object$results["Q","Mean"],df=object$df)
-    cat(paste("\nCochran's Q statistic: \t",round(object$results["Q","Mean"],5)," (p-value: ",round(Q_p,5),")",sep=""))
-    cat(paste("\nI-square index: \t", round(object$results["Isq","Mean"]*100,3)," %\n",sep=""))
+    Q_p = 1-pchisq(object$results["Q","Estimate"],df=object$df)
+    cat(paste("\nCochran's Q statistic: \t",round(object$results["Q","Estimate"],5)," (p-value: ",round(Q_p,5),")",sep=""))
+    cat(paste("\nI-square index: \t", round(object$results["Isq","Estimate"]*100,3)," %\n",sep=""))
 }
 
 
