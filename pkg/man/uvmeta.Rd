@@ -8,13 +8,14 @@
 
 \description{This function performs a univariate meta-analysis by assuming fixed or random effects. }
 
-\usage{ uvmeta(r, vars, model="random", method="MOM", pars=list(quantiles = c(0.025, 0.25, 0.5, 0.75, 0.975), n.chains=4, n.adapt=5000, n.init=1000, n.iter=10000), verbose=FALSE, ...)}
+\usage{ uvmeta(r, vars, model="random", method="MOM", na.action, pars=list(quantiles = c(0.025, 0.25, 0.5, 0.75, 0.975), n.chains=4, n.adapt=5000, n.init=1000, n.iter=10000), verbose=FALSE, ...)}
 
 \arguments{
   \item{r}{vector of numerics containing the effect sizes}
   \item{vars}{vector of numerics containing the error variance of the effect sizes}
   \item{model}{Assume random (\code{model="random"} (default) or fixed (\code{model="fixed"}) effects.}
   \item{method}{Estimation method. Use \code{method="MOM"} to implement the method-of-moment estimator proposed by DerSimonian and Laird. Altnernatively, use \code{method="bayes"} to perform a Bayesian meta-analysis.}
+  \item{na.action}{a function which indicates what should happen when the data contain NAs. Default to \code{na.action} setting of options, usually na.omit. na.exclude can be useful.}
   \item{pars}{A list with additional arguments. Use \code{quantiles} to specify which confidence or credibility intervals should be calculated for parameter estimates. The following parameters configure the MCMC sampling procedure and are ignored if \code{method="MOM"}:  \code{n.chains} (specifies the number of parallel chains), \code{n.adapt} (specifies the number of iterations for adaptation), \code{n.init} (number of iterations to run for initializing the Markov chain) and \code{n.iter} (number of iterations to monitor).}
   \item{verbose}{if TRUE then messages generated during the fitting process will be displayed.}
   \item{\dots}{arguments to be passed on to other functions}
