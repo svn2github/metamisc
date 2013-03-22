@@ -24,7 +24,8 @@ uvmeta.default <- function(r,vars, model="random", method="MOM", na.action,
                                      n.iter=10000), verbose=FALSE, ...)
 {
 
-  ds <- cbind(as.vector(r),as.vector(vars))
+  ds <- as.data.frame(cbind(as.vector(r),as.vector(vars)))
+  colnames(ds) <- c("theta","v")
   est <- NA    
   
   if (length(x)!=length(y)) {
@@ -48,13 +49,11 @@ uvmeta.default <- function(r,vars, model="random", method="MOM", na.action,
   }
   
   if (method == "MOM") { 
-    ############################################################################
     # FIXED EFFECTS MODEL
-    ############################################################################
-    w = 1/vars
+    w = 1/ds$v
     
     #Combined effect
-    weighted_Tbar = sum(r*w)/sum(w)
+    weighted_Tbar = sum(ds$theta*w)/sum(w)
     
     # Variance of the combined effect
     var_T = 1/sum(w)
@@ -65,19 +64,10 @@ uvmeta.default <- function(r,vars, model="random", method="MOM", na.action,
     # The Z-value
     z_T = weighted_Tbar/se_T
     
-    ############################################################################
     # RANDOM EFFECTS MODEL
-    ############################################################################
-    # Q-statistic
-    Q = sum(w*(r-weighted_Tbar)**2)
+    Q = sum(w*(ds$theta-weighted_Tbar)**2)
     I_sq = 0
-    
-    # Higgins and Thompson (2002) have also developed a confidence interval for
-    # I2. The interval is formulated by calculating another of their proposed
-    # measures of heterogeneity, the H2 index obtained by
-    # (Higgins & Thompson, 2002, p. 1545, eq. 6) also known as Birges
-    # ratio (Birge, 1932)
-    H_sq = 1    #H2
+    H_sq = 1    #2
     se_lnH = 0  #SE(ln(H2))
     
     # Between-study variance
@@ -86,14 +76,12 @@ uvmeta.default <- function(r,vars, model="random", method="MOM", na.action,
       between_study_var = (Q - dfr)/re_C
       I_sq = (Q-dfr)/Q
       H_sq = Q/dfr
-      se_lnH = (log(Q)-log(dfr))/(2*(sqrt(2*Q)-sqrt((2*length(r))-3)))
+      se_lnH = (log(Q)-log(dfr))/(2*(sqrt(2*Q)-sqrt((2*length(ds$theta))-3)))
     } else {
       between_study_var = 0
-      se_lnH = sqrt((1/(2*(length(r)-2)))*(1-(1/(3*((length(r)-2)**2)))))
+      se_lnH = sqrt((1/(2*(length(ds$theta)-2)))*(1-(1/(3*((length(ds$theta)-2)**2)))))
     }
-    #varQ = 2*dfr + 4*(sum(w)-sum(w**2)/sum(w))*between_study_var + 2*(sum(w**2)-2*((sum(w**3)/sum(w))+(sum(w**2)**2)/sum(w)**2))*between_study_var**2
-    #varTauSq = varQ/(sum(w)-sum(w**2)/sum(w))**2
-    
+
     # Within-study plus between-study variance
     re_v = vars + between_study_var
     
@@ -101,7 +89,7 @@ uvmeta.default <- function(r,vars, model="random", method="MOM", na.action,
     re_w = 1/re_v
     
     # Combined effect
-    re_weighted_Tbar =  sum(r*re_w)/sum(re_w)
+    re_weighted_Tbar =  sum(ds$theta*re_w)/sum(re_w)
     
     # Variance of the combined effect
     re_var_T  = 1/sum(re_w)
@@ -112,24 +100,10 @@ uvmeta.default <- function(r,vars, model="random", method="MOM", na.action,
     # The Z-value
     re_z_T = re_weighted_Tbar/re_se_T
     
-    fixef.results = list(mean=weighted_Tbar,var=var_T)
-    ranef.results = list(mean=re_weighted_Tbar,var=re_var_T,tauSq=between_study_var)
-    H2.results    = list(H2=H_sq,se_lnH=se_lnH)
-    I2.results    = list(I2=I_sq)
-    
-    ############################################################################
-    # Q statistics
-    ############################################################################
-    # The Q statistic has a chi-square distribution with k - 1 degrees of
-    # freedom, k being the number of studies. Thus, Q values higher than the
-    # critical point for a given significance level alfa enable us to reject the
-    # null hypothesis and conclude that there is statistically significant
-    # between-study variation
     #Q.critical = qchisq(0.95,df=(length(r)-1))
-    Q_p = 1-pchisq(Q,df=(length(r)-1))
-    Q.results = list(Q=Q,p.value=Q_p)
+    Q_p = 1-pchisq(Q,df=dfr)
     
-    results = array(NA,dim=c(4, length(pars$quantiles)+2))
+    results = as.data.frame(array(NA,dim=c(4, length(pars$quantiles)+2)))
     colnames(results) = c("Mean","Var",paste(pars$quantiles*100,"%",sep=""))
     rownames(results) = c("mu","tausq","Q","Isq")
     results[3,] = c(Q,NA,qchisq(pars$quantiles,df=dfr))
@@ -148,8 +122,8 @@ uvmeta.default <- function(r,vars, model="random", method="MOM", na.action,
     
     modelfile <-  if (model=="random") system.file(package="metamisc", "model", "uvmeta_ranef.bug") else system.file(package="metamisc", "model", "uvmeta_fixef.bug")
     jags <- jags.model(modelfile,
-                       data = list('r' = r,
-                                   'vars' = vars,
+                       data = list('r' = ds$theta,
+                                   'vars' = ds$v,
                                    'k' = numstudies), #prior precision matrix
                        n.chains = pars$n.chains,
                        n.adapt = pars$n.adapt,
@@ -159,7 +133,7 @@ uvmeta.default <- function(r,vars, model="random", method="MOM", na.action,
     
     results <- summary(samples,quantiles=pars$quantiles) #summary.mcmc(samples,quantiles=pars$quantiles)
     
-    results.overview = array(NA,dim=c(dim(results[[1]])[1], length(pars$quantiles)+2))
+    results.overview = as.data.frame(array(NA,dim=c(dim(results[[1]])[1], length(pars$quantiles)+2)))
     colnames(results.overview) = c("Mean","Var",paste(pars$quantiles*100,"%",sep=""))
     rownames(results.overview) = rownames(results[[2]])
     results.overview[,1] = (results[[1]])[,"Mean"]
@@ -173,7 +147,7 @@ uvmeta.default <- function(r,vars, model="random", method="MOM", na.action,
     stop("Invalid meta-analysis method!")
   }
   
-
+  est$na.action <- na.action
     est$call <- match.call()
     class(est) <- "uvmeta"
     return(est)

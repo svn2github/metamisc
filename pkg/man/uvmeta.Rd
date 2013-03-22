@@ -15,7 +15,7 @@
   \item{vars}{vector of numerics containing the error variance of the effect sizes}
   \item{model}{Assume random (\code{model="random"} (default) or fixed (\code{model="fixed"}) effects.}
   \item{method}{Estimation method. Use \code{method="MOM"} to implement the method-of-moment estimator proposed by DerSimonian and Laird. Altnernatively, use \code{method="bayes"} to perform a Bayesian meta-analysis.}
-  \item{na.action}{a function which indicates what should happen when the data contain NAs. Default to \code{na.action} setting of options, usually na.omit. na.exclude can be useful.}
+  \item{na.action}{a function which indicates what should happen when the data contain NAs. Defaults to \code{na.fail}, other options are \code{na.omit}, \code{na.exclude} or \code{na.pass}.}
   \item{pars}{A list with additional arguments. Use \code{quantiles} to specify which confidence or credibility intervals should be calculated for parameter estimates. The following parameters configure the MCMC sampling procedure and are ignored if \code{method="MOM"}:  \code{n.chains} (specifies the number of parallel chains), \code{n.adapt} (specifies the number of iterations for adaptation), \code{n.init} (number of iterations to run for initializing the Markov chain) and \code{n.iter} (number of iterations to monitor).}
   \item{verbose}{if TRUE then messages generated during the fitting process will be displayed.}
   \item{\dots}{arguments to be passed on to other functions}
