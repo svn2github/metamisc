@@ -29,7 +29,6 @@ uvmeta.default <- function(r,vars, model="random", method="MOM", na.action,
   ds <- as.data.frame(cbind(as.vector(r),as.vector(vars)))
   colnames(ds) <- c("theta","v")
   
-  
   if (missing(na.action)) 
     na.action <- "na.fail"
   if (length(na.action)) 
@@ -200,12 +199,43 @@ uvmeta.default <- function(r,vars, model="random", method="MOM", na.action,
   #  est <- list(results=results,model=model,df=dfr,numstudies=numstudies, pred.int=pred.int)
  
   
-
+  est$data <- ds
   est$na.action <- na.action
   est$method <- method
   est$call <- match.call()
   class(est) <- "uvmeta"
   return(est)
+}
+
+plot.uvmeta <- function(x, ...) {
+  
+  lowerci <- x$data[,"theta"]+qnorm(0.025)*sqrt(x$data[,"v"])
+  upperci <- x$data[,"theta"]+qnorm(0.975)*sqrt(x$data[,"v"])
+  
+  xlim <- c(min(lowerci),max(upperci))
+  ylim <- c(2,(x$numstudies+5))
+  main <- "Forest plot"
+  
+  
+  
+  loc = c((x$numstudies+4):3)
+    
+  lcol = "#EBEBEB"
+  plot(-500,-500,xlim=xlim,ylim=ylim,main=main,ylab="",yaxt="n", ann=FALSE)
+  axis(2,at=c((x$numstudies+4):5,3),labels=c(rownames(x$data),"Pooled estimate"),las=1)
+  
+  abline(v=0.00,lty=2,col=lcol)
+  for (i in 1:x$numstudies) {
+    yloc = loc[i]
+    points(x$data[i,"theta"],yloc,pch=15)
+    lines(c(lowerci[i],upperci[i]),c(yloc,yloc))
+  }
+  
+  points(x$results["mu","Estimate"],3,pch=5)
+  lines(x$results["mu",c("2.5%","97.5%")],c(3,3))
+  
+  box()
+  title(main=main)
 }
 
 

@@ -18,6 +18,7 @@
 \section{Slots}{
   \describe{
     \item{\code{call}:}{(language) The call to \code{\link{uvmeta}}.}
+    \item{\code{data}:}{(data frame) The data used for the meta-analysis. }
     \item{\code{results}:}{(data frame) Contains the pooled effect size (\code{mu}), the between-study variability (\code{tausq}), Cochran's Q statistic (\code{Q}) and Higgins' and Thompson's I square statistic (\code{Isq}). For each estimate, error variances are provided with predefined confidence (\code{method="MOM"}) or credibility (\code{method="bayes"}) intervals. }
     \item{\code{model}:}{(character) The meta-analysis model used.}
     \item{\code{method}:}{(character) The estimator used.}
@@ -32,6 +33,7 @@
 \section{Methods}{
   \describe{
     \item{print}{\code{signature(object = "uvmeta")}: Print object summary.}
+    \item{plot}{\code{signature(object = "uvmeta")}: Plot a forest plot with the summary estimate.}
     \item{summary}{\code{signature(object = "uvmeta")}: Generate object summary.}
 
   }
