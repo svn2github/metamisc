@@ -4,14 +4,13 @@
 # r    : Vector of the effect sizes
 # vars : Vector of the effect variances
 ###############################################################################
-# Author  : Thomas Debray
-# Version : 10 May 2011
-###############################################################################
 # Example
 # example.r = c(0.10,0.30,0.35,0.65,0.45,0.15)
 # example.var = c(0.03,0.03,0.05,0.01,0.05,0.02)
 # uvmeta(example.r,example.var)
 ###############################################################################
+
+#TODO: allow data transformations
 uvmeta <- function(r, vars, model="random", method="MOM", na.action,
                    pars=list(quantiles=c(0.025, 0.25, 0.5, 0.75, 0.975), 
                              n.chains=4, n.adapt=5000, n.init=1000, 
@@ -24,17 +23,19 @@ uvmeta.default <- function(r,vars, model="random", method="MOM", na.action,
                                      n.iter=10000), verbose=FALSE, ...)
 {
   if (length(r)!=length(vars)) {
-    stop("The vectors 'r' and 'vars' have a different length!")
+    stop("The vectors 'r' and 'vars' have different lengths!")
   }
 
   ds <- as.data.frame(cbind(as.vector(r),as.vector(vars)))
   colnames(ds) <- c("theta","v")
-  est <- NA    
+  
   
   if (missing(na.action)) 
     na.action <- "na.fail"
   if (length(na.action)) 
     ds <- do.call(na.action, list(ds))
+
+  est <- NA 
   
   
   #############################################################################
@@ -48,6 +49,10 @@ uvmeta.default <- function(r,vars, model="random", method="MOM", na.action,
   }
   
   if (method == "MOM") { 
+    results = as.data.frame(array(NA,dim=c(4, length(pars$quantiles)+2)))
+    colnames(results) = c("Estimate","Var",paste(pars$quantiles*100,"%",sep=""))
+    rownames(results) = c("mu","tausq","Q","Isq")
+    
     # FIXED EFFECTS MODEL
     w = 1/ds$v
     
@@ -65,20 +70,15 @@ uvmeta.default <- function(r,vars, model="random", method="MOM", na.action,
     
     # RANDOM EFFECTS MODEL
     Q = sum(w*(ds$theta-weighted_Tbar)**2)
-    I_sq = 0
-    H_sq = 1    #2
-    se_lnH = 0  #SE(ln(H2))
+    results["Q",] = c(Q,NA,qchisq(pars$quantiles,df=dfr))
+    
     
     # Between-study variance
-    if (Q > dfr) {
+    if (model=="random" & Q > dfr) {
       re_C =  sum(w) - sum(w**2)/sum(w)
       between_study_var = (Q - dfr)/re_C
-      I_sq = (Q-dfr)/Q
-      H_sq = Q/dfr
-      se_lnH = (log(Q)-log(dfr))/(2*(sqrt(2*Q)-sqrt((2*length(ds$theta))-3)))
     } else {
       between_study_var = 0
-      se_lnH = sqrt((1/(2*(length(ds$theta)-2)))*(1-(1/(3*((length(ds$theta)-2)**2)))))
     }
 
     # Within-study plus between-study variance
@@ -99,23 +99,26 @@ uvmeta.default <- function(r,vars, model="random", method="MOM", na.action,
     # The Z-value
     re_z_T = re_weighted_Tbar/re_se_T
     
-    #Q.critical = qchisq(0.95,df=(length(r)-1))
-    Q_p = 1-pchisq(Q,df=dfr)
     
-    results = as.data.frame(array(NA,dim=c(4, length(pars$quantiles)+2)))
-    colnames(results) = c("Estimate","Var",paste(pars$quantiles*100,"%",sep=""))
-    rownames(results) = c("mu","tausq","Q","Isq")
-    results[3,] = c(Q,NA,qchisq(pars$quantiles,df=dfr))
     
     if (model=="random") {
-      results[1,] = c(re_weighted_Tbar,re_var_T,re_weighted_Tbar+qnorm(pars$quantiles)*sqrt(re_var_T))
-      results[2,] = c(between_study_var,NA,rep(NA,length(pars$quantiles)))
-      results[4,] = c(I_sq,NA,rep(NA,length(pars$quantiles)))
+      results["mu",] = c(re_weighted_Tbar,re_var_T,re_weighted_Tbar+qnorm(pars$quantiles)*sqrt(re_var_T))
+      results["tausq",] = c(between_study_var,NA,rep(NA,length(pars$quantiles)))
+      
+      # Calculate I2 and its confidence limits
+      Isq <- (results["Q",]-dfr)/results["Q",]
+      Isq[which(Isq>1)] <- 1
+      Isq[which(Isq<0)] <- 0
+      results["Isq",] = Isq
     } else if (model=="fixed") {
-      results[1,] = c(weighted_Tbar,var_T,weighted_Tbar+qnorm(pars$quantiles)*sqrt(var_T))
-      results[2,] = c(0,0,rep(NA,length(pars$quantiles)))
+      results["mu",] = c(weighted_Tbar,var_T,weighted_Tbar+qnorm(pars$quantiles)*sqrt(var_T))
+      results["tausq",] = c(0,0,rep(NA,length(pars$quantiles)))
     }
-    est <- list(results=results,model=model,df=dfr,numstudies=numstudies)
+    pred.int <- results["mu","Estimate"] + qt(pars$quantiles,df=(numstudies-2))*sqrt(results["tausq","Estimate"]+results["mu","Var"])
+    names(pred.int) <- paste(pars$quantiles*100,"%",sep="")
+    
+    est <- list(results=results,model=model,df=dfr,numstudies=numstudies, pred.int=pred.int)
+    
   } else if (method == "bayes") { 
     quiet = !verbose
     
@@ -130,7 +133,9 @@ uvmeta.default <- function(r,vars, model="random", method="MOM", na.action,
     update(jags, pars$n.init) #initialize
     samples <- coda.samples(jags, c('mu','tausq','Q','Isq'),n.iter=pars$n.iter)
     
-    results <- summary(samples,quantiles=pars$quantiles) #summary.mcmc(samples,quantiles=pars$quantiles)
+    results <- summary(samples,quantiles=pars$quantiles) 
+    
+    #TODO: calculate prediction interval
     
     results.overview = as.data.frame(array(NA,dim=c(dim(results[[1]])[1], length(pars$quantiles)+2)))
     colnames(results.overview) = c("Estimate","Var",paste(pars$quantiles*100,"%",sep=""))
@@ -145,37 +150,81 @@ uvmeta.default <- function(r,vars, model="random", method="MOM", na.action,
   } else {
     stop("Invalid meta-analysis method!")
   }
+  # } else if (method=="pl") {
+  #   results = as.data.frame(array(NA,dim=c(4, length(pars$quantiles)+2)))
+  #  colnames(results) = c("Estimate","Var",paste(pars$quantiles*100,"%",sep=""))
+  #  rownames(results) = c("mu","tausq","Q","Isq")
+  #  
+  #  mle.loglik <- function(theta, tausq, ds) {
+  #    loglik <- sum(dnorm(x=ds$theta,mean=theta, sd=sqrt(tausq+ds$v),log=T))
+  #    return (-loglik)
+  #  }
+  #      
+  #  #### 5.99 ===> qchisq (0.95,df=2)
+  #  if (model == "random") 
+  #  {
+  #    mle <- mle2(minuslogl=mle.loglik, start=list(theta=0,tausq=0), data=list(ds=ds),method="L-BFGS-B",lower=list(theta=-Inf,tausq=0))
+  #    mle.cov <- vcov(mle)
+  #    p0 <- profile(mle)
+  #    
+  #    levels = pars$quantiles
+  #    levels[which(pars$quantiles<0.5)]  = 1-(pars$quantiles[which(pars$quantiles<0.5)]*2)
+  #    levels[which(pars$quantiles>=0.5)] = 1-(1-pars$quantiles[which(pars$quantiles>=0.5)])*2
+  #    pci = array(NA,dim=c(2,length(levels)))
+  #    colnames(pci) = paste(pars$quantiles*100,"%",sep=" ")
+  #    
+  #    for (i in 1:length(levels)) {
+  #      pcint <- confint(p0,level=levels[i])
+  #      cols.select <- which(colnames(pcint) %in% colnames(pci))
+  #      pci[,colnames(pcint)[cols.select]] <- pcint[,cols.select]
+  #    }
+  #    
+  #    wt <- 1/(coef(mle)["tausq"]+ds$v)
+  #    Q <- sum(wt*(ds$theta-coef(mle)["theta"])**2)
+  #    results["Q",] = c(Q,NA,qchisq(pars$quantiles,df=dfr))
+  #    
+  #    
+  #    # Use profile log-likelihood to calculate confidence intervals
+  #    results["mu",] = c(coef(mle)["theta"],mle.cov[1,1],pci[1,])
+  #    results["tausq",] = c(mle.tausq,mle.cov[2,2],pci[2,])
+  #    
+  #    # Calculate I2 and its confidence limits
+  #    Isq <- (results["Q",]-dfr)/results["Q",]
+  #    Isq[which(Isq>1)] <- 1
+  #    Isq[which(Isq<0)] <- 0
+  #    results["Isq",] = Isq
+  # }
+  #  pred.int <- results["mu","Estimate"] + qt(pars$quantiles,df=(numstudies-2))*sqrt(results["tausq","Estimate"]+results["mu","Var"])
+  #  names(pred.int) <- paste(pars$quantiles*100,"%",sep="")
+
+  #  est <- list(results=results,model=model,df=dfr,numstudies=numstudies, pred.int=pred.int)
+ 
   
+
   est$na.action <- na.action
-    est$call <- match.call()
-    class(est) <- "uvmeta"
-    return(est)
+  est$method <- method
+  est$call <- match.call()
+  class(est) <- "uvmeta"
+  return(est)
 }
 
 
 
 print.uvmeta <- function(x, ...)
 {
-	out <- (x$results)
+  out <- (x$results)
+  text.model <- if (x$model=="fixed") "Fixed" else "Random"
+  text.method <- if(x$method=="bayes") "credibility" else "confidence"
+  cat(paste(text.model,"effects estimates with corresponding", text.method, "intervals:\n\n"))
 	print(out)
+  if (x$model=="random") {
+    cat(paste("\n\nPrediction interval for mu:\n\n"))
+    print(x$pred.int)
+  }
+  
 	out
 }
 
-
-predict.uvmeta <- function(object, level = 0.95, ...)
-{
-  alpha = (1-level)/2
-
-  #The correct number of degrees of freedom for this t distribution is complex, and we use a value of k–2 largely for pragmatic reasons. (Riley 2011)
-  df = 2 
-  
-  pred.mean  <- object$results["mu","Estimate"]
-  pred.lower <- object$results["mu","Estimate"] + qt(alpha,df=(object$numstudies-df))*sqrt(object$results["tausq","Estimate"]+object$results["mu","Var"])
-  pred.upper <- object$results["mu","Estimate"] + qt((1-alpha),df=(object$numstudies-df))*sqrt(object$results["tausq","Estimate"]+object$results["mu","Var"])
-  predint <- c(pred.mean,pred.lower,pred.upper)
-  names(predint) <- c("Estimate", paste((alpha*100),"%"),paste(((1-alpha)*100),"%"))
-  predint
-}
 
 summary.uvmeta <- function(object, ...)
 {

@@ -6,7 +6,7 @@
 
 \title{Univariate meta-analysis.}
 
-\description{This function performs a univariate meta-analysis by assuming fixed or random effects. }
+\description{This function performs a univariate meta-analysis by assuming fixed or random effects.  Whereas the fixed effects model assumes that all studies in the analysis share a common effect size, the random-effects model allows different study-specific effect sizes. Concretely, if we move from fixed-effect weights to random-effects weights, large studies lose influence and small studies gain influence (Borenstein 2010). }
 
 \usage{ uvmeta(r, vars, model="random", method="MOM", na.action, pars=list(quantiles = c(0.025, 0.25, 0.5, 0.75, 0.975), n.chains=4, n.adapt=5000, n.init=1000, n.iter=10000), verbose=FALSE, ...)}
 
@@ -14,16 +14,17 @@
   \item{r}{vector of numerics containing the effect sizes}
   \item{vars}{vector of numerics containing the error variance of the effect sizes}
   \item{model}{Assume random (\code{model="random"} (default) or fixed (\code{model="fixed"}) effects.}
-  \item{method}{Estimation method. Use \code{method="MOM"} to implement the method-of-moment estimator proposed by DerSimonian and Laird. Altnernatively, use \code{method="bayes"} to perform a Bayesian meta-analysis.}
+  \item{method}{Estimation method. Use \code{method="MOM"} to implement the non-parametric method-of-moment estimator from DerSimonian and Laird. Altnernatively, use \code{method="bayes"} to perform a Bayesian meta-analysis that assumes normality of the random effects (Higgins 2009).}
   \item{na.action}{a function which indicates what should happen when the data contain NAs. Defaults to \code{na.fail}, other options are \code{na.omit}, \code{na.exclude} or \code{na.pass}.}
   \item{pars}{A list with additional arguments. Use \code{quantiles} to specify which confidence or credibility intervals should be calculated for parameter estimates. The following parameters configure the MCMC sampling procedure and are ignored if \code{method="MOM"}:  \code{n.chains} (specifies the number of parallel chains), \code{n.adapt} (specifies the number of iterations for adaptation), \code{n.init} (number of iterations to run for initializing the Markov chain) and \code{n.iter} (number of iterations to monitor).}
   \item{verbose}{if TRUE then messages generated during the fitting process will be displayed.}
   \item{\dots}{arguments to be passed on to other functions}
 }
 
-\details{ The defining feature of the fixed-effect model is that all studies in the analysis share a common effect size. Conversely, the random-effects model assumes a distribution of true effect sizes and estimates the mean of this distribution. Concretely, if we move from fixed-effect weights to random-effects weights, large studies lose influence and small studies gain influence (Borenstein 2010). The Bayesian approach uses an uninformative Normal prior for the mean and an uninformative uniform prior for the variance of the pooled effect size (Higgins 2009).  Note that JAGS need to be installed in order to run a Bayesian meta-analysis, see http://mcmc-jags.sourceforge.net/. }
+\details{The Bayesian approach uses an uninformative Normal prior for the mean and an uninformative uniform prior for the variance of the pooled effect size (Higgins 2009).  For random effects models, a prediction interval is calculated for the pooled effect size. This interval predicts in what range future effect sizes will fall given what has already been observed (based on a Student's t-distribution, cfr. Riley 2011).  
+}
 
-\value{ An object of the class \code{uvmeta} for which many standard methods are available. The results of the meta-analysis are stored in the object \code{results} which contains Cochran's Q statistic (\code{Q}), Higgins' and Thompson's I square statistic (\code{Isq}),  the between-study variability (\code{tausq}) and the pooled effect size (\code{mu}). For each estimate, error variances are provided with predefined confidence (\code{method="MOM"}) or credibility (\code{method="bayes"}) intervals. Note that the frequentist approach ignores several sources of uncertainty such that \code{NA} may occur for some confidence intervals.}
+\value{ An object of the class \code{uvmeta} for which many standard methods are available. The results of the meta-analysis are stored in the object \code{results} which contains the pooled effect size (\code{mu}), the between-study variability (\code{tausq}), Cochran's Q statistic (\code{Q}) and Higgins' and Thompson's I square statistic (\code{Isq}). For each estimate, error variances are provided with predefined confidence (\code{method="MOM"}) or credibility (\code{method="bayes"}) intervals. Note that the frequentist approach ignores several sources of uncertainty such that \code{NA} may occur for some confidence intervals.}
 
 \references{
 Biggerstaff BJ, Tweedie RL. Incorporating variability in estimates of heterogeneity in the random effects model in meta-analysis. \emph{Statistics in Medicine} 1997; \bold{16}:  753--768.
@@ -45,7 +46,7 @@ Rucker G, Schwarzer G, Carpenter JR, Schumacher M . Undue reliance on I2 in asse
 \author{ Thomas Debray <thomas.debray@gmail.com> }
 
 \seealso{
-\code{\link{summary.uvmeta}} \code{\link{predict.uvmeta}}
+\code{\link{summary.uvmeta}} 
 }
 
 \examples{
