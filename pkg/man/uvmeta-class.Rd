@@ -1,5 +1,5 @@
 \name{uvmeta-class}
-\docType{uvmeta}
+\alias{uvmeta-clas}
 
 %\alias{slice,mle2-method}
 %\alias{summary,mle2-method}
@@ -38,10 +38,7 @@
 
   }
 }
-\details{
 
-  
-}
 \examples{
 data(Collins)
 

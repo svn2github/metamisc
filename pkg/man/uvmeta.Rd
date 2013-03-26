@@ -1,7 +1,6 @@
 \name{uvmeta}
 \alias{uvmeta}
 \alias{uvmeta.default}
-\alias{uvmetaMOM}
 \alias{print.uvmeta}
 
 \title{Univariate meta-analysis.}
