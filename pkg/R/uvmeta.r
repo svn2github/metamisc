@@ -12,16 +12,16 @@
 
 #TODO: allow data transformations
 uvmeta <- function(r, vars, model="random", method="MOM", na.action,
-                   pars=list(quantiles=c(0.025, 0.25, 0.5, 0.75, 0.975), 
-                             n.chains=4, n.adapt=5000, n.init=1000, 
-                             n.iter=10000), verbose=FALSE, ...) 
+                   pars, verbose=FALSE, ...) 
   UseMethod("uvmeta")
 
 uvmeta.default <- function(r,vars, model="random", method="MOM", na.action, 
-                           pars=list(quantiles = c(0.025, 0.25, 0.5, 0.75, 0.975),
-                                     n.chains=4, n.adapt=5000, n.init=1000, 
-                                     n.iter=10000), verbose=FALSE, ...)
+                           pars, verbose=FALSE, ...)
 {
+  pars.default <- list(quantiles=c(0.025, 0.25, 0.5, 0.75, 0.975), 
+                       n.chains=4, n.adapt=5000, n.init=1000, 
+                       n.iter=10000)
+  
   if (length(r)!=length(vars)) {
     stop("The vectors 'r' and 'vars' have different lengths!")
   }
@@ -33,6 +33,13 @@ uvmeta.default <- function(r,vars, model="random", method="MOM", na.action,
     na.action <- "na.fail"
   if (length(na.action)) 
     ds <- do.call(na.action, list(ds))
+  
+  if (!missing(pars)) {
+    for (i in 1:length(pars)) {
+      element <- ls(pars)[i]
+      pars.default[[element]] <- pars[[i]]
+    }
+  }
 
   est <- NA 
   
@@ -48,8 +55,8 @@ uvmeta.default <- function(r,vars, model="random", method="MOM", na.action,
   }
   
   if (method == "MOM") { 
-    results = as.data.frame(array(NA,dim=c(4, length(pars$quantiles)+2)))
-    colnames(results) = c("Estimate","Var",paste(pars$quantiles*100,"%",sep=""))
+    results = as.data.frame(array(NA,dim=c(4, length(pars.default$quantiles)+2)))
+    colnames(results) = c("Estimate","Var",paste(pars.default$quantiles*100,"%",sep=""))
     rownames(results) = c("mu","tausq","Q","Isq")
     
     # FIXED EFFECTS MODEL
@@ -69,7 +76,7 @@ uvmeta.default <- function(r,vars, model="random", method="MOM", na.action,
     
     # RANDOM EFFECTS MODEL
     Q = sum(w*(ds$theta-weighted_Tbar)**2)
-    results["Q",] = c(Q,NA,qchisq(pars$quantiles,df=dfr))
+    results["Q",] = c(Q,NA,qchisq(pars.default$quantiles,df=dfr))
     
     
     # Between-study variance
@@ -101,8 +108,8 @@ uvmeta.default <- function(r,vars, model="random", method="MOM", na.action,
     
     
     if (model=="random") {
-      results["mu",] = c(re_weighted_Tbar,re_var_T,re_weighted_Tbar+qnorm(pars$quantiles)*sqrt(re_var_T))
-      results["tausq",] = c(between_study_var,NA,rep(NA,length(pars$quantiles)))
+      results["mu",] = c(re_weighted_Tbar,re_var_T,re_weighted_Tbar+qnorm(pars.default$quantiles)*sqrt(re_var_T))
+      results["tausq",] = c(between_study_var,NA,rep(NA,length(pars.default$quantiles)))
       
       # Calculate I2 and its confidence limits
       Isq <- (results["Q",]-dfr)/results["Q",]
@@ -110,11 +117,11 @@ uvmeta.default <- function(r,vars, model="random", method="MOM", na.action,
       Isq[which(Isq<0)] <- 0
       results["Isq",] = Isq
     } else if (model=="fixed") {
-      results["mu",] = c(weighted_Tbar,var_T,weighted_Tbar+qnorm(pars$quantiles)*sqrt(var_T))
-      results["tausq",] = c(0,0,rep(NA,length(pars$quantiles)))
+      results["mu",] = c(weighted_Tbar,var_T,weighted_Tbar+qnorm(pars.default$quantiles)*sqrt(var_T))
+      results["tausq",] = c(0,0,rep(NA,length(pars.default$quantiles)))
     }
-    pred.int <- results["mu","Estimate"] + qt(pars$quantiles,df=(numstudies-2))*sqrt(results["tausq","Estimate"]+results["mu","Var"])
-    names(pred.int) <- paste(pars$quantiles*100,"%",sep="")
+    pred.int <- results["mu","Estimate"] + qt(pars.default$quantiles,df=(numstudies-2))*sqrt(results["tausq","Estimate"]+results["mu","Var"])
+    names(pred.int) <- paste(pars.default$quantiles*100,"%",sep="")
     
     est <- list(results=results,model=model,df=dfr,numstudies=numstudies, pred.int=pred.int)
     
@@ -126,22 +133,22 @@ uvmeta.default <- function(r,vars, model="random", method="MOM", na.action,
                        data = list('r' = ds$theta,
                                    'vars' = ds$v,
                                    'k' = numstudies), #prior precision matrix
-                       n.chains = pars$n.chains,
-                       n.adapt = pars$n.adapt,
+                       n.chains = pars.default$n.chains,
+                       n.adapt = pars.default$n.adapt,
                        quiet = quiet)
-    update(jags, pars$n.init) #initialize
-    samples <- coda.samples(jags, c('mu','tausq','Q','Isq'),n.iter=pars$n.iter)
+    update(jags, pars.default$n.init) #initialize
+    samples <- coda.samples(jags, c('mu','tausq','Q','Isq'),n.iter=pars.default$n.iter)
     
-    results <- summary(samples,quantiles=pars$quantiles) 
+    results <- summary(samples,quantiles=pars.default$quantiles) 
     
     #TODO: calculate prediction interval
     
-    results.overview = as.data.frame(array(NA,dim=c(dim(results[[1]])[1], length(pars$quantiles)+2)))
-    colnames(results.overview) = c("Estimate","Var",paste(pars$quantiles*100,"%",sep=""))
+    results.overview = as.data.frame(array(NA,dim=c(dim(results[[1]])[1], length(pars.default$quantiles)+2)))
+    colnames(results.overview) = c("Estimate","Var",paste(pars.default$quantiles*100,"%",sep=""))
     rownames(results.overview) = rownames(results[[2]])
     results.overview[,1] = (results[[1]])[,"Mean"]
     results.overview[,2] = (results[[1]])[,"SD"]**2
-    for (i in 1:length(pars$quantiles)) {
+    for (i in 1:length(pars.default$quantiles)) {
       results.overview[,(i+2)] = (results[[2]])[,i]
     }
     
