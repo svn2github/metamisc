@@ -14,9 +14,7 @@
     \item{\code{SE}}{a numeric vector with the standard error of the treatment effect sizes}
   }
 }
-\details{
 
-}
 \source{
 Collins, R., Yusuf, S., Peto, R. Overview of randomised trials of diuretics in pregnancy. \emph{British Medical Journal} 1985, \bold{290}, 17--23.
 

@@ -15,12 +15,14 @@ uvmeta <- function(r, vars, model="random", method="MOM", na.action,
                    pars, verbose=FALSE, ...) 
   UseMethod("uvmeta")
 
-uvmeta.default <- function(r,vars, model="random", method="MOM", na.action, 
+uvmeta.default <- function(r, vars, model="random", method="MOM", na.action, 
                            pars, verbose=FALSE, ...)
 {
   pars.default <- list(quantiles=c(0.025, 0.25, 0.5, 0.75, 0.975), 
-                       n.chains=4, n.adapt=5000, n.init=1000, 
-                       n.iter=10000)
+                       n.chains=4, #JAGS (# chains)
+                       n.adapt=5000, #JAGS
+                       n.init=1000,  #JAGS
+                       n.iter=10000) #JAGS
   
   if (length(r)!=length(vars)) {
     stop("The vectors 'r' and 'vars' have different lengths!")

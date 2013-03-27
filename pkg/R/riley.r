@@ -87,6 +87,7 @@ rileyES <- function(X = NULL, Y1, Y2, vars1, vars2, optimization = "Nelder-Mead"
 		if(fit$convergence == 1) warning ("Iteration limit had been reached.")
 		else if (fit$convergence == 10) warning("Degeneracy of the Nelder-Mead simplex.")
 		else if (fit$convergence == 51 | fit$convergence == 52) warning(fit$message)
+    else warning("Unspecified convergence error in optim.")
 	}
 	
 	beta1 = fit$par[1]
@@ -156,6 +157,8 @@ rileyDA <-
       output = rileyES(Y1=logit.sens,Y2=logit.fpr,vars1=var.logit.sens,vars2=var.logit.fpr,optimization = optimization, control = control, ...)
       output$type = "test.accuracy"
       output$data = origdata
+      output$correction = correction 
+      output$correction.control = correction.control
       
       return(output)
   }
