@@ -47,7 +47,7 @@ rileyES <- function(X = NULL, Y1, Y2, vars1, vars2, optimization = "Nelder-Mead"
 	if (numstudies >= 2) {
 		sumlY1 <- uvmeta(r=Y1, vars=vars1, method="MOM")
 		sumlY2 <- uvmeta(r=Y2, vars=vars2, method="MOM")
-		pars.start = c(sumlY1$results["mu","Mean"],sumlY2$results["mu","Mean"],sqrt(sumlY1$results["mu","Var"]),sqrt(sumlY2$results["mu","Var"]),0)
+		pars.start = c(sumlY1$results["mu","Estimate"],sumlY2$results["mu","Estimate"],sqrt(sumlY1$results["mu","Var"]),sqrt(sumlY2$results["mu","Var"]),0)
 	}
 	
 	negfullloglik <- function(pars,Y,vars)
@@ -154,7 +154,7 @@ rileyDA <-
       var.logit.fpr <- 1/(fpr*(1-fpr)*number.of.neg)
       
 	  #Apply ordinary bivariate meta-analysis on transformed data
-      output = rileyES(Y1=logit.sens,Y2=logit.fpr,vars1=var.logit.sens,vars2=var.logit.fpr,optimization = optimization, control = control, ...)
+      output = rileyES(X=NULL, Y1=logit.sens,Y2=logit.fpr,vars1=var.logit.sens,vars2=var.logit.fpr,optimization = optimization, control = control, ...)
       output$type = "test.accuracy"
       output$data = origdata
       output$correction = correction 
