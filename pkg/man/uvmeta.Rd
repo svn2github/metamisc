@@ -1,6 +1,7 @@
 \name{uvmeta}
 \alias{uvmeta}
 \alias{uvmeta.default}
+\alias{forest.uvmeta}
 \alias{print.uvmeta}
 
 \title{Univariate meta-analysis.}
