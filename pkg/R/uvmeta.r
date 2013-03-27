@@ -145,11 +145,10 @@ uvmeta.default <- function(r, vars, model="random", method="MOM", labels, na.act
                        n.adapt = pars.default$n.adapt,
                        quiet = quiet)
     update(jags, pars.default$n.init) #initialize
-    samples <- coda.samples(jags, c('mu','tausq','Q','Isq'),n.iter=pars.default$n.iter)
+    samples <- coda.samples(jags, c('mu','tausq','Q','Isq','theta.new'),n.iter=pars.default$n.iter)
     
     results <- summary(samples,quantiles=pars.default$quantiles) 
-    
-    #TODO: calculate prediction interval
+    pred.int=(results[[2]])["theta.new",]
     
     results.overview = as.data.frame(array(NA,dim=c(dim(results[[1]])[1], length(pars.default$quantiles)+2)))
     colnames(results.overview) = c("Estimate","Var",paste(pars.default$quantiles*100,"%",sep=""))
@@ -159,8 +158,9 @@ uvmeta.default <- function(r, vars, model="random", method="MOM", labels, na.act
     for (i in 1:length(pars.default$quantiles)) {
       results.overview[,(i+2)] = (results[[2]])[,i]
     }
+    results.overview = results.overview[c("mu","tausq","Q","Isq"),]
     
-    est <- list(results=results.overview,model=model,df=dfr,numstudies=numstudies)
+    est <- list(results=results.overview,model=model,df=dfr,numstudies=numstudies,pred.int=pred.int)
   } else {
     stop("Invalid meta-analysis method!")
   }
@@ -213,7 +213,7 @@ uvmeta.default <- function(r, vars, model="random", method="MOM", labels, na.act
 
   #  est <- list(results=results,model=model,df=dfr,numstudies=numstudies, pred.int=pred.int)
  
-  
+  attr(est$results,"quantiles") = pars.default$quantiles
   est$data <- ds
   est$na.action <- na.action
   est$method <- method
@@ -224,10 +224,10 @@ uvmeta.default <- function(r, vars, model="random", method="MOM", labels, na.act
 
 forest.uvmeta <- function(x, ...) {
   
-  lowerci <- x$data[,"theta"]+qnorm(0.025)*sqrt(x$data[,"v"])
-  upperci <- x$data[,"theta"]+qnorm(0.975)*sqrt(x$data[,"v"])
+  quantiles <- attr(x$results,"quantiles")
+  ci <- x$data[,"theta"]+t(qnorm(quantiles)*matrix(rep(sqrt(x$data[,"v"]),length(quantiles)),nrow=(length(quantiles)), ncol=dim(x$data)[1],byrow=T))
   
-  xlim <- c(min(lowerci),max(upperci))
+  xlim <- c(min(ci),max(ci))
   ylim <- c(2,(x$numstudies+5))
 
   par(mfrow=c(1,1), mar=( c(5, 12, 4, 4) + 0.1))
@@ -242,10 +242,16 @@ forest.uvmeta <- function(x, ...) {
   for (i in 1:x$numstudies) {
     yloc = loc[i]
     points(x$data[i,"theta"],yloc,pch=15)
-    lines(c(lowerci[i],upperci[i]),c(yloc,yloc))
+    lines(c(min(ci[i,]),max(ci[i,])),c(yloc,yloc))
+    for (j in 1:dim(ci)[2])
+      lines(c(ci[i,j],ci[i,j]),c((yloc-0.1),(yloc+0.1)),pch=3)
   }
   
-  lines(x$results["mu",c("2.5%","97.5%")],c(3,3))
+  ci.bounds <- x$results["mu",-match(c("Estimate","Var"),colnames(x$results))]
+  for (i in 1:length(ci.bounds))
+   lines(c(ci.bounds[i],ci.bounds[i]),c(2.9,3.1),pch=3)
+  
+  lines(c(min(ci.bounds),max(ci.bounds)),c(3,3))
   points(x$results["mu","Estimate"],3,pch=23,bg="white")
   
   box()
