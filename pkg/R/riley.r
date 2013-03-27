@@ -119,32 +119,32 @@ rileyDA <-
   {
       if(!is.null(X)){
         X <- as.data.frame(X)
-        origdata <- X
-        TP <- X$TP
-        FN <- X$FN
-        FP <- X$FP
-        TN <- X$TN
+        origdata <- newdata <- X
+      } else {
+        origdata <- newdata <- as.data.frame(cbind(TP,FN,FP,TN))
+        colnames(origdata) <- c("TP","FN","FP","TN")
       }
       
 	  ## The following corrections are copied from the "mada" package to facilitate comparison of results
       ## apply continuity correction to _all_ studies if one contains zero
-      if(correction.control == "all"){if(any(c(TP,FN,FP,TN) == 0)){TP <- TP + correction;
-                                                                   FN <- FN + correction;
-                                                                   FP <- FP + correction;
-                                                                   TN <- TN + correction}}
+      if(correction.control == "all"){if(any(origdata == 0)){newdata$TP <- origdata$TP + correction;
+                                                             newdata$FN <- origdata$FN + correction;
+                                                             newdata$FP <- origdata$FP + correction;
+                                                             newdata$TN <- origdata$TN + correction}}
       if(correction.control == "single"){
-        correction = ((((TP == 0)|(FN == 0))|(FP == 0))| (TN == 0))*correction
-        TP <- correction + TP
-        FN <- correction + FN
-        FP <- correction + FP
-        TN <- correction + TN
+        correction = ((((origdata$TP == 0)|(origdata$FN == 0))|(origdata$FP == 0))| (origdata$TN == 0))*correction
+        newdata$TP <- correction + origdata$TP
+        newdata$FN <- correction + origdata$FN
+        newdata$FP <- correction + origdata$FP
+        newdata$TN <- correction + origdata$TN
       }
       
+      
       #Calculate sensitivities and specificities (original scale)
-      number.of.pos <- TP + FN
-      number.of.neg <- FP + TN
-      sens <-TP/number.of.pos
-      fpr <- FP/number.of.neg
+      number.of.pos <- newdata$TP + newdata$FN
+      number.of.neg <- newdata$FP + newdata$TN
+      sens <-newdata$TP/number.of.pos
+      fpr <- newdata$FP/number.of.neg
       var.sens = sens*(1-sens)/number.of.pos
       var.fpr = fpr*(1-fpr)/number.of.neg
       
@@ -153,10 +153,10 @@ rileyDA <-
       var.logit.sens <- 1/(sens*(1-sens)*number.of.pos)
       var.logit.fpr <- 1/(fpr*(1-fpr)*number.of.neg)
       
-	  #Apply ordinary bivariate meta-analysis on transformed data
+	    #Apply ordinary bivariate meta-analysis on transformed data
       output = rileyES(X=NULL, Y1=logit.sens,Y2=logit.fpr,vars1=var.logit.sens,vars2=var.logit.fpr,optimization = optimization, control = control, ...)
       output$type = "test.accuracy"
-      output$data = origdata
+      output$data = newdata
       output$correction = correction 
       output$correction.control = correction.control
       

@@ -24,7 +24,7 @@ uvmeta(r, vars, model="random", method="MOM", na.action, pars,
   \item{\dots}{arguments to be passed on to other functions}
 }
 
-\details{The Bayesian approach uses an uninformative Normal prior for the mean and an uninformative uniform prior for the variance of the pooled effect size (Higgins 2009).  For random effects models, a prediction interval for the pooled effect size is displayed. This interval predicts in what range future effect sizes will fall given what has already been observed (Riley 2011).  
+\details{The Bayesian approach uses an uninformative Normal prior for the mean and an uninformative uniform prior for the variance of the pooled effect size (Higgins 2009).  For random effects models, a prediction interval for the pooled effect size is displayed. This interval predicts in what range future effect sizes will fall given what has already been observed (Higgins 2009, Riley 2011).  
 }
 
 \value{ An object of the class \code{uvmeta} for which many standard methods are available. }
