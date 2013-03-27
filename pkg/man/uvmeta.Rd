@@ -60,7 +60,7 @@ vars <- Roberts$SE**2
 
 #Frequentist random-effects meta-analysis
 fit1 <- uvmeta(r,vars,labels=rownames(Roberts))
-forest(fit1) #show a forest plot
+forest(fit1, main="Forest plot") #show a forest plot
 fit1
 
 

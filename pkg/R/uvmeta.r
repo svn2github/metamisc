@@ -229,14 +229,13 @@ forest.uvmeta <- function(x, ...) {
   
   xlim <- c(min(lowerci),max(upperci))
   ylim <- c(2,(x$numstudies+5))
-  main <- "Forest plot"
-  
-  par(mfrow=c(1,1),mar=( c(5, 12, 4, 4) + 0.1))
+
+  par(mfrow=c(1,1), mar=( c(5, 12, 4, 4) + 0.1))
   
   loc = c((x$numstudies+4):3)
     
   lcol = "#EBEBEB"
-  plot(-500,-500,xlim=xlim,ylim=ylim,main=main,ylab="",yaxt="n", ann=FALSE)
+  plot(-500,-500,xlim=xlim,ylim=ylim,xlab="", ylab="",yaxt="n",...)
   axis(2,at=c((x$numstudies+4):5,3),labels=c(rownames(x$data),"Pooled estimate"),las=1)
   
   abline(v=0.00,lty=2,col=lcol)
@@ -250,7 +249,6 @@ forest.uvmeta <- function(x, ...) {
   points(x$results["mu","Estimate"],3,pch=23,bg="white")
   
   box()
-  title(main=main)
 }
 
 
