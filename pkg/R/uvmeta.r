@@ -11,11 +11,11 @@
 ###############################################################################
 
 #TODO: allow data transformations
-uvmeta <- function(r, vars, model="random", method="MOM", na.action,
+uvmeta <- function(r, vars, model="random", method="MOM", labels, na.action,
                    pars, verbose=FALSE, ...) 
   UseMethod("uvmeta")
 
-uvmeta.default <- function(r, vars, model="random", method="MOM", na.action, 
+uvmeta.default <- function(r, vars, model="random", method="MOM", labels, na.action, 
                            pars, verbose=FALSE, ...)
 {
   pars.default <- list(quantiles=c(0.025, 0.25, 0.5, 0.75, 0.975), 
@@ -27,9 +27,15 @@ uvmeta.default <- function(r, vars, model="random", method="MOM", na.action,
   if (length(r)!=length(vars)) {
     stop("The vectors 'r' and 'vars' have different lengths!")
   }
-
+  
   ds <- as.data.frame(cbind(as.vector(r),as.vector(vars)))
   colnames(ds) <- c("theta","v")
+  
+  if (!missing(labels)) {
+    if (length(labels) != length(r))
+      stop("The vectors 'labels' and 'r' have different lengths!")
+    rownames(ds) = labels
+  } 
   
   if (missing(na.action)) 
     na.action <- "na.fail"
@@ -216,7 +222,7 @@ uvmeta.default <- function(r, vars, model="random", method="MOM", na.action,
   return(est)
 }
 
-plot.uvmeta <- function(x, ...) {
+forest.uvmeta <- function(x, ...) {
   
   lowerci <- x$data[,"theta"]+qnorm(0.025)*sqrt(x$data[,"v"])
   upperci <- x$data[,"theta"]+qnorm(0.975)*sqrt(x$data[,"v"])
@@ -225,7 +231,7 @@ plot.uvmeta <- function(x, ...) {
   ylim <- c(2,(x$numstudies+5))
   main <- "Forest plot"
   
-  
+  par(mfrow=c(1,1),mar=( c(5, 12, 4, 4) + 0.1))
   
   loc = c((x$numstudies+4):3)
     
@@ -240,8 +246,8 @@ plot.uvmeta <- function(x, ...) {
     lines(c(lowerci[i],upperci[i]),c(yloc,yloc))
   }
   
-  points(x$results["mu","Estimate"],3,pch=5)
   lines(x$results["mu",c("2.5%","97.5%")],c(3,3))
+  points(x$results["mu","Estimate"],3,pch=23,bg="white")
   
   box()
   title(main=main)

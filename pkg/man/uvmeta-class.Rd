@@ -33,7 +33,7 @@
 \section{Methods}{
   \describe{
     \item{print}{\code{signature(object = "uvmeta")}: Print object summary.}
-    \item{plot}{\code{signature(object = "uvmeta")}: Plot a forest plot with the summary estimate.}
+    \item{forest}{\code{signature(object = "uvmeta")}: Plot a forest plot with the summary estimate.}
     \item{summary}{\code{signature(object = "uvmeta")}: Generate object summary.}
 
   }

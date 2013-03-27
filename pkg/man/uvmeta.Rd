@@ -16,6 +16,7 @@ uvmeta(r, vars, model="random", method="MOM", na.action, pars,
   \item{vars}{vector of numerics containing the error variance of the effect sizes}
   \item{model}{Assume "random" or "fixed" effects.}
   \item{method}{Estimation method: use "MOM" to implement the non-parametric method-of-moment estimator from DerSimonian and Laird or "bayes" to implement a Bayesian meta-analysis assuming normality of the random effects (Higgins 2009).}
+  \item{labels}{vector of characters containing the labels for the studies}
   \item{na.action}{a function which indicates what should happen when the data contain NAs. Defaults to "na.fail", other options are "na.omit", "na.exclude" or "na.pass".}
   \item{pars}{A list with additional arguments. Use "quantiles" to specify a vector with quantiles for which parameter confidence or credibility intervals should be calculated. The following parameters configure the MCMC sampling procedure and are ignored if \code{method="MOM"}:  \code{n.chains} (specifies the number of parallel chains), \code{n.adapt} (specifies the number of iterations for adaptation), \code{n.init} (number of iterations to run for initializing the Markov chain) and \code{n.iter} (number of iterations to monitor).}
   \item{verbose}{if TRUE then messages generated during the fitting process will be displayed.}
@@ -54,12 +55,14 @@ Rucker G, Schwarzer G, Carpenter JR, Schumacher M . Undue reliance on I2 in asse
 data(Roberts)
 
 #Extract effect size and error variance
-r <- Roberts[,1]
-vars <- Roberts[,2]**2
+r <- Roberts$SDM
+vars <- Roberts$SE**2
 
 #Frequentist random-effects meta-analysis
-fit1 <- uvmeta(r,vars)
+fit1 <- uvmeta(r,vars,labels=rownames(Roberts))
+forest(fit1) #show a forest plot
 fit1
+
 
 #Bayesian random-effects meta-analysis
 #fit2 <- uvmeta(r,vars,method="bayes")
