@@ -36,6 +36,8 @@ Borenstein M, Hedges LV, Higgins JPT, Rothstein HR. A basic introduction to fixe
 
 DerSimonian R, Laird N. Meta-analysis in clinical trials. \emph{Controlled Clinical Trials} 1986; \bold{7}: 177--188.
 
+Graham PL, Moran JL. Robust meta-analytic conclusions mandate the provision of prediction intervals in meta-analysis summaries. \emph{Journal of Clinical Epidemiology} 2012; \bold{65}: 503--510.
+
 Higgins JPT, Thompson SG. Quantifying heterogeneity in a meta-analysis. \emph{Statistics in Medicine} 2002; \bold{21}: 1539--1558.
 
 Higgins JPT, Thompson SG, Spiegelhalter DJ. A re-evaluation of random-effects meta-analysis. \emph{Journal of the Royal Statistical Society. Series A (Statistics in Society)} 2009, \bold{172}: 137--159.
