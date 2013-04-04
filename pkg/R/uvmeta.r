@@ -222,7 +222,7 @@ uvmeta.default <- function(r, vars, model="random", method="MOM", labels, na.act
   return(est)
 }
 
-forest.uvmeta <- function(x, ...) {
+plot.uvmeta <- function(x, ...) {
   
   quantiles <- attr(x$results,"quantiles")
   ci <- x$data[,"theta"]+t(qnorm(quantiles)*matrix(rep(sqrt(x$data[,"v"]),length(quantiles)),nrow=(length(quantiles)), ncol=dim(x$data)[1],byrow=T))
