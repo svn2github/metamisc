@@ -9,7 +9,7 @@
 \description{This function performs a univariate meta-analysis by assuming fixed or random effects.  Whereas the fixed effects model assumes that all studies in the analysis share a common effect size, the random-effects model allows different study-specific effect sizes. Concretely, if we move from fixed-effect weights to random-effects weights, large studies lose influence and small studies gain influence (Borenstein 2010). }
 
 \usage{
-uvmeta(r, vars, model="random", method="MOM", na.action, pars, 
+uvmeta(r, vars, model="random", method="MOM", labels, na.action, pars, 
        verbose=FALSE, ...)}
 
 \arguments{
@@ -51,7 +51,7 @@ Rucker G, Schwarzer G, Carpenter JR, Schumacher M . Undue reliance on I2 in asse
 \author{ Thomas Debray <thomas.debray@gmail.com> }
 
 \seealso{
-\code{\link{uvmeta-class}}
+\code{uvmeta-class}
 }
 
 \examples{
@@ -63,7 +63,7 @@ vars <- Roberts$SE**2
 
 #Frequentist random-effects meta-analysis
 fit1 <- uvmeta(r,vars,labels=rownames(Roberts))
-forest(fit1, main="Forest plot") #show a forest plot
+plot(fit1, main="Forest plot") #show a forest plot
 fit1
 
 
