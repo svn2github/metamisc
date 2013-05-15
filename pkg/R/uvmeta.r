@@ -18,6 +18,29 @@ uvmeta <- function(r, vars, model="random", method="MOM", labels, na.action,
 uvmeta.default <- function(r, vars, model="random", method="MOM", labels, na.action, 
                            pars, verbose=FALSE, ...)
 {
+  calcProfile <- function (mleObj, pars) {
+    levels = pars$quantiles
+    levels[which(pars$quantiles<0.5)]  = 1-(pars$quantiles[which(pars$quantiles<0.5)]*2)
+    levels[which(pars$quantiles>=0.5)] = 1-(1-pars$quantiles[which(pars$quantiles>=0.5)])*2
+    levels=unique(levels)
+    pci = array(NA,dim=c(length(coef(mleObj)),length(pars$quantiles)))
+    colnames(pci) = paste(pars$quantiles*100,"%",sep=" ")
+    for (i in 1:length(levels)) {
+      pcint <- confint(mle,level=levels[i])
+      
+      if (length(coef(mleObj))>1) {
+        cols.select <- which(colnames(pcint) %in% colnames(pci))
+        pci[,colnames(pcint)[cols.select]] <- pcint[,cols.select]
+      } else {
+        cols.select <- which(names(pcint) %in% colnames(pci))
+        pci[,names(pcint)[cols.select]] <- pcint[cols.select]
+      }
+            
+    }
+    return(pci)
+  }
+  
+  
   pars.default <- list(quantiles=c(0.025, 0.25, 0.5, 0.75, 0.975), 
                        n.chains=4, #JAGS (# chains)
                        n.adapt=5000, #JAGS
@@ -146,7 +169,7 @@ uvmeta.default <- function(r, vars, model="random", method="MOM", labels, na.act
           loglik <- sum(dnorm(x=ds$theta,mean=theta, sd=sqrt(tausq+ds$v),log=T))
           return (-loglik)
     }
-    mle.loglik.fixed <- function(theta, ds) { #random effects
+    mle.loglik.fixed <- function(theta, ds) { #fixed effects
       loglik <- sum(dnorm(x=ds$theta,mean=theta, sd=sqrt(ds$v),log=T))
       return (-loglik)
     }
@@ -154,32 +177,30 @@ uvmeta.default <- function(r, vars, model="random", method="MOM", labels, na.act
     if (model=="random") {
       mle <- mle2(minuslogl=mle.loglik.random,start=list(theta=0, tausq=0),data=list(ds=ds),method="L-BFGS-B",lower=list(theta=-Inf,tausq=0))
       
-      results["mu",] = c(coef(mle)["theta"],diag(vcov(mle))["theta"],coef(mle)["theta"]+qnorm(pars.default$quantiles)*sqrt(diag(vcov(mle))["theta"]))
-      results["tausq",] = c(coef(mle)["tausq"],diag(vcov(mle))["tausq"],rep(NA,length(pars.default$quantiles)))
+      profile = calcProfile(mle,pars.default)  #Use profile likelihood confidence intervals
+      results["mu",] = c(coef(mle)["theta"],diag(vcov(mle))["theta"],profile[1,])
+      results["tausq",] = c(coef(mle)["tausq"],diag(vcov(mle))["tausq"],profile[2,])
       
       w <- 1/(ds$v+coef(mle)["tausq"])
       Q <- sum(w*(ds$theta-coef(mle)["theta"])**2)
       results["Q",] = c(Q,NA,rep(NA,length(pars.default$quantiles)))
       
-      # Calculate I2 and its confidence limits
+      # Calculate I2 
       Isq <- (results["Q",]-dfr)/results["Q",]
       Isq[which(Isq>1)] <- 1
       Isq[which(Isq<0)] <- 0
       results["Isq",] = Isq
     } else {
       mle <- mle2(minuslogl=mle.loglik.fixed,start=list(theta=0),data=list(ds=ds))
-      results["mu",] = c(coef(mle)["theta"],diag(vcov(mle))["theta"],coef(mle)["theta"]+qnorm(pars.default$quantiles)*sqrt(diag(vcov(mle))["theta"]))
-      results["tausq",] = c(0,0,NA,rep(NA,length(pars.default$quantiles)))
+      profile = calcProfile(mle,pars.default)  #Use profile likelihood confidence intervals
+      results["mu",] = c(coef(mle)["theta"],diag(vcov(mle))["theta"],profile)
+      results["tausq",] = c(0,0,rep(0,length(pars.default$quantiles)))
     }
     
     pred.int <- results["mu","Estimate"] + qt(pars.default$quantiles,df=(numstudies-2))*sqrt(results["tausq","Estimate"]+results["mu","Var"])
     names(pred.int) <- paste(pars.default$quantiles*100,"%",sep="")
     
-    est <- list(results=results,model=model,df=dfr,numstudies=numstudies, pred.int=pred.int)
-    
-    
-    
-    
+    est <- list(results=results,model=model,df=dfr,numstudies=numstudies, pred.int=pred.int, loglik=-attr(mle,"min"))
   } else if (method == "bayes") { 
     quiet = !verbose
     
