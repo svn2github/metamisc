@@ -84,7 +84,7 @@ uvmeta.default <- function(r, vars, model="random", method="MOM", labels, na.act
     
     # RANDOM EFFECTS MODEL
     Q = sum(w*(ds$theta-weighted_Tbar)**2)
-    results["Q",] = c(Q,NA,qchisq(pars.default$quantiles,df=dfr))
+    results["Q",] = c(Q,NA,rep(NA,length(pars.default$quantiles)))
     
     
     # Between-study variance
@@ -132,6 +132,53 @@ uvmeta.default <- function(r, vars, model="random", method="MOM", labels, na.act
     names(pred.int) <- paste(pars.default$quantiles*100,"%",sep="")
     
     est <- list(results=results,model=model,df=dfr,numstudies=numstudies, pred.int=pred.int)
+    
+  } else if (method== "mle") {
+    results = as.data.frame(array(NA,dim=c(4, length(pars.default$quantiles)+2)))
+    colnames(results) = c("Estimate","Var",paste(pars.default$quantiles*100,"%",sep=""))
+    rownames(results) = c("mu","tausq","Q","Isq")
+    
+    #mle.loglik <- function( theta, tausq, ds) {
+    #  loglik <- -0.5*sum(log(2*pi*(ds$v+tausq)))-0.5*sum(((ds$theta-theta)**2)/(ds$v+tausq))
+    #  return (-loglik) #return negative log-likelihood
+    #}
+    mle.loglik.random <- function(theta, tausq, ds) { #random effects
+          loglik <- sum(dnorm(x=ds$theta,mean=theta, sd=sqrt(tausq+ds$v),log=T))
+          return (-loglik)
+    }
+    mle.loglik.fixed <- function(theta, ds) { #random effects
+      loglik <- sum(dnorm(x=ds$theta,mean=theta, sd=sqrt(ds$v),log=T))
+      return (-loglik)
+    }
+    
+    if (model=="random") {
+      mle <- mle2(minuslogl=mle.loglik.random,start=list(theta=0, tausq=0),data=list(ds=ds),method="L-BFGS-B",lower=list(theta=-Inf,tausq=0))
+      
+      results["mu",] = c(coef(mle)["theta"],diag(vcov(mle))["theta"],coef(mle)["theta"]+qnorm(pars.default$quantiles)*sqrt(diag(vcov(mle))["theta"]))
+      results["tausq",] = c(coef(mle)["tausq"],diag(vcov(mle))["tausq"],rep(NA,length(pars.default$quantiles)))
+      
+      w <- 1/(ds$v+coef(mle)["tausq"])
+      Q <- sum(w*(ds$theta-coef(mle)["theta"])**2)
+      results["Q",] = c(Q,NA,rep(NA,length(pars.default$quantiles)))
+      
+      # Calculate I2 and its confidence limits
+      Isq <- (results["Q",]-dfr)/results["Q",]
+      Isq[which(Isq>1)] <- 1
+      Isq[which(Isq<0)] <- 0
+      results["Isq",] = Isq
+    } else {
+      mle <- mle2(minuslogl=mle.loglik.fixed,start=list(theta=0),data=list(ds=ds))
+      results["mu",] = c(coef(mle)["theta"],diag(vcov(mle))["theta"],coef(mle)["theta"]+qnorm(pars.default$quantiles)*sqrt(diag(vcov(mle))["theta"]))
+      results["tausq",] = c(0,0,NA,rep(NA,length(pars.default$quantiles)))
+    }
+    
+    pred.int <- results["mu","Estimate"] + qt(pars.default$quantiles,df=(numstudies-2))*sqrt(results["tausq","Estimate"]+results["mu","Var"])
+    names(pred.int) <- paste(pars.default$quantiles*100,"%",sep="")
+    
+    est <- list(results=results,model=model,df=dfr,numstudies=numstudies, pred.int=pred.int)
+    
+    
+    
     
   } else if (method == "bayes") { 
     quiet = !verbose
