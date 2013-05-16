@@ -196,7 +196,11 @@ uvmeta.default <- function(r, vars, model="random", method="MOM", labels, na.act
                        n.adapt = pars.default$n.adapt,
                        quiet = quiet)
     update(jags, pars.default$n.init) #initialize
+    
     samples <- coda.samples(jags, c('mu','tausq','Q','Isq','theta.new'),n.iter=pars.default$n.iter)
+    m.deviance <- dic.samples(jags, n.iter=pars.default$n.iter) # Deviance Information Criterion
+    pD <- sum(m.deviance$deviance) # deviance information criterion
+    popt <- pD + sum(m.deviance$penalty) #penalized expected deviance
     
     results <- summary(samples,quantiles=pars.default$quantiles) 
     pred.int=(results[[2]])["theta.new",]
@@ -211,7 +215,7 @@ uvmeta.default <- function(r, vars, model="random", method="MOM", labels, na.act
     }
     results.overview = results.overview[c("mu","tausq","Q","Isq"),]
     
-    est <- list(results=results.overview, model=model,df=dfr,numstudies=numstudies,pred.int=pred.int)
+    est <- list(results=results.overview, model=model,df=dfr,numstudies=numstudies,pred.int=pred.int, pD=pD, popt=popt)
   } else {
     stop("Invalid meta-analysis method!")
   }
@@ -321,8 +325,10 @@ print.uvmeta <- function(x, ...)
     cat(paste("\n\nPrediction interval for mu:\n\n"))
     print(x$pred.int)
   }
-  if(x$method=="mle") { #display MLE
+  if(x$method=="ml" | x$method=="pl") { #display MLE
     cat(paste("\nLog-likelihood: ", round(x$loglik,2),"\n"))
+  } else if (x$method=="bayes") {
+    cat(paste("\nDeviance information criterion (DIC): ", round(x$pD,3),"\nPenalized expected deviance: ", round(x$popt,3),"\n"))
   }
   
 	out
