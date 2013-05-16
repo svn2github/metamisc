@@ -10,7 +10,8 @@
 \description{ This function fits the alternative model for bivariate random-effects meta-analysis on effect size data when the within-study correlations are unknown. This bivariate model was proposed by Riley et al. (2008) and is similar to the bivariate random-effects model from Reitsma et al. (2005), but includes an overall correlation parameter rather than separating the (usually unknown) within- and between-study correlation. As a consequence, the alternative model is not fully hierarchical, and estimates of additional variation beyond sampling error (\code{psi}) are not directly equivalent to the between-study variation (\code{tau}) from the general model. Furthermore, it has been argumented that assuming zero within-study correlations (i.e. applying Reitsma's approach) is reasonable when summarizing the sensitivities and false positive rates of a diagnostic test (Reitsma et al. 2005, Daniels and Hughes 1997, Korn et al. 2005, Thompson et al. 2005, Van Houwelingen et al. 2002). The alternative model for bivariate random-effects meta-analysis may, however, be useful when there is large within-study variability, few primary studies are available or the general model estimates the between-study correlation as 1 or -1.}
 
 \usage{
-rileyES(X = NULL, Y1, Y2, vars1, vars2, optimization = "Nelder-Mead", control = list(),...)
+rileyES(X = NULL, Y1, Y2, vars1, vars2, optimization = "Nelder-Mead", 
+           control = list(),...)
 }
 
 \arguments{

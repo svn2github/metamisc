@@ -26,7 +26,7 @@ uvmeta.default <- function(r, vars, model="random", method="MOM", labels, na.act
     pci = array(NA,dim=c(length(coef(mleObj)),length(pars$quantiles)))
     colnames(pci) = paste(pars$quantiles*100,"%",sep=" ")
     for (i in 1:length(levels)) {
-      pcint <- confint(mle,level=levels[i])
+      pcint <- confint(mle,level=levels[i], quietly=T)
       
       if (length(coef(mleObj))>1) {
         cols.select <- which(colnames(pcint) %in% colnames(pci))
@@ -337,6 +337,9 @@ print.uvmeta <- function(x, ...)
   if (x$model=="random") {
     cat(paste("\n\nPrediction interval for mu:\n\n"))
     print(x$pred.int)
+  }
+  if(x$method=="mle") { #display MLE
+    cat(paste("\nLog-likelihood: ", round(x$loglik,2),"\n"))
   }
   
 	out
