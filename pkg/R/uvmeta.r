@@ -10,6 +10,9 @@
 # uvmeta(example.r,example.var)
 ###############################################################################
 
+
+#Multivariate meta-analyse: http://blogs.sas.com/content/iml/2012/10/31/compute-the-log-determinant-of-a-matrix/ (directly take log-determinant)
+
 #TODO: allow data transformations
 uvmeta <- function(r, vars, model="random", method="MOM", labels, na.action,
                    pars, verbose=FALSE, ...) 
@@ -39,7 +42,6 @@ uvmeta.default <- function(r, vars, model="random", method="MOM", labels, na.act
     }
     return(pci)
   }
-  
   
   pars.default <- list(quantiles=c(0.025, 0.25, 0.5, 0.75, 0.975), 
                        n.chains=4, #JAGS (# chains)
@@ -71,9 +73,7 @@ uvmeta.default <- function(r, vars, model="random", method="MOM", labels, na.act
       pars.default[[element]] <- pars[[i]]
     }
   }
-
   est <- NA 
-  
   
   #############################################################################
   # Start analyses
@@ -92,24 +92,13 @@ uvmeta.default <- function(r, vars, model="random", method="MOM", labels, na.act
     
     # FIXED EFFECTS MODEL
     w = 1/ds$v
-    
-    #Combined effect
     weighted_Tbar = sum(ds$theta*w)/sum(w)
-    
-    # Variance of the combined effect
     var_T = 1/sum(w)
-    
-    # Standard error combined effect
     se_T = sqrt(var_T)
-    
-    # The Z-value
-    z_T = weighted_Tbar/se_T
-    
-    # RANDOM EFFECTS MODEL
     Q = sum(w*(ds$theta-weighted_Tbar)**2)
     results["Q",] = c(Q,NA,rep(NA,length(pars.default$quantiles)))
-    
-    
+  
+    # RANDOM EFFECTS MODEL
     # Between-study variance
     if (model=="random" & Q > dfr) {
       re_C =  sum(w) - sum(w**2)/sum(w)
@@ -118,25 +107,11 @@ uvmeta.default <- function(r, vars, model="random", method="MOM", labels, na.act
       between_study_var = 0
     }
 
-    # Within-study plus between-study variance
-    re_v = vars + between_study_var
-    
-    # Updated weights
-    re_w = 1/re_v
-    
-    # Combined effect
-    re_weighted_Tbar =  sum(ds$theta*re_w)/sum(re_w)
-    
-    # Variance of the combined effect
-    re_var_T  = 1/sum(re_w)
-    
-    # Standard error of combined effect
-    re_se_T = sqrt(re_var_T)
-    
-    # The Z-value
-    re_z_T = re_weighted_Tbar/re_se_T
-    
-    
+    re_v = vars + between_study_var # Within-study plus between-study variance
+    re_w = 1/re_v # Updated weights
+    re_weighted_Tbar =  sum(ds$theta*re_w)/sum(re_w) # Combined effect
+    re_var_T  = 1/sum(re_w)     # Variance of the combined effect   
+    re_se_T = sqrt(re_var_T)     # Standard error of combined effect
     
     if (model=="random") {
       results["mu",] = c(re_weighted_Tbar,re_var_T,re_weighted_Tbar+qnorm(pars.default$quantiles)*sqrt(re_var_T))
@@ -154,9 +129,9 @@ uvmeta.default <- function(r, vars, model="random", method="MOM", labels, na.act
     pred.int <- results["mu","Estimate"] + qt(pars.default$quantiles,df=(numstudies-2))*sqrt(results["tausq","Estimate"]+results["mu","Var"])
     names(pred.int) <- paste(pars.default$quantiles*100,"%",sep="")
     
-    est <- list(results=results,model=model,df=dfr,numstudies=numstudies, pred.int=pred.int)
+    est <- list(results=results, model=model,df=dfr,numstudies=numstudies, pred.int=pred.int)
     
-  } else if (method== "mle") {
+  } else if (method=="ml" | method=="pl") {
     results = as.data.frame(array(NA,dim=c(4, length(pars.default$quantiles)+2)))
     colnames(results) = c("Estimate","Var",paste(pars.default$quantiles*100,"%",sep=""))
     rownames(results) = c("mu","tausq","Q","Isq")
@@ -174,34 +149,42 @@ uvmeta.default <- function(r, vars, model="random", method="MOM", labels, na.act
       return (-loglik)
     }
     
+    # first apply fixed-effects analysis
+    mle.fixed <- mle2(minuslogl=mle.loglik.fixed,start=list(theta=0),data=list(ds=ds))
+    Q <- sum((ds$theta-coef(mle.fixed)["theta"])**2/ds$v) #use theta of the fixed-effects analysis
+    results["Q",] = c(Q,NA,rep(NA,length(pars.default$quantiles)))
+    
     if (model=="random") {
-      mle <- mle2(minuslogl=mle.loglik.random,start=list(theta=0, tausq=0),data=list(ds=ds),method="L-BFGS-B",lower=list(theta=-Inf,tausq=0))
+      mle.random <- mle2(minuslogl=mle.loglik.random,start=list(theta=0, tausq=0),data=list(ds=ds),method="L-BFGS-B",lower=list(theta=-Inf,tausq=0))
       
-      profile = calcProfile(mle,pars.default)  #Use profile likelihood confidence intervals
-      results["mu",] = c(coef(mle)["theta"],diag(vcov(mle))["theta"],profile[1,])
-      results["tausq",] = c(coef(mle)["tausq"],diag(vcov(mle))["tausq"],profile[2,])
-      
-      w <- 1/(ds$v+coef(mle)["tausq"])
-      Q <- sum(w*(ds$theta-coef(mle)["theta"])**2)
-      results["Q",] = c(Q,NA,rep(NA,length(pars.default$quantiles)))
+      if (method=="pl") {
+        profile = calcProfile(mle.random, pars.default)  #Use profile likelihood confidence intervals
+        results["mu",] = c(coef(mle.random)["theta"],diag(vcov(mle.random))["theta"],profile[1,])
+        results["tausq",] = c(coef(mle.random)["tausq"],diag(vcov(mle.random))["tausq"],profile[2,])
+      } else {
+        results["mu",] = c(coef(mle.random)["theta"],diag(vcov(mle.random))["theta"],coef(mle.random)["theta"]+qnorm(pars.default$quantiles)*sqrt(diag(vcov(mle.random))["theta"]))
+        results["tausq",] = c(coef(mle.random)["tausq"],diag(vcov(mle.random))["tausq"],rep(NA,length(pars.default$quantiles)))
+      }
       
       # Calculate I2 
       Isq <- (results["Q",]-dfr)/results["Q",]
       Isq[which(Isq>1)] <- 1
       Isq[which(Isq<0)] <- 0
       results["Isq",] = Isq
+      loglik = -attr(mle.random,"min")
     } else {
-      mle <- mle2(minuslogl=mle.loglik.fixed,start=list(theta=0),data=list(ds=ds))
-      profile = calcProfile(mle,pars.default)  #Use profile likelihood confidence intervals
-      results["mu",] = c(coef(mle)["theta"],diag(vcov(mle))["theta"],profile)
+      profile = calcProfile(mle.fixed,pars.default)  #Use profile likelihood confidence intervals
+      results["mu",] = c(coef(mle.fixed)["theta"],diag(vcov(mle.fixed))["theta"],profile)
       results["tausq",] = c(0,0,rep(0,length(pars.default$quantiles)))
+      loglik = -attr(mle.fixed,"min")
     }
-    
     pred.int <- results["mu","Estimate"] + qt(pars.default$quantiles,df=(numstudies-2))*sqrt(results["tausq","Estimate"]+results["mu","Var"])
-    names(pred.int) <- paste(pars.default$quantiles*100,"%",sep="")
+    names(pred.int) <- paste(pars.default$quantiles*100,"%",sep="")    
+    est <- list(results=results, model=model,df=dfr,numstudies=numstudies, pred.int=pred.int, loglik=loglik)
+  } else if (method == "reml") {
     
-    est <- list(results=results,model=model,df=dfr,numstudies=numstudies, pred.int=pred.int, loglik=-attr(mle,"min"))
-  } else if (method == "bayes") { 
+  }
+  else if (method == "bayes") { 
     quiet = !verbose
     
     modelfile <-  if (model=="random") system.file(package="metamisc", "model", "uvmeta_ranef.bug") else system.file(package="metamisc", "model", "uvmeta_fixef.bug")
@@ -228,7 +211,7 @@ uvmeta.default <- function(r, vars, model="random", method="MOM", labels, na.act
     }
     results.overview = results.overview[c("mu","tausq","Q","Isq"),]
     
-    est <- list(results=results.overview,model=model,df=dfr,numstudies=numstudies,pred.int=pred.int)
+    est <- list(results=results.overview, model=model,df=dfr,numstudies=numstudies,pred.int=pred.int)
   } else {
     stop("Invalid meta-analysis method!")
   }
