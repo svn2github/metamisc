@@ -43,7 +43,9 @@ uvmeta.default <- function(r, vars, model="random", method="MOM", labels, na.act
     return(pci)
   }
   
-  pars.default <- list(quantiles=c(0.025, 0.25, 0.5, 0.75, 0.975), 
+  pars.default <- list(quantiles=c(0.025, 0.25, 0.5, 0.75, 0.975),
+                       hp.mu.mean = 0, 
+                       hp.mu.var = 1000,
                        n.chains=4, #JAGS (# chains)
                        n.adapt=5000, #JAGS
                        n.init=1000,  #JAGS
@@ -185,25 +187,26 @@ uvmeta.default <- function(r, vars, model="random", method="MOM", labels, na.act
     
   }
   else if (method == "bayes") { 
+    require("coda")
+    require("rjags")
+    
     quiet = !verbose
     
-    modelfile <-  if (model=="random") system.file(package="metamisc", "model", "uvmeta_ranef.bug") else system.file(package="metamisc", "model", "uvmeta_fixef.bug")
+    #Start with fixed effects model to calculate Q and I square statistic
+    modelfile <-  system.file(package="metamisc", "model", "uvmeta_fixef.bug")
+   
     jags <- jags.model(modelfile,
                        data = list('r' = ds$theta,
                                    'vars' = ds$v,
+                                   'hp.mu.mean' = pars.default$hp.mu.mean,
+                                   'hp.mu.prec' = 1/pars.default$hp.mu.var,
                                    'k' = numstudies), #prior precision matrix
                        n.chains = pars.default$n.chains,
                        n.adapt = pars.default$n.adapt,
                        quiet = quiet)
     update(jags, pars.default$n.init) #initialize
-    
     samples <- coda.samples(jags, c('mu','tausq','Q','Isq','theta.new'),n.iter=pars.default$n.iter)
-    m.deviance <- dic.samples(jags, n.iter=pars.default$n.iter) # Deviance Information Criterion
-    pD <- sum(m.deviance$deviance) # deviance information criterion
-    popt <- pD + sum(m.deviance$penalty) #penalized expected deviance
-    
     results <- summary(samples,quantiles=pars.default$quantiles) 
-    pred.int=(results[[2]])["theta.new",]
     
     results.overview = as.data.frame(array(NA,dim=c(dim(results[[1]])[1], length(pars.default$quantiles)+2)))
     colnames(results.overview) = c("Estimate","Var",paste(pars.default$quantiles*100,"%",sep=""))
@@ -215,59 +218,39 @@ uvmeta.default <- function(r, vars, model="random", method="MOM", labels, na.act
     }
     results.overview = results.overview[c("mu","tausq","Q","Isq"),]
     
+    if (model=="random") {
+      modelfile <- system.file(package="metamisc", "model", "uvmeta_ranef.bug")
+      jags <- jags.model(modelfile,
+                         data = list('r' = ds$theta,
+                                     'vars' = ds$v,
+                                     'k' = numstudies,
+                                     'hp.mu.mean' = pars.default$hp.mu.mean,
+                                     'hp.mu.prec' = 1/pars.default$hp.mu.var), #prior precision matrix
+                         n.chains = pars.default$n.chains,
+                         n.adapt = pars.default$n.adapt,
+                         quiet = quiet)
+      update(jags, pars.default$n.init) #initialize
+      samples <- coda.samples(jags, c('mu','tausq','theta.new'),n.iter=pars.default$n.iter)
+      
+      results <- summary(samples,quantiles=pars.default$quantiles) 
+      
+      #Update 'mu' and 'tausq'
+      results.overview[c("mu","tausq"),1] = (results[[1]])[c("mu","tausq"),"Mean"]
+      results.overview[c("mu","tausq"),2] = (results[[1]])[c("mu","tausq"),"SD"]**2
+    }
+    
+    # Calculate prediction interval
+    pred.int=(results[[2]])["theta.new",]
+    
+    # Calculate deviance
+    m.deviance <- dic.samples(jags, n.iter=pars.default$n.iter) # Deviance Information Criterion
+    pD <- sum(m.deviance$deviance) # deviance information criterion
+    popt <- pD + sum(m.deviance$penalty) #penalized expected deviance
+    
     est <- list(results=results.overview, model=model,df=dfr,numstudies=numstudies,pred.int=pred.int, pD=pD, popt=popt)
   } else {
     stop("Invalid meta-analysis method!")
   }
-  # } else if (method=="pl") {
-  #   results = as.data.frame(array(NA,dim=c(4, length(pars$quantiles)+2)))
-  #  colnames(results) = c("Estimate","Var",paste(pars$quantiles*100,"%",sep=""))
-  #  rownames(results) = c("mu","tausq","Q","Isq")
-  #  
-  #  mle.loglik <- function(theta, tausq, ds) {
-  #    loglik <- sum(dnorm(x=ds$theta,mean=theta, sd=sqrt(tausq+ds$v),log=T))
-  #    return (-loglik)
-  #  }
-  #      
-  #  #### 5.99 ===> qchisq (0.95,df=2)
-  #  if (model == "random") 
-  #  {
-  #    mle <- mle2(minuslogl=mle.loglik, start=list(theta=0,tausq=0), data=list(ds=ds),method="L-BFGS-B",lower=list(theta=-Inf,tausq=0))
-  #    mle.cov <- vcov(mle)
-  #    p0 <- profile(mle)
-  #    
-  #    levels = pars$quantiles
-  #    levels[which(pars$quantiles<0.5)]  = 1-(pars$quantiles[which(pars$quantiles<0.5)]*2)
-  #    levels[which(pars$quantiles>=0.5)] = 1-(1-pars$quantiles[which(pars$quantiles>=0.5)])*2
-  #    pci = array(NA,dim=c(2,length(levels)))
-  #    colnames(pci) = paste(pars$quantiles*100,"%",sep=" ")
-  #    
-  #    for (i in 1:length(levels)) {
-  #      pcint <- confint(p0,level=levels[i])
-  #      cols.select <- which(colnames(pcint) %in% colnames(pci))
-  #      pci[,colnames(pcint)[cols.select]] <- pcint[,cols.select]
-  #    }
-  #    
-  #    wt <- 1/(coef(mle)["tausq"]+ds$v)
-  #    Q <- sum(wt*(ds$theta-coef(mle)["theta"])**2)
-  #    results["Q",] = c(Q,NA,qchisq(pars$quantiles,df=dfr))
-  #    
-  #    
-  #    # Use profile log-likelihood to calculate confidence intervals
-  #    results["mu",] = c(coef(mle)["theta"],mle.cov[1,1],pci[1,])
-  #    results["tausq",] = c(mle.tausq,mle.cov[2,2],pci[2,])
-  #    
-  #    # Calculate I2 and its confidence limits
-  #    Isq <- (results["Q",]-dfr)/results["Q",]
-  #    Isq[which(Isq>1)] <- 1
-  #    Isq[which(Isq<0)] <- 0
-  #    results["Isq",] = Isq
-  # }
-  #  pred.int <- results["mu","Estimate"] + qt(pars$quantiles,df=(numstudies-2))*sqrt(results["tausq","Estimate"]+results["mu","Var"])
-  #  names(pred.int) <- paste(pars$quantiles*100,"%",sep="")
-
-  #  est <- list(results=results,model=model,df=dfr,numstudies=numstudies, pred.int=pred.int)
- 
   attr(est$results,"quantiles") = pars.default$quantiles
   est$data <- ds
   est$na.action <- na.action
