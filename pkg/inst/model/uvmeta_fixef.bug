@@ -11,8 +11,6 @@ model {
 	dfr <- k-1
 	Isq <- max(0,(Q-dfr)/Q)
 
-	#No heterogeneity assumed
-	tausq <- 0
 
 	#prior distributions
 	mu ~ dnorm(hp.mu.mean,hp.mu.prec)

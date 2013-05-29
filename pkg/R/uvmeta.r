@@ -48,7 +48,7 @@ uvmeta.default <- function(r, vars, model="random", method="MOM", labels, na.act
                        hp.mu.var = 1000,
                        n.chains=4, #JAGS (# chains)
                        n.adapt=5000, #JAGS
-                       n.init=1000,  #JAGS
+                       n.init=5000,  #JAGS burn-in
                        n.iter=10000) #JAGS
   
   if (length(r)!=length(vars)) {
@@ -204,8 +204,8 @@ uvmeta.default <- function(r, vars, model="random", method="MOM", labels, na.act
                        n.chains = pars.default$n.chains,
                        n.adapt = pars.default$n.adapt,
                        quiet = quiet)
-    update(jags, pars.default$n.init) #initialize
-    samples <- coda.samples(jags, c('mu','tausq','Q','Isq','theta.new'),n.iter=pars.default$n.iter)
+    update(jags, pars.default$n.init) #initialize burn-in
+    samples <- coda.samples(jags, c('mu','Q','Isq','theta.new'),n.iter=pars.default$n.iter)
     results <- summary(samples,quantiles=pars.default$quantiles) 
     
     results.overview = as.data.frame(array(NA,dim=c(dim(results[[1]])[1], length(pars.default$quantiles)+2)))
@@ -216,6 +216,7 @@ uvmeta.default <- function(r, vars, model="random", method="MOM", labels, na.act
     for (i in 1:length(pars.default$quantiles)) {
       results.overview[,(i+2)] = (results[[2]])[,i]
     }
+    results.overview["tausq",] = 0
     results.overview = results.overview[c("mu","tausq","Q","Isq"),]
     
     if (model=="random") {
@@ -237,6 +238,7 @@ uvmeta.default <- function(r, vars, model="random", method="MOM", labels, na.act
       #Update 'mu' and 'tausq'
       results.overview[c("mu","tausq"),1] = (results[[1]])[c("mu","tausq"),"Mean"]
       results.overview[c("mu","tausq"),2] = (results[[1]])[c("mu","tausq"),"SD"]**2
+      
     }
     
     # Calculate prediction interval
@@ -246,6 +248,7 @@ uvmeta.default <- function(r, vars, model="random", method="MOM", labels, na.act
     m.deviance <- dic.samples(jags, n.iter=pars.default$n.iter) # Deviance Information Criterion
     pD <- sum(m.deviance$deviance) # deviance information criterion
     popt <- pD + sum(m.deviance$penalty) #penalized expected deviance
+    
     
     est <- list(results=results.overview, model=model,df=dfr,numstudies=numstudies,pred.int=pred.int, pD=pD, popt=popt)
   } else {
