@@ -175,15 +175,15 @@ uvmeta.default <- function(r, vars, model="random", method="MOM", labels, na.act
     
   }
   else if (method == "bayes") { 
-    require("coda")
-    require("rjags")
+    #require("coda")
+    #require("rjags")
     
     quiet = !verbose
     
     #Start with fixed effects model to calculate Q and I square statistic
     modelfile <-  system.file(package="metamisc", "model", "uvmeta_fixef.bug")
    
-    jags <- jags.model(modelfile,
+    jags <- rjags::jags.model(modelfile,
                        data = list('r' = ds$theta,
                                    'vars' = ds$v,
                                    'hp.mu.mean' = pars.default$hp.mu.mean,
@@ -192,8 +192,8 @@ uvmeta.default <- function(r, vars, model="random", method="MOM", labels, na.act
                        n.chains = pars.default$n.chains,
                        n.adapt = pars.default$n.adapt,
                        quiet = quiet)
-    update(jags, pars.default$n.init) #initialize burn-in
-    samples <- coda.samples(jags, c('mu','Q','Isq','theta.new'),n.iter=pars.default$n.iter)
+    rjags::update(jags, pars.default$n.init) #initialize burn-in
+    samples <- rjags::coda.samples(jags, c('mu','Q','Isq','theta.new'),n.iter=pars.default$n.iter)
     results <- summary(samples,quantiles=quantiles) 
     
     results.overview = as.data.frame(array(NA,dim=c(dim(results[[1]])[1], length(quantiles)+2)))
@@ -209,7 +209,7 @@ uvmeta.default <- function(r, vars, model="random", method="MOM", labels, na.act
     
     if (model=="random") {
       modelfile <- system.file(package="metamisc", "model", "uvmeta_ranef.bug")
-      jags <- jags.model(modelfile,
+      jags <- rjags::jags.model(modelfile,
                          data = list('r' = ds$theta,
                                      'vars' = ds$v,
                                      'k' = numstudies,
@@ -218,8 +218,8 @@ uvmeta.default <- function(r, vars, model="random", method="MOM", labels, na.act
                          n.chains = pars.default$n.chains,
                          n.adapt = pars.default$n.adapt,
                          quiet = quiet)
-      update(jags, pars.default$n.init) #initialize
-      samples <- coda.samples(jags, c('mu','tausq','theta.new'),n.iter=pars.default$n.iter)
+      rjags::update(jags, pars.default$n.init) #initialize
+      samples <- rjags::coda.samples(jags, c('mu','tausq','theta.new'),n.iter=pars.default$n.iter)
       
       results <- summary(samples,quantiles=quantiles) 
       
@@ -233,7 +233,7 @@ uvmeta.default <- function(r, vars, model="random", method="MOM", labels, na.act
     pred.int=(results[[2]])["theta.new",]
     
     # Calculate deviance
-    m.deviance <- dic.samples(jags, n.iter=pars.default$n.iter) # Deviance Information Criterion
+    m.deviance <- rjags::dic.samples(jags, n.iter=pars.default$n.iter) # Deviance Information Criterion
     pD <- sum(m.deviance$deviance) # deviance information criterion
     popt <- pD + sum(m.deviance$penalty) #penalized expected deviance
     

@@ -3,6 +3,8 @@ export("uvmeta")
 import("rjags")
 import("coda")
 
+importFrom("rjags", jags.model)
+
 S3method(print, riley)
 S3method(summary, riley)
 S3method(print, summary.riley)
