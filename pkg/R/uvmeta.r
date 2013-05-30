@@ -242,7 +242,7 @@ uvmeta.default <- function(r, vars, model="random", method="MOM", labels, na.act
   } else {
     stop("Invalid meta-analysis method!")
   }
-  attr(est$results,"quantiles") = quantiles
+  attr(est$results,"level") = pars.default$level
   est$data <- ds
   est$na.action <- na.action
   est$method <- method
@@ -253,7 +253,9 @@ uvmeta.default <- function(r, vars, model="random", method="MOM", labels, na.act
 
 plot.uvmeta <- function(x, ...) {
   
-  quantiles <- attr(x$results,"quantiles")
+  level <- attr(x$results,"level")
+  quantiles <- c((1-level)/2, (1-((1-level)/2)))
+
   ci <- x$data[,"theta"]+t(qnorm(quantiles)*matrix(rep(sqrt(x$data[,"v"]),length(quantiles)),nrow=(length(quantiles)), ncol=dim(x$data)[1],byrow=T))
   
   xlim <- c(min(ci),max(ci))
@@ -276,10 +278,8 @@ plot.uvmeta <- function(x, ...) {
       lines(c(ci[i,j],ci[i,j]),c((yloc-0.1),(yloc+0.1)),pch=3)
   }
   
-  ci.bounds <- x$results["mu",-match(c("Estimate","Var"),colnames(x$results))]
-  for (i in 1:length(ci.bounds))
-   lines(c(ci.bounds[i],ci.bounds[i]),c(2.9,3.1),pch=3)
-  
+  ci.bounds <- x$results["mu",paste(quantiles*100,"%", sep="")]
+  lines(rep(x$results["mu","Estimate"],2), c(2.9,3.1),pch=3)
   lines(c(min(ci.bounds),max(ci.bounds)),c(3,3))
   points(x$results["mu","Estimate"],3,pch=23,bg="white")
   
