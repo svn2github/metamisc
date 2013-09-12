@@ -27,7 +27,7 @@ uvmeta(r, vars, model="random", method="MOM", labels, na.action, pars,
 \details{The Bayesian approach uses an uninformative Normal prior for the mean and an uninformative uniform prior for the variance of the pooled effect size (Higgins 2009).  For random effects models, a prediction interval for the pooled effect size is displayed. This interval predicts in what range future effect sizes will fall given what has already been observed (Higgins 2009, Riley 2011).  
 }
 
-\value{ An object of the class \code{uvmeta} for which many standard methods are available. }
+\value{ An object of the class \code{uvmeta} for which many standard methods are available. If \code{method="bayes"}, the results contain an object of the class \code{mcmc.list}. }
 
 \references{
 Biggerstaff BJ, Tweedie RL. Incorporating variability in estimates of heterogeneity in the random effects model in meta-analysis. \emph{Statistics in Medicine} 1997; \bold{16}:  753--768.
@@ -70,8 +70,13 @@ fit1
 
 
 #Bayesian random-effects meta-analysis
-#fit2 <- uvmeta(r,vars,method="bayes")
-#fit2
+## Not run: 
+fit2 <- uvmeta(r,vars,method="bayes")
+fit2
+#Analyze the MCMC samples
+plot(fit2$samples)
+## End(Not run)
+
 }
 
 \keyword{ DerSimonian }

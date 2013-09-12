@@ -179,6 +179,7 @@ uvmeta.default <- function(r, vars, model="random", method="MOM", labels, na.act
     #require("rjags")
     
     quiet = !verbose
+    samples <- NA
     
     #Start with fixed effects model to calculate Q and I square statistic
     modelfile <-  system.file(package="metamisc", "model", "uvmeta_fixef.bug")
@@ -226,7 +227,6 @@ uvmeta.default <- function(r, vars, model="random", method="MOM", labels, na.act
       #Update 'mu' and 'tausq'
       results.overview[c("mu","tausq"),1] = (results[[1]])[c("mu","tausq"),"Mean"]
       results.overview[c("mu","tausq"),2] = (results[[1]])[c("mu","tausq"),"SD"]**2
-      
     }
     
     # Calculate prediction interval
@@ -238,7 +238,7 @@ uvmeta.default <- function(r, vars, model="random", method="MOM", labels, na.act
     popt <- pD + sum(m.deviance$penalty) #penalized expected deviance
     
     
-    est <- list(results=results.overview, model=model,df=dfr,numstudies=numstudies,pred.int=pred.int, pD=pD, popt=popt)
+    est <- list(results=results.overview, model=model, df=dfr, numstudies=numstudies, pred.int=pred.int, pD=pD, popt=popt, samples=samples)
   } else {
     stop("Invalid meta-analysis method!")
   }
