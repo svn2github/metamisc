@@ -30,8 +30,15 @@ Debray TPA, Koffijberg H, Nieboer D, Vergouwe Y, Steyerberg EW, Moons KGM. Meta-
 
 }
 
-\examples{
-#TODO
+\examples {
+  #Load example
+  data(DVTmodels)
+  models <- list(Wells=DVTmodels[1,], ModifiedWells=DVTmodels[2,], Gagne=DVTmodels[3,], Hamilton=DVTmodels[4,], Oudega=DVTmodels[5,])
+  outcome <- "dvt"
+  
+  #Generate a dataset
+  
+  #Apply meta-analysis
 
 }
 
