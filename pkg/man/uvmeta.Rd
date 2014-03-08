@@ -73,8 +73,7 @@ fit1
 ## Not run: 
 fit2 <- uvmeta(r,vars,method="bayes")
 fit2
-#Analyze the MCMC samples
-plot(fit2$samples)
+plot(fit2$samples) #Analyze the MCMC samples
 ## End(Not run)
 
 }

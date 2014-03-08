@@ -1,8 +1,8 @@
 Package: metamisc
 Type: Package
 Title: Diagnostic and prognostic meta analysis (metamisc)
-Version: 0.1.1
-Date: 2013-05-30
+Version: 0.1.2
+Date: 2014-03-08
 Author: Thomas Debray
 Maintainer: Thomas Debray <thomas.debray@gmail.com>
 Description: This package provides functions for diagnostic and prognostic meta-analyses. It estimates univariate, bivariate and multivariate models, and allows the aggregation of previously published prediction models with new data.

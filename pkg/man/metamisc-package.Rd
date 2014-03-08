@@ -4,17 +4,19 @@
 \title{Diagnostic and prognostic meta-analysis}
 \description{This package provides functions for diagnostic and prognostic meta-analyses. It estimates univariate, bivariate and multivariate models, and allows the aggregation of previously published prediction models with new data.}
 \details{
-\tabular{ll}{
-Package: \tab metamisc\cr
-Type: \tab Package\cr
-Version: \tab 0.1.1\cr
-Date: \tab 2013-05-30\cr
-License: \tab GPL-2 \cr
-}
-The package provides tools for the meta-analysis of individual participant (IPD) and/or aggregate data (AD). At this stage, it is possible to pool univariate (with \code{\link{uvmeta}}) and bivariate (with \code{\link{riley}}) summary data using frequentist and Bayesian approaches.}
+%\tabular{ll}{
+%Package: \tab metamisc\cr
+%Type: \tab Package\cr
+%Version: \tab 0.1.2\cr
+%Date: \tab 2014-03-08\cr
+%License: \tab GPL-2 \cr
+%}
+The following functionality is currently implemented: univariate meta-analysis of summary data (\code{\link{uvmeta}}), bivariate meta-analysis of correlated outcomes (\code{\link{riley}}) and bivariate meta-analysis of diagnostic test accuracy data (\code{\link{reitsma}}).}
 \author{Thomas Debray <thomas.debray@gmail.com>}
 
 \references{
+Debray TPA, Koffijberg H, Nieboer D, Vergouwe Y, Steyerberg EW, Moons KGM. Meta-analysis and aggregation of multiple published prediction models. \emph{Statistics in Medicine} 2014; Early View.
+
 DerSimonian R, Laird N. Meta-analysis in clinical trials. \emph{Controlled Clinical Trials} 1986; \bold{7}: 177--188.
 
 Reitsma J, Glas A, Rutjes A, Scholten R, Bossuyt P, Zwinderman A. Bivariate analysis of sensitivity and specificity produces informative summary
