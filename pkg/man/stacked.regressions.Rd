@@ -9,7 +9,7 @@ stacked.regressions <- function (models=list(), names.models=NULL, outcome=NA, d
        }
 
 \arguments{
-  \item{models}{A list of prediction models. Each element may represent a named list of regression coefficients, or a \code{glm} fit.}
+  \item{models}{A list of prediction models. Each element may represent a named list of regression coefficients, or a \code{glm} fit. Note that the coefficient names should adhere to the output of a \code{glm} analysis. For instance, the intercept term should always be named as "(Intercept)". }
   \item{names.models}{A vector with the names of the provided prediction models.}
   \item{outcome}{The name of the outcome variable of interest.}
   \item{data}{A data frame containing the data used for meta-analyzing the prediction models.}
