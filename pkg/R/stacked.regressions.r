@@ -5,6 +5,7 @@ stacked.regressions <- function (models=list(), names.models=NULL, outcome=NA, d
   if (is.null(names.models)) {
     names.models = c(paste("model",(1:length(models)),sep=""))
   }
+  if (length(models)==0) stop("No models entered!")
   if (length(names.models)!=length(models)) {
     stop("The number of model names does not correspond to the amount of specified models!")
   }
@@ -32,11 +33,13 @@ stacked.regressions <- function (models=list(), names.models=NULL, outcome=NA, d
                      data=NULL #validation sample
   ) {      
     if ("lm" %in% class(fit)) {
-      coefs <- coefficients(fit)
-    } else if ("numeric" %in% class(fit)) {
+      lp <- predict(fit, newdata=data, type="response")
+      return(lp)
+    } 
+    if ("numeric" %in% class(fit)) {
       coefs <- fit[which(!is.na(fit))]
     } else {
-      stop ("Invalid model entered!")
+      stop ("Model type not supported:", class(fit))
     }
     
     if ("(Intercept)" %in% names(coefs)) {
