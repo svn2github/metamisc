@@ -1,22 +1,20 @@
 \name{stacked.regressions}
 
-\title{Meta-analysis of prediction models (stacked regression).}
+\title{Meta-analysis of risk prediction models: Stacked Regression.}
 
-\description{This function performs performs a meta-analysis of multiple prediction models (Debray 2014). }
+\description{This function performs performs a meta-analysis of multiple risk prediction models by applying Stacked Regressions (Debray 2014). }
 
 \usage{
 stacked.regressions <- function (models=list(), names.models=NULL, outcome=NA, data=NULL) 
        }
 
 \arguments{
-  \item{models}{A list of prediction models. Each element may represent a named list of regression coefficients, or a \code{glm} fit. Note that the coefficient names should adhere to the output of a \code{glm} analysis. For instance, the intercept term should always be named as "(Intercept)". }
+  \item{models}{A list of prediction models. Each element may represent a named vector of regression coefficients, or a \code{glm} object. Note that the coefficients (e.g. intercept terms or interaction terms) should be named according to the output of a \code{glm} analysis.}
   \item{names.models}{A vector with the names of the provided prediction models.}
   \item{outcome}{The name of the outcome variable of interest.}
   \item{data}{A data frame containing the data used for meta-analyzing the prediction models.}
 }
 
-\details{  
-}
 
 \value{ An object of the class \code{metamodel} for which many standard methods are available.}
 
@@ -26,9 +24,6 @@ Debray TPA, Koffijberg H, Nieboer D, Vergouwe Y, Steyerberg EW, Moons KGM. Meta-
 
 \author{ Thomas Debray <thomas.debray@gmail.com> }
 
-\seealso{
-
-}
 
 \examples {
   #Load example
