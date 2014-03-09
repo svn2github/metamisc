@@ -2,21 +2,16 @@ stacked.regressions <- function (models=list(), names.models=NULL, outcome=NA, d
   require(pROC)
   
   if (class(models) != "list") stop("Models should be entered as a list")
-  if (is.null(names.models)) {
-    names.models = c(paste("model",(1:length(models)),sep=""))
-  }
+  if (is.null(names.models)) names.models = c(paste("model",(1:length(models)),sep=""))
   if (length(models)==0) stop("No models entered!")
-  if (length(names.models)!=length(models)) {
-    stop("The number of model names does not correspond to the amount of specified models!")
-  }
+  if (length(names.models)!=length(models)) stop("The number of model names does not correspond to the amount of specified models!")
   if (length(models)==0) stop("No models entered!!")
   if (is.null(data)) stop("No validation data entered!")
   if (is.na(outcome)) stop("No outcome variable specified!")
   
   # Calculate variance inflation factor
   davis.vif <- function(fit) {
-    #Drop intercept
-    v <- fit$vcov[-1,-1, drop=F]
+    v <- fit$vcov[-1,-1, drop=F] #Drop intercept
     nam <- names(fit$coefficients)[-1]
     
     d <- diag(v)^0.5
@@ -32,28 +27,28 @@ stacked.regressions <- function (models=list(), names.models=NULL, outcome=NA, d
                      outcome=NA, #the outcome variable
                      data=NULL #validation sample
   ) {      
+
     if ("lm" %in% class(fit)) {
       lp <- predict(fit, newdata=data, type="response")
       return(lp)
     } 
     if ("numeric" %in% class(fit)) {
       coefs <- fit[which(!is.na(fit))]
-    } else {
-      stop ("Model type not supported:", class(fit))
-    }
+      if ("(Intercept)" %in% names(coefs)) {
+        xcoefs <- coefs[-match("(Intercept)", names(coefs))] #model frame adds an intercept term by default
+      } else {
+        xcoefs <- c(0, coefs)
+        names(xcoefs)[1] <- "-1"
+      }
+      
+      fmla <- as.formula(paste(outcome,"~",paste(names(xcoefs), collapse="+")))
+      dfrTmp <- model.frame(fmla, data)
+      x <- as.matrix(model.matrix(fmla, data=dfrTmp))
+      lp <- x%*%coefs[match(colnames(x),names(coefs))]   
+      return(lp)
+    } 
     
-    if ("(Intercept)" %in% names(coefs)) {
-      xcoefs <- coefs[-match("(Intercept)", names(coefs))]
-    } else {
-      xcoefs <- c(0, coefs)
-      names(xcoefs)[1] <- "-1"
-    }
-    
-    fmla <- as.formula(paste(outcome,"~",paste(names(xcoefs), collapse="+")))
-    dfrTmp <- model.frame(fmla, data)
-    x <- as.matrix(model.matrix(fmla, data=dfrTmp))
-    lp <- x%*%coefs[match(colnames(x),names(coefs))]   
-    return(lp)  
+    stop ("Model type not supported:", class(fit))  
   }
   
   mle.regconstrained <- function(lp, y, ...) { # it is possible to add control parameters for optim
@@ -64,7 +59,7 @@ stacked.regressions <- function (models=list(), names.models=NULL, outcome=NA, d
     }
     v <- cbind(1, lp)
     theta.start <- c(0,rep(0,(dim(lp)[2])))
-    names(theta.start) <- c("Intercept", colnames(lp))
+    names(theta.start) <- c("(Intercept)", colnames(lp))
     lower <- c(-Inf, rep(0, dim(lp)[2]))
     mle <- optim(par=theta.start, fn=model, y=y, x=as.matrix(v), hessian=T, lower=lower, method="L-BFGS-B", ...)
     lp.final <- v %*% mle$par
@@ -88,7 +83,6 @@ stacked.regressions <- function (models=list(), names.models=NULL, outcome=NA, d
   cstat <- c(meta.roc$auc, meta.roc.se)
   names(cstat) = c("c-stat", "se(c-stat)")
   
-  #Todo: calculate performance stacked model
   out <- list(weights=m.stacked$coefficients, vif=vif, deviance=m.stacked$deviance, performance=cstat, vcov=m.stacked$vcov)
   class(out) <- c("metamodel", class(out))
   
