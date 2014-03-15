@@ -1,7 +1,9 @@
 export("riley")
 export("uvmeta")
+export("pmmeta")
 import("rjags")
 import("coda")
+import("pROC")
 
 #Riley methods
 S3method(print, riley)
@@ -18,5 +20,5 @@ S3method(plot, uvmeta)
 S3method(summary, uvmeta)
 S3method(uvmeta, default)
 
+#pmmeta methods
 
- 

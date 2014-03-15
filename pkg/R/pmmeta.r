@@ -1,6 +1,11 @@
-stacked.regressions <- function (models=list(), names.models=NULL, outcome=NA, data=NULL) {
-  require(pROC)
+pmmeta <- function(models=list(), names.models=NULL, outcome=NA, data=NULL,
+                   method="stacked.regressions") {
+  UseMethod("stackedregressions")
+}
   
+
+#keep hidden from users -> don't add in export functions
+stackedregressions <- function (models=list(), names.models, outcome, data) {
   if (class(models) != "list") stop("Models should be entered as a list")
   if (is.null(names.models)) names.models = c(paste("model",(1:length(models)),sep=""))
   if (length(models)==0) stop("No models entered!")
@@ -48,7 +53,7 @@ stacked.regressions <- function (models=list(), names.models=NULL, outcome=NA, d
       return(lp)
     } 
     
-    stop ("Model type not supported:", class(fit))  
+    stop ("Model type not supported: ", class(fit))  
   }
   
   mle.regconstrained <- function(lp, y, ...) { # it is possible to add control parameters for optim

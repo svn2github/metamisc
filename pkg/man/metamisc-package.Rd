@@ -11,7 +11,7 @@
 %Date: \tab 2014-03-08\cr
 %License: \tab GPL-2 \cr
 %}
-The following functionality is currently implemented: univariate meta-analysis of summary data (\code{\link{uvmeta}}), bivariate meta-analysis of correlated outcomes (\code{\link{riley}}), bivariate meta-analysis of diagnostic test accuracy data (\code{\link{reitsma}}) and meta-analysis of risk prediction models (\code{\link{stacked.regressions}}).}
+The following functionality is currently implemented: univariate meta-analysis of summary data (\code{\link{uvmeta}}), bivariate meta-analysis of correlated outcomes (\code{\link{riley}}), bivariate meta-analysis of diagnostic test accuracy data (\code{\link{reitsma}}) and meta-analysis of risk prediction models (\code{\link{pmmeta}}).}
 \author{Thomas Debray <thomas.debray@gmail.com>}
 
 \references{
@@ -29,4 +29,5 @@ Riley RD, Thompson JR, Abrams KR. An alternative model for bivariate random-effe
 \keyword{regression}
 \keyword{meta-analysis}
 
-\seealso{ \code{\link{Daniels}}, \code{\link{Kertai}}, \code{\link{riley}}, \code{\link{Scheidler}}, \code{\link{uvmeta}}}
+\seealso{ \code{\link{Daniels}}, \code{\link{Kertai}}, \code{\link{riley}}, \code{\link{Scheidler}}, 
+\code{\link{uvmeta}}, \code{\link{pmmeta}}}
