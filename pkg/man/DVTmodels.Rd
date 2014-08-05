@@ -1,18 +1,16 @@
 \name{DVTmodels}
 \alias{DVTmodels}
 \docType{data}
-\title{Risk prediction models for diagnosing Deep Venous Thrombosis
+\title{Risk prediction models for diagnosing Deep Venous Thrombosis (DVT)
 }
-\description{
-%%  ~~ A concise (1-5 lines) description of the dataset. ~~
+\description{This function creates an object with literature models for predicting the presence of DVT. 
 }
 \usage{data(DVTmodels)}
+
 \format{
-An object of the class \code{litmodels} with the following items:
-\item{descriptives }{Study-level descriptives of each DVT model}
-\item{weights}{Weights for each predictor}
-\item{weights.var}{Error variance for each predictor effect or weight}
+An object of the class \code{litmodels} with the following information for each literature model: the study-level descriptives (\code{$descriptives}), the regression coefficient or weight for each predictor (\code{$weights}) and the error variance for each regression coefficient or weight (\code{$weights.var}). }
 }
+
 \details{
 %%  ~~ If necessary, more details than the __description__ above ~~
 }
@@ -20,7 +18,15 @@ An object of the class \code{litmodels} with the following items:
 %%  ~~ reference to a publication or URL from which the data were obtained ~~
 }
 \references{
-%%  ~~ possibly secondary sources and usages ~~
+Wells PS, Anderson DR, Bormanis J, Guy F, Mitchell M, Gray L, Clement C, Robinson KS, Lewandowski B. Value of assessment of pretest probability of deep-vein thrombosis in clinical management. \emph{Lancet} 1997; \bold{350}(9094):1795–1798. DOI: 10.1016/S0140-6736(97)08140-3.
+
+Wells PS, Anderson DR, Rodger M, Forgie M, Kearon C, Dreyer J, Kovacs G, Mitchell M, Lewandowski B, Kovacs MJ. Evaluation of D-dimer in the diagnosis of suspected deep-vein thrombosis. \emph{The New England Journal of Medicine} 2003; \bold{349}(13):1227–1235. DOI: 10.1056/NEJMoa023153.
+
+Gagne P, Simon L, Le Pape F, Bressollette L, Mottier D, Le Gal G. Clinical prediction rule for diagnosing deep vein thrombosis in primary care. \emph{La Presse Médicale} 2009; \bold{38}(4):525–533. DOI: 10.1016/j.lpm.2008.09.022.
+
+Subramaniam RM, Snyder B, Heath R, Tawse F, Sleigh J. Diagnosis of lower limb deep venous thrombosis in emergency department patients: performance of Hamilton and modified Wells scores. \emph{Annals of Emergency Medicine} 2006; \bold{48}(6):678–685. DOI: 10.1016/j.annemergmed.2006.04.010.
+
+Oudega R, Moons KGM, Hoes AW. Ruling out deep venous thrombosis in primary care. a simple diagnostic algorithm including D-dimer testing. \emph{Thrombosis and Haemostasis} 2005; \bold{94}(1):200–205. DOI: 10.1160/TH04-12-0829.
 }
 \seealso{
 \code{\link{DVTipd}}
