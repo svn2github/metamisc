@@ -22,6 +22,9 @@ An object of the class \code{litmodels} with the following items:
 \references{
 %%  ~~ possibly secondary sources and usages ~~
 }
+\seealso{
+\code{\link{DVTipd}}
+}
 \examples{
 data(DVTmodels)
 }
