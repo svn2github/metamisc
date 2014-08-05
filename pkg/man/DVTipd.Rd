@@ -1,7 +1,7 @@
 \name{DVTipd}
 \alias{DVTipd}
 \docType{data}
-\title{Hypothetical dataset for diagnosis of Deep Vein Thrombosis
+\title{Hypothetical dataset for diagnosis of Deep Vein Thrombosis (DVT)
 }
 \description{
 A hypothetical dataset with 500 subjects suspected of having deep vein thrombosis (DVT).
@@ -13,7 +13,7 @@ A hypothetical dataset with 500 subjects suspected of having deep vein thrombosi
     \item{\code{sex}}{gender (0=female, 1=male)}
     \item{\code{malign}}{active malignancy (0=no active malignancy, 1=active malignancy)}
     \item{\code{par}}{paresis (0=no paresis, 1=paresis)}
-    \item{\code{surg}}{recent surgery (or bedridden)}
+    \item{\code{surg}}{recent surgery or bedridden}
     \item{\code{tend}}{tenderness venous system}
     \item{\code{oachst}}{oral contraceptives or hst}
     \item{\code{leg}}{entire leg swollen}
@@ -23,7 +23,7 @@ A hypothetical dataset with 500 subjects suspected of having deep vein thrombosi
     \item{\code{vein}}{vein distension}
     \item{\code{altdiagn}}{alternative diagnosis present}
     \item{\code{histdvt}}{history of previous DVT}
-    \item{\code{ddimdich}}{dichotimized d-dimer value}
+    \item{\code{ddimdich}}{dichotimized D-dimer value}
     \item{\code{dvt}}{final diagnosis of DVT}
   }
 }
