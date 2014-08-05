@@ -4,7 +4,7 @@
 \title{Hypothetical dataset for diagnosis of Deep Venous Thrombosis
 }
 \description{
-A hypothetical dataset with 500 primary care subjects suspected of having deep vein thrombosis (DVT).
+A hypothetical dataset with 500 subjects suspected of having deep vein thrombosis (DVT).
 }
 \usage{data(DVTipd)}
 \format{
@@ -40,5 +40,9 @@ A hypothetical dataset with 500 primary care subjects suspected of having deep v
 data(DVTipd)
 str(DVTipd) 
 summary(apply(DVTipd,2,as.factor))
+
+## Develop a prediction model to predict presence of DVT
+model.dvt <- glm("dvt~sex+oachst+malign+surg+notraum+vein+calfdif3+ddimdich", family=binomial, data=DVTipd)
+summary(model.dvt)
 }
 \keyword{datasets}
