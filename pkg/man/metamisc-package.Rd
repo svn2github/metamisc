@@ -15,7 +15,7 @@ The following functionality is currently implemented: univariate meta-analysis o
 \author{Thomas Debray <thomas.debray@gmail.com>}
 
 \references{
-Debray TPA, Koffijberg H, Nieboer D, Vergouwe Y, Steyerberg EW, Moons KGM. Meta-analysis and aggregation of multiple published prediction models. \emph{Statistics in Medicine} 2014; Early View.
+Debray TPA, Koffijberg H, Nieboer D, Vergouwe Y, Steyerberg EW, Moons KGM. Meta-analysis and aggregation of multiple published prediction models. \emph{Statistics in Medicine} 2014; \bold{33}: 2341--2362. DOI: 10.1002/sim.6080.
 
 DerSimonian R, Laird N. Meta-analysis in clinical trials. \emph{Controlled Clinical Trials} 1986; \bold{7}: 177--188.
 
