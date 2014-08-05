@@ -8,7 +8,10 @@
 }
 \usage{data(DVTmodels)}
 \format{
-A data frame with regression coefficients (or weights) of 5 prediction models.
+An object of the class \code{litmodels} with the following items:
+\item{descriptives }{Study-level descriptives of each DVT model}
+\item{weights}{Weights for each predictor}
+\item{weights.var}{Error variance for each predictor effect or weight}
 }
 \details{
 %%  ~~ If necessary, more details than the __description__ above ~~
