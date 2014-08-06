@@ -49,6 +49,15 @@ model.dvt <- glm("dvt~sex+oachst+malign+surg+notraum+vein+calfdif3+ddimdich", fa
 val.dvt <- validate(model.dvt, DVTipd)
 val.dvt
 
+## Example for a model without an intercept term
+data(DVTmodels)
+weights.Wells <- DVTmodels$weights["Wells",]
+coefs <- weights.Wells[!is.na(weights.Wells)]
+fmla <- as.formula(paste("dvt~0+",paste(names(coefs)[-1], collapse="+")))
+model.Wells <- as.model(coefs, fmla, binomial()) 
+val.Wells <- validate(model.Wells, DVTipd)
+val.Wells
+
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

@@ -15,9 +15,6 @@ An object of the class \code{litmodels} with the following information for each 
 %%  ~~ If necessary, more details than the __description__ above ~~
 }
 \source{
-%%  ~~ reference to a publication or URL from which the data were obtained ~~
-}
-\references{
 Wells PS, Anderson DR, Bormanis J, Guy F, Mitchell M, Gray L, Clement C, Robinson KS, Lewandowski B. Value of assessment of pretest probability of deep-vein thrombosis in clinical management. \emph{Lancet} 1997; \bold{350}(9094):1795–1798. DOI: 10.1016/S0140-6736(97)08140-3.
 
 Wells PS, Anderson DR, Rodger M, Forgie M, Kearon C, Dreyer J, Kovacs G, Mitchell M, Lewandowski B, Kovacs MJ. Evaluation of D-dimer in the diagnosis of suspected deep-vein thrombosis. \emph{The New England Journal of Medicine} 2003; \bold{349}(13):1227–1235. DOI: 10.1056/NEJMoa023153.
@@ -28,6 +25,7 @@ Subramaniam RM, Snyder B, Heath R, Tawse F, Sleigh J. Diagnosis of lower limb de
 
 Oudega R, Moons KGM, Hoes AW. Ruling out deep venous thrombosis in primary care. a simple diagnostic algorithm including D-dimer testing. \emph{Thrombosis and Haemostasis} 2005; \bold{94}(1):200–205. DOI: 10.1160/TH04-12-0829.
 }
+
 \seealso{
 \code{\link{DVTipd}}
 }
