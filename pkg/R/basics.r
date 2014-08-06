@@ -264,7 +264,8 @@ plot.validation <- function (X, type="discrimination", ...) {
     y
   }
   
-  plot.calibration <- function(X, main="",
+  plot.calibration <- function(X, 
+                               main="",
                               m=20, #number of observations per group
                               shaded.bg=T,
                               h.bars = 0.15, #height of the bars
@@ -359,12 +360,16 @@ plot.validation <- function (X, type="discrimination", ...) {
     data <- data.frame(y=X$predictions$y, lp=X$predictions$lp)
     f1 = glm(y~lp, data=data, family=X$family)
     x1 <- predict(f1, type="response")
-    x1[p == 0] <- 0
-    x1[p == 1] <- 1
+    #x1[p == 0] <- 0
+    #x1[p == 1] <- 1
     bins1 <- seq(lim[1], lim[2], length = 101)
     x1 <- x1[x1 >= lim[1] & x1 <= lim[2]]
     f1 <- table(cut(x1, bins1))
-    pcty = as.numeric(f1/sum(f1))*h.bars
+
+    #make sure the highest value for pcty equals 0.12
+    pcty = as.numeric(f1/sum(f1))#*h.bars
+    pcty <- pcty * (0.12/max(pcty))
+    
     pctx = rep(0,length(pcty))
     diff = (bins1[2]-bins1[1])/2
     for (j in 1:length(pcty)) {
