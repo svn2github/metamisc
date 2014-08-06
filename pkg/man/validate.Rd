@@ -13,7 +13,7 @@ validate(x, ds.ipd, time.calibration=NA)
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{x}{An object of class "\code{\link{glm}}" or "\code{pmmodel}" representing a prediction model.}
-  \item{ds.ipd}{A dataset with information on the predictor and outcome variables of the model. }
+  \item{ds.ipd}{A validation dataset with information on the predictor and outcome variables of the model. }
   \item{time.calibration}{Not implemented at this stage, but will be of use when validating time-to-event models.}
 }
 \details{

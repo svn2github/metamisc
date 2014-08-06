@@ -114,6 +114,20 @@ validate <- function(x, ds.ipd, time.calibration=NA) {
   return(out)
 }
 
+print.validation <- function(x) {
+  cat("Validation Data\n*************************************\n")
+  cat(paste("Study size: ", dim(x$predictions)[1], " subjects (", 
+            x$cal$events["num.observed"], " events)\n", sep=""))
+  cat("\nDiscrimination\n*************************************\n")
+  cat(paste("Area under the ROC curve: ", round(x$roc$auc,3), "\n", sep=""))
+  ci.roc <- signif(ci(x$roc), digits = 3)
+  cat(paste("95% confidence interval: ", ci.roc[1], "; ", ci.roc[3], "\n", sep=""))
+  cat("\nCalibration\n*************************************\n")
+  cat(paste("Observed versus expected: "), round(x$cal$OE["O:E"],3), "\n", sep="")
+  cat(paste("Calibration-in-the-large: ", round(x$cal$intercept["estimate"],3), "\n"))
+  cat(paste("Calibration slope: ", round(x$cal$slope["estimate"],3), "\n"))
+}
+
 
 #as.model <- function(coefficients, vars, model.class="glm", formula) {
 #  model <- list()
