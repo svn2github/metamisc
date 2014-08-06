@@ -125,9 +125,11 @@ print.validation <- function(x) {
   cat("\nPerformance\n*************************************\n")
   ci.roc <- signif(ci(x$roc), digits = 3)
   cat(paste("Area under the ROC curve: ", round(x$roc$auc,3), " (95% CI: ",ci.roc[1], "; ", ci.roc[3],")\n", sep=""))
-  cat(paste("Observed versus expected: "), round(x$cal$OE["O:E"],3), "\n", sep="")
-  cat(paste("Calibration-in-the-large: ", round(x$cal$intercept["estimate"],3), "\n"))
-  cat(paste("Calibration slope: ", round(x$cal$slope["estimate"],3), "\n"))
+  cat(paste("Observed versus expected: "), round(x$cal$OE["estimate"],3), "\n", sep="")
+  cat(paste("Calibration-in-the-large: ", round(x$cal$intercept["estimate"],3), 
+            " (95% CI: ", round(x$cal$intercept["2.5%"],3), "; ", round(x$cal$intercept["97.5%"],3),")\n", sep=""))
+  cat(paste("Calibration slope: ", round(x$cal$slope["estimate"],3), 
+            " (95% CI: ", round(x$cal$slope["2.5%"],3), "; ", round(x$cal$slope["97.5%"],3),")\n", sep=""))
 }
 
 

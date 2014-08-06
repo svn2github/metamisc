@@ -12,21 +12,17 @@ validate(x, ds.ipd, time.calibration=NA)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{x}{An object of class "\code{\link{glm}}" or "\code{pmmodel}" representing a prediction model.}
-  \item{ds.ipd}{A validation dataset with information on the predictor and outcome variables of the model. }
-  \item{time.calibration}{Not implemented at this stage, but will be of use when validating time-to-event models.}
+  \item{x}{An object of class "\code{\link{glm}}" or "\code{pmmodel}", representing a prediction model.}
+  \item{ds.ipd}{A validation dataset with information on the predictor and outcome variables of \code{x}. }
+  \item{time.calibration}{Not implemented at this stage.}
 }
 \details{
 %%  ~~ If necessary, more details than the description above ~~
 }
 \value{
-%%  ~Describe the value returned
-%%  If it is a LIST, use
   \item{roc}{Model discrimination results, presented as an object of class "\code{roc}".}
   \item{cal}{Model calibration results ("estimate") with corresponding standard error ("se") and/or 95\% confidence interval ("2.5\%" and "97.5\%"). The following statistics are included: actual and predicted number of events ("$events"), ratio observed versus expected number of events ("$O:E"), calibration slope ("$slope") and calibration-in-the-large ("$intercept")}
-  \item{predictions}{A data frame with the linear predictor ("lp"), predicted outcome ("yhat") and observed outcome ("y") for each subject from the validation dataset.  }
-%%  \item{comp2 }{Description of 'comp2'}
-%% ...
+  \item{predictions}{A data frame with the linear predictor ("lp"), predicted outcome ("yhat") and observed outcome ("y") for each subject from the validation dataset.}
 }
 \references{
 %% ~put references to the literature/web site here ~
