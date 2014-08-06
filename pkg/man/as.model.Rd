@@ -15,8 +15,6 @@ as.model(coefficients, formula, family=binomial())
   \item{coefficients}{A named vector of regression coefficients. The intercept term should be named as '(Intercept)'.}
   \item{formula}{An object of class "\code{\link{formula}}" providing a symbolic description of the fitted model.}
   \item{family}{An object of class "\code{\link{family}}" describing the error distribution and link function to be used in the model.}
-%%     ~~Describe \code{x} here~~
-}
 }
 \details{
 %%  ~~ If necessary, more details than the description above ~~

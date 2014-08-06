@@ -273,7 +273,6 @@ plot.validation <- function (X, type="discrimination", ...) {
                               cex.axis=1, 
                               cex.main=1, 
                               cex.sub=1,
-                              ylab="Actual probability",
                               shade.col="gray")
 {
     #if (! X$family$link %in% c("logit", "log", "identity")) stop("Model family not supported!")
@@ -301,15 +300,23 @@ plot.validation <- function (X, type="discrimination", ...) {
     
     se.lower <- (yy$fit + qnorm(0.025) * yy$se.fit)
     se.upper <- (yy$fit + qnorm(0.975) * yy$se.fit)
+    xlab <- "Predicted value"
+    ylab <- "Observed value"
     xp = x #identity link
     if (X$family$link=="logit") {
       se.lower <- inv.logit(yy$fit + qnorm(0.025) * yy$se.fit)
       se.upper <- inv.logit(yy$fit + qnorm(0.975) * yy$se.fit)
       xp = inv.logit(x) #predicted probability
+      xlab = "Predicted probability"
+      ylab = "Actual probability"
+      ylim = c(-0.15,1)
+      xlim = c(0,1)
     } else if (X$family$link=="log") {
       se.lower <- exp(yy$fit + qnorm(0.025) * yy$se.fit)
       se.upper <- exp(yy$fit + qnorm(0.975) * yy$se.fit)
       xp = exp(x)
+      xlab = "Predicted number of events"
+      ylab = "Observed number of events"
     }
     
     # Plot parameters
@@ -324,7 +331,7 @@ plot.validation <- function (X, type="discrimination", ...) {
     xaxt = "s"
     yaxt = "s"
     
-    plot(0, 0, type = "n",  xlab = "Predicted probability", ylab = ylab, xlim = xlim, ylim = ylim, main=main, cex.lab=cex.lab, cex.axis=cex.axis, cex.main=cex.main, cex.sub=cex.sub,xaxt=xaxt,yaxt=yaxt)
+    plot(0, 0, type = "n",  xlab = xlab, ylab = ylab, xlim = xlim, ylim = ylim, main=main, cex.lab=cex.lab, cex.axis=cex.axis, cex.main=cex.main, cex.sub=cex.sub,xaxt=xaxt,yaxt=yaxt)
 
     
     #Draw a background shade
@@ -337,9 +344,6 @@ plot.validation <- function (X, type="discrimination", ...) {
     polygon(xpol, ypol, col = shade.col, border = NA, density = NULL)
     lines(xval, yval, col = line.par$col)
     lines(xref,yref,lty=2)
-    
-    ytext1=0.9
-    ytext2=0.8
     
     # Triangles
     p = X$predictions$yhat
