@@ -8,12 +8,12 @@
 %%  ~~ A concise (1-5 lines) description of what the function does. ~~
 }
 \usage{
-validate(x, ds.ipd, time.calibration=NA)
+validate(X, ds.ipd, time.calibration=NA)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{x}{An object of class "\code{\link{glm}}" or "\code{pmmodel}", representing a prediction model.}
-  \item{ds.ipd}{A validation dataset with information on the predictor and outcome variables of \code{x}. }
+  \item{X}{An object of class "\code{\link{glm}}" or "\code{pmmodel}", representing a prediction model.}
+  \item{ds.ipd}{A validation dataset with information on the predictor and outcome variables of \code{X}. }
   \item{time.calibration}{Not implemented at this stage.}
 }
 \details{
@@ -45,6 +45,7 @@ data(DVTipd)
 model.dvt <- glm("dvt~sex+oachst+malign+surg+notraum+vein+calfdif3+ddimdich", family=binomial, data=DVTipd)
 val.dvt <- validate(model.dvt, DVTipd)
 val.dvt
+plot(val.dvt, type="calibration")
 
 ## Example for a model without an intercept term
 data(DVTmodels)
