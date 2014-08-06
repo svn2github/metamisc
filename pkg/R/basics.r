@@ -21,19 +21,23 @@ validate <- function(x, ds.ipd, time.calibration=NA) {
     lp <- as.numeric(lp)
     predictions <- as.data.frame(cbind(y,lp))
     m.ll <- glm("y~1", offset=lp, data=predictions, family=family)
-    results = array(NA, dim=2)
-    names(results) = c("estimate", "se")
+    m.ci <- confint(m.ll)
+    results = array(NA, dim=4)
+    names(results) = c("estimate", "se", "2.5%", "97.5%")
     results["estimate"] <- coefficients(m.ll)[1]
     results["se"] <- sqrt(vcov(m.ll)[1,1])
+    results[c("2.5%", "97.5%")] <- m.ci
     return(results)
   }
   cal.slope <- function(y, lp, family) {
     predictions <- as.data.frame(cbind(y,lp))
     m.ll = glm(as.formula("y~lp"), data=predictions, family=family)
-    results = array(NA, dim=2)
-    names(results) = c("estimate", "se")
+    m.ci <- confint(m.ll, "lp")
+    results = array(NA, dim=4)
+    names(results) = c("estimate", "se", "2.5%", "97.5%")
     results["estimate"] <- coefficients(m.ll)[2]
     results["se"] <- sqrt(vcov(m.ll)[2,2])
+    results[c("2.5%", "97.5%")] <- m.ci
     return(results)
   }
   calc.lp <- function(coefficients, ds, fmla) {
@@ -51,7 +55,7 @@ validate <- function(x, ds.ipd, time.calibration=NA) {
     
     out$lp = x%*%beta[match(colnames(x), names.beta)]
     out$yhat <- inv.logit(out$lp)
-    
+    print(out)
     return(out)
   }
   
@@ -100,7 +104,7 @@ validate <- function(x, ds.ipd, time.calibration=NA) {
     OE <- num.observed/num.expected
     se.lnOE <- sqrt((1-p.observed)/num.observed)
     OEresults <- c(OE, exp(log(OE)+qnorm(0.025)*se.lnOE), exp(log(OE)+qnorm(0.975)*se.lnOE))
-    names(OEresults) <- c("O:E", "2.5%CI", "97.5%CI")
+    names(OEresults) <- c("estimate", "2.5%", "97.5%")
     
     
     
@@ -118,11 +122,9 @@ print.validation <- function(x) {
   cat("Validation Data\n*************************************\n")
   cat(paste("Study size: ", dim(x$predictions)[1], " subjects (", 
             x$cal$events["num.observed"], " events)\n", sep=""))
-  cat("\nDiscrimination\n*************************************\n")
-  cat(paste("Area under the ROC curve: ", round(x$roc$auc,3), "\n", sep=""))
+  cat("\nPerformance\n*************************************\n")
   ci.roc <- signif(ci(x$roc), digits = 3)
-  cat(paste("95% confidence interval: ", ci.roc[1], "; ", ci.roc[3], "\n", sep=""))
-  cat("\nCalibration\n*************************************\n")
+  cat(paste("Area under the ROC curve: ", round(x$roc$auc,3), " (95% CI: ",ci.roc[1], "; ", ci.roc[3],")\n", sep=""))
   cat(paste("Observed versus expected: "), round(x$cal$OE["O:E"],3), "\n", sep="")
   cat(paste("Calibration-in-the-large: ", round(x$cal$intercept["estimate"],3), "\n"))
   cat(paste("Calibration slope: ", round(x$cal$slope["estimate"],3), "\n"))

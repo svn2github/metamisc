@@ -22,16 +22,17 @@ validate(x, ds.ipd, time.calibration=NA)
 \value{
 %%  ~Describe the value returned
 %%  If it is a LIST, use
-%%  \item{comp1 }{Description of 'comp1'}
+  \item{roc}{Model discrimination results, presented as an object of class "\code{roc}".}
+  \item{cal}{Model calibration results ("estimate") with corresponding standard error ("se") and/or 95\% confidence interval ("2.5\%" and "97.5\%"). The following statistics are included: actual and predicted number of events ("$events"), ratio observed versus expected number of events ("$O:E"), calibration slope ("$slope") and calibration-in-the-large ("$intercept")}
+  \item{predictions}{A data frame with the linear predictor ("lp"), predicted outcome ("yhat") and observed outcome ("y") for each subject from the validation dataset.  }
 %%  \item{comp2 }{Description of 'comp2'}
 %% ...
 }
 \references{
 %% ~put references to the literature/web site here ~
 }
-\author{
-%%  ~~who you are~~
-}
+\author{Thomas Debray <thomas.debray@gmail.com>}
+
 \note{
 %%  ~~further notes~~
 }
@@ -61,5 +62,5 @@ val.Wells
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
-\keyword{ ~kwd1 }
-\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
+\keyword{validation}
+\keyword{performance}
