@@ -8,7 +8,7 @@
 \usage{data(DVTmodels)}
 
 \format{
-An object of the class \code{litmodels} with the following information for each literature model: the study-level descriptives (\code{$descriptives}), the regression coefficient or weight for each predictor (\code{$weights}) and the error variance for each regression coefficient or weight (\code{$weights.var}). }
+An object of the class \code{litmodels} with the following information for each literature model: the study-level descriptives (\code{$descriptives}), the regression coefficient or weight for each predictor (\code{$weights}) and the error variance for each regression coefficient or weight (\code{$weights.var}). 
 }
 
 \details{

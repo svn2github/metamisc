@@ -27,7 +27,7 @@ validate <- function(x, ds.ipd, time.calibration=NA) {
   
   out <- list()
   if ("glm" %in% class(x)) {
-    lp <- as.numeric(predict(x, newdata=ds.ipd, type="link")) #calculate linear predictor
+    lp   <- as.numeric(predict(x, newdata=ds.ipd, type="link")) #calculate linear predictor
     yhat <- as.numeric(predict(x, newdata=ds.ipd, type="response"))
     outcome <- all.vars(formula(x))[1]
     y <- ds.ipd[,outcome]
@@ -37,7 +37,7 @@ validate <- function(x, ds.ipd, time.calibration=NA) {
     
     num.observed <- sum(y)
     num.expected <- sum(yhat)
-    p.observed <- num.observed/length(y)
+    p.observed   <- mean(y)
     
     # num events
     events.results <- c(num.observed, num.expected)
