@@ -1,7 +1,7 @@
 export("riley")
 export("uvmeta")
 export("pmmeta")
-export("pmmodel")
+export("pm")
 import("rjags")
 import("coda")
 import("pROC")
@@ -20,7 +20,7 @@ S3method(print, validation)
 S3method(plot, validation)
 
 ## Basic methods
-S3method(pmmodel, default)
+S3method(pm, default)
 
 #uvmeta methods
 S3method(print, uvmeta)

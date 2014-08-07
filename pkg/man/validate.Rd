@@ -8,12 +8,12 @@
 %%  ~~ A concise (1-5 lines) description of what the function does. ~~
 }
 \usage{
-validate(X, ds.ipd, time.calibration=NA)
+validate(x, ds.ipd, time.calibration=NA)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{X}{An object of class "\code{\link{glm}}" or "\code{pmmodel}", representing a prediction model.}
-  \item{ds.ipd}{A validation dataset with information on the predictor and outcome variables of \code{X}. }
+  \item{x}{An object of class "\code{\link{glm}}" or "\code{pm}", representing a prediction model.}
+  \item{ds.ipd}{A validation dataset with information on the predictor and outcome variables of \code{x}. }
   \item{time.calibration}{Not implemented at this stage.}
 }
 \details{
@@ -53,7 +53,7 @@ data(DVTmodels)
 weights.Wells <- DVTmodels$weights["Wells",]
 coefs <- weights.Wells[!is.na(weights.Wells)]
 fmla <- as.formula(paste("dvt~0+",paste(names(coefs)[-1], collapse="+")))
-model.Wells <- pmmodel(coefs, fmla, binomial()) 
+model.Wells <- pm(coefs, fmla, binomial()) 
 val.Wells <- validate(model.Wells, DVTipd)
 val.Wells
 

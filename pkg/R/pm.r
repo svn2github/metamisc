@@ -1,9 +1,9 @@
-pmmodel <- function(coefficients, formula, family=binomial()) {
-  UseMethod("pmmodel")
+pm <- function(coefficients, formula, family=binomial()) {
+  UseMethod("pm")
 }
 
 
-pmmodel.default <- function(coefficients, formula, family=binomial()) {
+pm.default <- function(coefficients, formula, family=binomial()) {
   if (class(formula) != "formula") stop("Invalid formula object!")
   if (class(family) != "family") stop("Invalid family object!")
   if (! ("(Intercept)" %in% names(coefficients))) warning("The model does not have an intercept term!")
@@ -11,6 +11,6 @@ pmmodel.default <- function(coefficients, formula, family=binomial()) {
   out$coefficients <- coefficients
   out$formula <- formula
   out$family <- family
-  class(out) <- "pmmodel"
+  class(out) <- "pm"
   return(out)
 }

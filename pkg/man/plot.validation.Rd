@@ -11,7 +11,7 @@ plot.validation(x, type="discrimination", ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{x}{An object of class "\code{pmmodel}"}
+  \item{x}{An object of class "\code{pm}"}
   \item{type}{A character indicating whether to plot the ROC curve ("discrimination") or calibration curve ("calibration").}
   \item{...}{Additional arguments for \code{\link{plot}}.}
 }
@@ -54,7 +54,7 @@ data(DVTmodels)
 weights.Oudega <- DVTmodels$weights["Oudega",]
 coefs <- weights.Oudega[!is.na(weights.Oudega)]
 fmla <- as.formula(paste("dvt~",paste(names(coefs)[-1], collapse="+")))
-model.Oudega <- pmmodel(coefs, fmla, binomial()) 
+model.Oudega <- pm(coefs, fmla, binomial()) 
 val.Oudega <- validate(model.Oudega, DVTipd)
 plot(val.Oudega, type="calibration")
 

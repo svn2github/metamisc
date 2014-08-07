@@ -61,7 +61,7 @@ validate <- function(x, ds.ipd, time.calibration=NA) {
     #calibration slope and intercept
     m.intercept <- cal.intercept(y, lp, family(x))
     m.slope <- cal.slope(y, lp, family(x))
-  } else if ("pmmodel" %in% class(x)) {
+  } else if ("pm" %in% class(x)) {
     outcome <- all.vars(x$formula)[1]
     family <- x$family
     coefs <- x$coefficients
@@ -75,7 +75,7 @@ validate <- function(x, ds.ipd, time.calibration=NA) {
     stop("Invalid model class!!")
   }
   
-  if (sum(c("pmmodel", "glm") %in% c("glm", "lm"))>0)
+  if (sum(c("pm", "glm") %in% c("glm", "lm"))>0)
   {
     # Model discrimination
     roc.rule = roc(response=predictions$y, predictor=predictions$lp)
