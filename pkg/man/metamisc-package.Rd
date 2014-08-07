@@ -2,7 +2,8 @@
 \alias{metamisc-package}
 \docType{package}
 \title{Diagnostic and prognostic meta-analysis}
-\description{This package provides functions for diagnostic and prognostic meta-analyses. It estimates univariate, bivariate and multivariate models, and allows the aggregation of previously published prediction models with new data.}
+\description{This package provides functions for diagnostic and prognostic research. It allows to perform meta-analysis of univariate (e.g. added value prognostic marker), bivariate (e.g. diagnostic test accuracy) and multivariate (e.g. previously published prediction model) statistics. It allows external validation of a prediction model.}
+
 \details{
 %\tabular{ll}{
 %Package: \tab metamisc\cr
@@ -11,7 +12,7 @@
 %Date: \tab 2014-08-05\cr
 %License: \tab GPL-2 \cr
 %}
-The following functionality is currently implemented: univariate meta-analysis of summary data (\code{\link{uvmeta}}), bivariate meta-analysis of correlated outcomes (\code{\link{riley}}), bivariate meta-analysis of diagnostic test accuracy data (\code{reitsma}) and meta-analysis of risk prediction models (\code{\link{pmmeta}}).}
+The following functionality is currently implemented: univariate meta-analysis of summary data (\code{\link{uvmeta}}), bivariate meta-analysis of correlated outcomes (\code{\link{riley}}), bivariate meta-analysis of diagnostic test accuracy data (\code{reitsma}), meta-analysis of risk prediction models (\code{\link{pmmeta}}) and external validation of a prediction model (\code{\link{validation}}).}
 \author{Thomas Debray <thomas.debray@gmail.com>}
 
 \references{

@@ -285,7 +285,7 @@ plot.validation <- function (x, type="discrimination", ...) {
     
     #Calculate performance
     data <- data.frame(y = X$predictions$y, lp = X$predictions$lp)
-    gam1 <- glm(y ~ lp, data = data, family=X$family)
+    gam1 <- glm(y ~ lp, data = data, family=X$family) #We can make this model more complex by adding splines here
     
     x <- seq(min(X$predictions$lp), max(X$predictions$lp), length = 500)
     yy <- predict(gam1, newdata=data.frame(lp = x), type="link", se.fit = TRUE)
@@ -308,8 +308,8 @@ plot.validation <- function (x, type="discrimination", ...) {
       ylim = c(-0.15,1)
       xlim = c(0,1)
     } else if (X$family$link=="log") {
-      se.lower <- exp(yy$fit + qnorm(0.025) * yy$se.fit)
-      se.upper <- exp(yy$fit + qnorm(0.975) * yy$se.fit)
+      se.lower <- exp(yy$fit + qt(0.025, gam1$df.residual) * yy$se.fit)
+      se.upper <- exp(yy$fit + qt(0.975, gam1$df.residual) * yy$se.fit)
       xp = exp(x)
       xlab = "Predicted number of events"
       ylab = "Observed number of events"
