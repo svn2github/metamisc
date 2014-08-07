@@ -56,7 +56,7 @@ fmla <- as.formula(paste("dvt~",paste(names(coefs)[-1], collapse="+")))
 
 # create pm object and validate the model in external data
 model.Oudega <- pm(coefs, fmla, binomial())
-val.Oudega <- validate(model.Oudega, DVTipd)
+val.Oudega <- validation(model.Oudega, DVTipd)
 val.Oudega
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the

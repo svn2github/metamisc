@@ -45,7 +45,7 @@ plot.validation(x, type="discrimination", ...)
 data(DVTipd)
 model.dvt <- glm("dvt~sex+oachst+malign+surg+notraum+vein+calfdif3+ddimdich", 
                   family=binomial, data=DVTipd)
-val.dvt <- validate(model.dvt, DVTipd)
+val.dvt <- validation(pm(model.dvt), DVTipd)
 plot(val.dvt, type="discrimination")
 plot(val.dvt, type="calibration")
 
@@ -55,7 +55,7 @@ weights.Oudega <- DVTmodels$weights["Oudega",]
 coefs <- weights.Oudega[!is.na(weights.Oudega)]
 fmla <- as.formula(paste("dvt~",paste(names(coefs)[-1], collapse="+")))
 model.Oudega <- pm(coefs, fmla, binomial()) 
-val.Oudega <- validate(model.Oudega, DVTipd)
+val.Oudega <- validation(model.Oudega, DVTipd)
 plot(val.Oudega, type="calibration")
 
 }

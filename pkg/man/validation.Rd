@@ -8,7 +8,7 @@
 %%  ~~ A concise (1-5 lines) description of what the function does. ~~
 }
 \usage{
-validate(x, ds.ipd, time.calibration=NA)
+validation(x, ds.ipd, time.calibration=NA)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -44,7 +44,7 @@ data(DVTipd)
 ## Develop a prediction model to predict presence of DVT
 model.dvt <- glm("dvt~sex+oachst+malign+surg+notraum+vein+calfdif3+ddimdich", 
                   family=binomial, data=DVTipd)
-val.dvt <- validate(pm(model.dvt), DVTipd)
+val.dvt <- validation(pm(model.dvt), DVTipd)
 val.dvt
 plot(val.dvt, type="calibration")
 
@@ -54,7 +54,7 @@ weights.Wells <- DVTmodels$weights["Wells",]
 coefs <- weights.Wells[!is.na(weights.Wells)]
 fmla <- as.formula(paste("dvt~0+",paste(names(coefs)[-1], collapse="+")))
 model.Wells <- pm(coefs, fmla, binomial()) 
-val.Wells <- validate(model.Wells, DVTipd)
+val.Wells <- validation(model.Wells, DVTipd)
 val.Wells
 
 }
