@@ -292,14 +292,16 @@ plot.validation <- function (x, type="discrimination", ...) {
     #x <- x[!is.na(yy$fit)]
     #yy$fit <- yy$fit[!is.na(yy$fit)]
     
-    se.lower <- (yy$fit + qnorm(0.025) * yy$se.fit)
-    se.upper <- (yy$fit + qnorm(0.975) * yy$se.fit)
+    se.lower <- (yy$fit + qt(0.025, gam1$df.residual) * yy$se.fit)
+    se.upper <- (yy$fit + qt(0.975, gam1$df.residual) * yy$se.fit)
     xlab <- "Predicted value"
     ylab <- "Observed value"
     xp = x #identity link
     if (X$family$link=="logit") {
-      se.lower <- inv.logit(yy$fit + qnorm(0.025) * yy$se.fit)
-      se.upper <- inv.logit(yy$fit + qnorm(0.975) * yy$se.fit)
+      #use 
+      gam1$df.residual
+      se.lower <- inv.logit(yy$fit + qt(0.025, gam1$df.residual) * yy$se.fit)
+      se.upper <- inv.logit(yy$fit + qt(0.975, gam1$df.residual) * yy$se.fit)
       xp = inv.logit(x) #predicted probability
       xlab = "Predicted probability"
       ylab = "Actual probability"
@@ -353,7 +355,7 @@ plot.validation <- function (x, type="discrimination", ...) {
     x1 <- X$predictions$yhat #predict(f1, type="response")
     #x1[p == 0] <- 0
     #x1[p == 1] <- 1
-    bins1 <- seq(lim[1], lim[2], length = dim(X$predictions)[1]/width.bins)
+    bins1 <- seq(lim[1], lim[2], length = dim(X$predictions)[1]/size.bins)
     x1 <- x1[x1 >= lim[1] & x1 <= lim[2]]
     f1 <- table(cut(x1, bins1))
     
