@@ -77,7 +77,7 @@ validation.default <- function(x, ds.ipd, time.calibration=NA) {
     m.slope <- cal.slope(predictions$y, predictions$lp, x$family)
   } 
   
-  if (!"pmsurv" %in% class(x))
+  if (!("pmsurv" %in% class(x)))
   {
     # Model discrimination
     roc.rule = roc(response=predictions$y, predictor=predictions$lp)
@@ -259,7 +259,7 @@ plot.validation <- function (x, type="discrimination", ...) {
                                main="",
                                m=20, #number of observations per group
                                shaded.bg=T,
-                               width.bins=10, #height of the bars
+                               size.bins=10, #height of the bars
                                cex=2,  #text size
                                cex.lab=1, 
                                cex.axis=1, 
@@ -269,6 +269,8 @@ plot.validation <- function (x, type="discrimination", ...) {
   {
     #if (! X$family$link %in% c("logit", "log", "identity")) stop("Model family not supported!")
     if (! X$family$link %in% c("logit")) stop(paste("Calibration curves for prediction models with link \"", X$family$link, "\" currently not supported!")) #currently only support for logistic regression models
+    
+    if (size.bins > dim(X$predictions)[1] | size.bins < 1) size.bins = 1
     
     #params
     line.par = list(col = "black")
