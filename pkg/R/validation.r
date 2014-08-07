@@ -108,10 +108,11 @@ validation.default <- function(x, ds.ipd, time.calibration=NA) {
     OEresults <- c(OE, exp(log(OE)+qnorm(0.025)*se.lnOE), exp(log(OE)+qnorm(0.975)*se.lnOE))
     names(OEresults) <- c("estimate", "2.5%", "97.5%")
     
-    
-    
-    cal <- list(events=events.results, OE=OEresults, slope=m.slope, intercept=m.intercept)
-    out <- list(coefficients=coefs, family=family, predictions=predictions, roc=roc.rule, cal=cal, ds.ipd=ds.ipd)
+    out$coefficients = coefs
+    out$predictions = predictions
+    out$roc = roc.rule
+    out$cal = list(events=events.results, OE=OEresults, slope=m.slope, intercept=m.intercept)
+    out$ds.ipd = ds.ipd
   }
   
   ## TODO: write code for time-to-event models 
@@ -283,8 +284,7 @@ plot.validation <- function (x, type="discrimination", ...) {
                                cex.sub=1,
                                shade.col="gray")
   {
-    #if (! X$family$link %in% c("logit", "log", "identity")) stop("Model family not supported!")
-    if (! X$family$link %in% c("logit")) stop(paste("Calibration curves for prediction models with link \"", X$family$link, "\" currently not supported!")) #currently only support for logistic regression models
+    if (! X$model$family$link %in% c("logit")) stop(paste("Calibration curves for prediction models with link \"", X$model$family$link, "\" currently not supported!", sep="")) #currently only support for logistic regression models
     
     if (size.bins > dim(X$predictions)[1] | size.bins < 1) size.bins = 1
     
@@ -301,7 +301,7 @@ plot.validation <- function (x, type="discrimination", ...) {
     
     #Calculate performance
     data <- data.frame(y = X$predictions$y, lp = X$predictions$lp)
-    gam1 <- glm(y ~ lp, data = data, family=X$family) #We can make this model more complex by adding splines here
+    gam1 <- glm(y ~ lp, data = data, family=X$model$family) #We can make this model more complex by adding splines here
     
     x <- seq(min(X$predictions$lp), max(X$predictions$lp), length = 500)
     yy <- predict(gam1, newdata=data.frame(lp = x), type="link", se.fit = TRUE)
@@ -313,7 +313,7 @@ plot.validation <- function (x, type="discrimination", ...) {
     xlab <- "Predicted value"
     ylab <- "Observed value"
     xp = x #identity link
-    if (X$family$link=="logit") {
+    if (X$model$family$link=="logit") {
       #use 
       gam1$df.residual
       se.lower <- inv.logit(yy$fit + qt(0.025, gam1$df.residual) * yy$se.fit)
@@ -323,7 +323,7 @@ plot.validation <- function (x, type="discrimination", ...) {
       ylab = "Actual probability"
       ylim = c(-0.15,1)
       xlim = c(0,1)
-    } else if (X$family$link=="log") {
+    } else if (X$model$family$link=="log") {
       se.lower <- exp(yy$fit + qt(0.025, gam1$df.residual) * yy$se.fit)
       se.upper <- exp(yy$fit + qt(0.975, gam1$df.residual) * yy$se.fit)
       xp = exp(x)
@@ -386,6 +386,8 @@ plot.validation <- function (x, type="discrimination", ...) {
     }
     box()
   }
+  
+  if (sum(c("glm", "pm") %in% class(x$model))==0) stop(paste("Plot function not implemented for validated models of type \"",class(x$model), "\"!", sep=""))
   
   if (type=="discrimination") {
     plot(0, 0, type = "n",  xlab = "1-specificity", ylab = "Sensitivity", xlim = c(0,1), ylim = c(0,1), main="Discrimination")

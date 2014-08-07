@@ -1,10 +1,10 @@
 \name{plot.validation}
 \alias{plot.validation}
 
-\title{Plot the results of a validation study}
+\title{Plot the results of an external validation study}
 
 \description{
-This function plots the ROC curve or calibration curve of a validated prediction model.
+Display the ROC curve or calibration curve of an externally validated prediction model.
 }
 \usage{
 \method{plot}{validation}(x, type="discrimination", \ldots)
@@ -18,13 +18,7 @@ This function plots the ROC curve or calibration curve of a validated prediction
 \details{
 %%  ~~ If necessary, more details than the description above ~~
 }
-\value{
-%%  ~Describe the value returned
-%%  If it is a LIST, use
-%%  \item{comp1 }{Description of 'comp1'}
-%%  \item{comp2 }{Description of 'comp2'}
-%% ...
-}
+
 \references{
 %% ~put references to the literature/web site here ~
 }
