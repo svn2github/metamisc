@@ -1,5 +1,5 @@
-\name{validate}
-\alias{validate}
+\name{validation}
+\alias{validation}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{Validate a prediction model
 %%  ~~function to do ... ~~
@@ -12,7 +12,7 @@ validate(x, ds.ipd, time.calibration=NA)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{x}{An object of class "\code{\link{glm}}" or "\code{pm}", representing a prediction model.}
+  \item{x}{An object of class "\code{\link{pm}}", representing a prediction model.}
   \item{ds.ipd}{A validation dataset with information on the predictor and outcome variables of \code{x}. }
   \item{time.calibration}{Not implemented at this stage.}
 }
@@ -44,7 +44,7 @@ data(DVTipd)
 ## Develop a prediction model to predict presence of DVT
 model.dvt <- glm("dvt~sex+oachst+malign+surg+notraum+vein+calfdif3+ddimdich", 
                   family=binomial, data=DVTipd)
-val.dvt <- validate(model.dvt, DVTipd)
+val.dvt <- validate(pm(model.dvt), DVTipd)
 val.dvt
 plot(val.dvt, type="calibration")
 

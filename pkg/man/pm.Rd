@@ -8,11 +8,11 @@
 Create an object of the class \code{pm}, for which several functions are available.
 }
 \usage{
-pm(coefficients, formula, family=binomial())
+pm(x, formula, family=binomial())
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{coefficients}{A named vector of regression coefficients. The intercept term should be named as '(Intercept)'.}
+  \item{x}{An object of class "\code{\link{glm}}" or a named vector of regression coefficients.}
   \item{formula}{An object of class "\code{\link{formula}}" providing a symbolic description of the fitted model.}
   \item{family}{An object of class "\code{\link{family}}" describing the error distribution and link function to be used in the model.}
 }
@@ -42,6 +42,11 @@ pm(coefficients, formula, family=binomial())
 %% ~~objects to See Also as \code{\link{help}}, ~~~
 }
 \examples{
+data(DVTipd)
+model.dvt <- glm("dvt~sex+oachst+malign+surg+notraum+vein+calfdif3+ddimdich", 
+                  family=binomial, data=DVTipd)
+pm(model.dvt)                  
+                  
 data(DVTmodels)
 
 # extract coefficients Oudega model
