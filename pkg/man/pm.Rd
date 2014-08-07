@@ -40,6 +40,7 @@ pm(x, formula, family=binomial())
 }
 \examples{
 data(DVTmodels)
+data(DVTipd)
 
 # extract coefficients Oudega model
 weights.Oudega <- DVTmodels$weights["Oudega",]
