@@ -16,6 +16,7 @@ S3method(plot, riley)
 S3method(riley, default)
 
 ##validation methods
+S3method(validation, default)
 S3method(print, validation)
 S3method(plot, validation)
 
