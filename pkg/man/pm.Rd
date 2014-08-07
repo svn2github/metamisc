@@ -26,12 +26,9 @@ pm(x, formula, family=binomial())
 %%  \item{comp2 }{Description of 'comp2'}
 %% ...
 }
-\references{
-%% ~put references to the literature/web site here ~
-}
-\author{
-%%  ~~who you are~~
-}
+
+\author{Thomas Debray <thomas.debray@gmail.com>}
+
 \note{
 %%  ~~further notes~~
 }

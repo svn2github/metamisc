@@ -1,4 +1,4 @@
-validation <- function(x) {
+validation <- function(x, ds.ipd, time.calibration=NA) {
   UseMethod("validation")
 }
 
@@ -77,7 +77,7 @@ validation.default <- function(x, ds.ipd, time.calibration=NA) {
     m.slope <- cal.slope(predictions$y, predictions$lp, x$family)
   } 
   
-  if (sum(c("pm", "glm") %in% c("glm", "lm"))>0)
+  if (!"pmsurv" %in% class(x))
   {
     # Model discrimination
     roc.rule = roc(response=predictions$y, predictor=predictions$lp)
