@@ -1,6 +1,7 @@
 export("riley")
 export("uvmeta")
 export("pmmeta")
+export("basics")
 import("rjags")
 import("coda")
 import("pROC")
