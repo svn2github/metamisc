@@ -16,6 +16,8 @@ The following functionality is currently implemented: univariate meta-analysis o
 \author{Thomas Debray <thomas.debray@gmail.com>}
 
 \references{
+Debray TPA, Koffijberg H, Vergouwe Y, Moons KGM, Steyerberg EW. Aggregating published prediction models with individual participant data: a comparison of different approaches. \emph{Statistics in Medicine} 2012; \bold{31}: 2697--2712. DOI: 10.1002/sim.5412.
+
 Debray TPA, Koffijberg H, Nieboer D, Vergouwe Y, Steyerberg EW, Moons KGM. Meta-analysis and aggregation of multiple published prediction models. \emph{Statistics in Medicine} 2014; \bold{33}: 2341--2362. DOI: 10.1002/sim.6080.
 
 DerSimonian R, Laird N. Meta-analysis in clinical trials. \emph{Controlled Clinical Trials} 1986; \bold{7}: 177--188.
@@ -29,6 +31,5 @@ Riley RD, Thompson JR, Abrams KR. An alternative model for bivariate random-effe
 \keyword{ package }
 \keyword{regression}
 \keyword{meta-analysis}
+\keyword{validation}
 
-\seealso{ \code{\link{Daniels}}, \code{\link{Kertai}}, \code{\link{riley}}, \code{\link{Scheidler}}, 
-\code{\link{uvmeta}}, \code{\link{pmmeta}}}
