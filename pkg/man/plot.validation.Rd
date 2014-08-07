@@ -7,12 +7,13 @@
 This function plots the ROC curve or calibration curve of a validated prediction model.
 }
 \usage{
-plot.validation(X, type="discrimination", ...)
+plot.validation(x, type="discrimination", ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{X}{An object of class "\code{pmmodel}"}
+  \item{x}{An object of class "\code{pmmodel}"}
   \item{type}{A character indicating whether to plot the ROC curve ("discrimination") or calibration curve ("calibration").}
+  \item{...}{Additional arguments for \code{\link{plot}}.}
 }
 \details{
 %%  ~~ If necessary, more details than the description above ~~
@@ -42,7 +43,8 @@ plot.validation(X, type="discrimination", ...)
 \examples{
 ## Apparent validation of a novel prediction model
 data(DVTipd)
-model.dvt <- glm("dvt~sex+oachst+malign+surg+notraum+vein+calfdif3+ddimdich", family=binomial, data=DVTipd)
+model.dvt <- glm("dvt~sex+oachst+malign+surg+notraum+vein+calfdif3+ddimdich", 
+                  family=binomial, data=DVTipd)
 val.dvt <- validate(model.dvt, DVTipd)
 plot(val.dvt, type="discrimination")
 plot(val.dvt, type="calibration")

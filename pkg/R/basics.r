@@ -118,21 +118,21 @@ validate <- function(x, ds.ipd, time.calibration=NA) {
   return(out)
 }
 
-print.validation <- function(X) {
+print.validation <- function(x) {
   cat("Validation Data\n*************************************\n")
-  cat(paste("Study size: ", dim(X$predictions)[1], " subjects (", 
-            X$cal$events["num.observed"], " events)\n", sep=""))
+  cat(paste("Study size: ", dim(x$predictions)[1], " subjects (", 
+            x$cal$events["num.observed"], " events)\n", sep=""))
   cat("\nPerformance\n*************************************\n")
-  ci.roc <- signif(ci(X$roc), digits = 3)
-  cat(paste("Area under the ROC curve: ", round(X$roc$auc,3), " (95% CI: ",ci.roc[1], "; ", ci.roc[3],")\n", sep=""))
-  cat(paste("Observed versus expected: "), round(X$cal$OE["estimate"],3), "\n", sep="")
-  cat(paste("Calibration-in-the-large: ", round(X$cal$intercept["estimate"],3), 
-            " (95% CI: ", round(X$cal$intercept["2.5%"],3), "; ", round(X$cal$intercept["97.5%"],3),")\n", sep=""))
-  cat(paste("Calibration slope: ", round(X$cal$slope["estimate"],3), 
-            " (95% CI: ", round(X$cal$slope["2.5%"],3), "; ", round(X$cal$slope["97.5%"],3),")\n", sep=""))
+  ci.roc <- signif(ci(x$roc), digits = 3)
+  cat(paste("Area under the ROC curve: ", round(x$roc$auc,3), " (95% CI: ",ci.roc[1], "; ", ci.roc[3],")\n", sep=""))
+  cat(paste("Observed versus expected: "), round(x$cal$OE["estimate"],3), "\n", sep="")
+  cat(paste("Calibration-in-the-large: ", round(x$cal$intercept["estimate"],3), 
+            " (95% CI: ", round(x$cal$intercept["2.5%"],3), "; ", round(x$cal$intercept["97.5%"],3),")\n", sep=""))
+  cat(paste("Calibration slope: ", round(x$cal$slope["estimate"],3), 
+            " (95% CI: ", round(x$cal$slope["2.5%"],3), "; ", round(x$cal$slope["97.5%"],3),")\n", sep=""))
 }
 
-plot.validation <- function (X, type="discrimination", ...) {
+plot.validation <- function (x, type="discrimination", ...) {
   
   #This code was copied from package "rms" to avoid unneeded loading of other functionalities
   cut2 <- function (x, cuts, m = 150, g, levels.mean = FALSE, digits, minmax = TRUE, 
@@ -268,7 +268,7 @@ plot.validation <- function (X, type="discrimination", ...) {
                                main="",
                               m=20, #number of observations per group
                               shaded.bg=T,
-                              h.bars = 0.15, #height of the bars
+                              width.bins=10, #height of the bars
                               cex=2,  #text size
                               cex.lab=1, 
                               cex.axis=1, 
@@ -354,15 +354,13 @@ plot.validation <- function (X, type="discrimination", ...) {
     points(means, prop, pch = 2)  
     
     abline(a=0,b=0,lty=3)
-    
 
     lim = c(0, 1)
-    data <- data.frame(y=X$predictions$y, lp=X$predictions$lp)
-    f1 = glm(y~lp, data=data, family=X$family)
-    x1 <- predict(f1, type="response")
+    #f1 = glm(y~lp, data=data.frame(y=X$predictions$y, lp=X$predictions$lp), family=X$family)
+    x1 <- X$predictions$yhat #predict(f1, type="response")
     #x1[p == 0] <- 0
     #x1[p == 1] <- 1
-    bins1 <- seq(lim[1], lim[2], length = 101)
+    bins1 <- seq(lim[1], lim[2], length = dim(X$predictions)[1]/width.bins)
     x1 <- x1[x1 >= lim[1] & x1 <= lim[2]]
     f1 <- table(cut(x1, bins1))
 
@@ -380,10 +378,10 @@ plot.validation <- function (X, type="discrimination", ...) {
   
   if (type=="discrimination") {
     plot(0, 0, type = "n",  xlab = "1-specificity", ylab = "Sensitivity", xlim = c(0,1), ylim = c(0,1), main="Discrimination")
-    lines(rev(1-X$roc$sp), rev(X$roc$se), lwd=2)
+    lines(rev(1-x$roc$sp), rev(x$roc$se), lwd=2)
     lines(c(0,1), c(0,1), lty=2)
   } else if (type=="calibration") {
-    plot.calibration(X, main="Calibration", ...)
+    plot.calibration(x, main="Calibration", ...)
   }
 }
 

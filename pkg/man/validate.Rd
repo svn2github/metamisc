@@ -42,7 +42,8 @@ validate(X, ds.ipd, time.calibration=NA)
 data(DVTipd)
 
 ## Develop a prediction model to predict presence of DVT
-model.dvt <- glm("dvt~sex+oachst+malign+surg+notraum+vein+calfdif3+ddimdich", family=binomial, data=DVTipd)
+model.dvt <- glm("dvt~sex+oachst+malign+surg+notraum+vein+calfdif3+ddimdich", 
+                  family=binomial, data=DVTipd)
 val.dvt <- validate(model.dvt, DVTipd)
 val.dvt
 plot(val.dvt, type="calibration")

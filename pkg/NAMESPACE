@@ -18,6 +18,9 @@ S3method(riley, default)
 S3method(print, validation)
 S3method(plot, validation)
 
+## Basic methods
+
+
 #uvmeta methods
 S3method(print, uvmeta)
 S3method(plot, uvmeta)
