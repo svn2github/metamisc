@@ -3,8 +3,8 @@
 \docType{data}
 \title{Risk prediction models for diagnosing Deep Venous Thrombosis (DVT)
 }
-\description{This function creates an object with literature models for predicting the presence of DVT. 
-}
+\description{This function creates an object with literature models for predicting the presence of DVT. }
+
 \usage{data(DVTmodels)}
 
 \format{

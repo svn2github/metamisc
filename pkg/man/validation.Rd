@@ -4,15 +4,14 @@
 \title{Validate a prediction model
 %%  ~~function to do ... ~~
 }
-\description{
-%%  ~~ A concise (1-5 lines) description of what the function does. ~~
-}
+\description{Externally validate a prediction model, and calculate statistics for model discrimination and model calibration.}
+
 \usage{
 validation(x, ds.ipd, time.calibration=NA)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{x}{An object of class "\code{\link{pm}}", representing a prediction model.}
+  \item{x}{An object of class "\code{\link{pm}}", "\code{\link{glm}}" or "\code{\link{coxph}}".}
   \item{ds.ipd}{A validation dataset with information on the predictor and outcome variables of \code{x}. }
   \item{time.calibration}{Not implemented at this stage.}
 }
@@ -20,6 +19,7 @@ validation(x, ds.ipd, time.calibration=NA)
 %%  ~~ If necessary, more details than the description above ~~
 }
 \value{
+  \item{model}{The validated model.}
   \item{roc}{Model discrimination results, presented as an object of class "\code{roc}".}
   \item{cal}{Model calibration results ("estimate") with corresponding standard error ("se") and/or 95\% confidence interval ("2.5\%" and "97.5\%"). The following statistics are included: actual and predicted number of events ("$events"), ratio observed versus expected number of events ("$O:E"), calibration slope ("$slope") and calibration-in-the-large ("$intercept")}
   \item{predictions}{A data frame with the linear predictor ("lp"), predicted outcome ("yhat") and observed outcome ("y") for each subject from the validation dataset.}
@@ -44,7 +44,7 @@ data(DVTipd)
 ## Develop a prediction model to predict presence of DVT
 model.dvt <- glm("dvt~sex+oachst+malign+surg+notraum+vein+calfdif3+ddimdich", 
                   family=binomial, data=DVTipd)
-val.dvt <- validation(pm(model.dvt), DVTipd)
+val.dvt <- validation(model.dvt, DVTipd)
 val.dvt
 plot(val.dvt, type="calibration")
 

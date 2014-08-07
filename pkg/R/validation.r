@@ -48,12 +48,14 @@ validation.default <- function(x, ds.ipd, time.calibration=NA) {
     return(out)
   }
   
-  if (!"pm" %in% class(x))
-    stop("Model type not supported!!")
-  
-  
+  if (missing("ds.ipd")) stop("No validation data provided!")
+
+  val.surv <- T
   out <- list()
+  out$model <- x
+  class(out) <- "validation"
   if ("glm" %in% class(x)) {
+    val.surv <- F
     lp   <- as.numeric(predict(x, newdata=ds.ipd, type="link")) #calculate linear predictor
     yhat <- as.numeric(predict(x, newdata=ds.ipd, type="response"))
     outcome <- all.vars(formula(x))[1]
@@ -65,19 +67,29 @@ validation.default <- function(x, ds.ipd, time.calibration=NA) {
     #calibration slope and intercept
     m.intercept <- cal.intercept(y, lp, family(x))
     m.slope <- cal.slope(y, lp, family(x))
+  } else if ("pm" %in% class(x)) {
+    if (x$family$link=="logit") {
+      val.surv <- F
+      outcome <- all.vars(x$formula)[1]
+      family <- x$family
+      coefs <- x$coefficients
+      predictions <- calc.lp(coefs, ds.ipd, x$formula)
+      
+      #calibration slope and intercept
+      m.intercept <- cal.intercept(predictions$y, predictions$lp, x$family)
+      m.slope <- cal.slope(predictions$y, predictions$lp, x$family)
+    } else {
+      return(out)
+    }
+  } else if ("coxph" %in% class(x)) {
+    #newdata=as.matrix(model.matrix(x, ds.ipd))
+    #out$lp = newdata%*%coefficients(x)[match(colnames(newdata), coefficients(x))]
+    return(out)
   } else {
-    outcome <- all.vars(x$formula)[1]
-    family <- x$family
-    coefs <- x$coefficients
-    predictions <- calc.lp(coefs, ds.ipd, x$formula)
-    
-    
-    #calibration slope and intercept
-    m.intercept <- cal.intercept(predictions$y, predictions$lp, x$family)
-    m.slope <- cal.slope(predictions$y, predictions$lp, x$family)
-  } 
+    stop("Model type not supported!")
+  }
   
-  if (!("pmsurv" %in% class(x)))
+  if (!val.surv)
   {
     # Model discrimination
     roc.rule = roc(response=predictions$y, predictor=predictions$lp)
@@ -103,24 +115,28 @@ validation.default <- function(x, ds.ipd, time.calibration=NA) {
   }
   
   ## TODO: write code for time-to-event models 
-  
-  class(out) <- "validation"
+
   return(out)
 }
 
 
 print.validation <- function(x, ...) {
-  cat("Validation Data\n*************************************\n")
-  cat(paste("Study size: ", dim(x$predictions)[1], " subjects (", 
-            x$cal$events["num.observed"], " events)\n", sep=""))
-  cat("\nPerformance\n*************************************\n")
-  ci.roc <- signif(ci(x$roc), digits = 3)
-  cat(paste("Area under the ROC curve: ", round(x$roc$auc,3), " (95% CI: ",ci.roc[1], "; ", ci.roc[3],")\n", sep=""))
-  cat(paste("Observed versus expected: "), round(x$cal$OE["estimate"],3), "\n", sep="")
-  cat(paste("Calibration-in-the-large: ", round(x$cal$intercept["estimate"],3), 
-            " (95% CI: ", round(x$cal$intercept["2.5%"],3), "; ", round(x$cal$intercept["97.5%"],3),")\n", sep=""))
-  cat(paste("Calibration slope: ", round(x$cal$slope["estimate"],3), 
-            " (95% CI: ", round(x$cal$slope["2.5%"],3), "; ", round(x$cal$slope["97.5%"],3),")\n", sep=""))
+  if (sum(c("glm", "pm") %in% class(x$model))) {
+    cat("Validation Data\n*************************************\n")
+    cat(paste("Study size: ", dim(x$predictions)[1], " subjects (", 
+              x$cal$events["num.observed"], " events)\n", sep=""))
+    cat("\nPerformance\n*************************************\n")
+    ci.roc <- signif(ci(x$roc), digits = 3)
+    cat(paste("Area under the ROC curve: ", round(x$roc$auc,3), " (95% CI: ",ci.roc[1], "; ", ci.roc[3],")\n", sep=""))
+    cat(paste("Observed versus expected: "), round(x$cal$OE["estimate"],3), "\n", sep="")
+    cat(paste("Calibration-in-the-large: ", round(x$cal$intercept["estimate"],3), 
+              " (95% CI: ", round(x$cal$intercept["2.5%"],3), "; ", round(x$cal$intercept["97.5%"],3),")\n", sep=""))
+    cat(paste("Calibration slope: ", round(x$cal$slope["estimate"],3), 
+              " (95% CI: ", round(x$cal$slope["2.5%"],3), "; ", round(x$cal$slope["97.5%"],3),")\n", sep=""))
+  } else {
+    cat("Functionality not implemented at this stage!")
+  }
+  
 }
 
 plot.validation <- function (x, type="discrimination", ...) {
@@ -250,8 +266,8 @@ plot.validation <- function (x, type="discrimination", ...) {
       levels(y) <- format(means)
     }
     attr(y, "class") <- "factor"
-    if (length(xlab)) 
-      label(y) <- xlab
+    #if (length(xlab)) 
+    #  label(y) <- xlab
     y
   }
   

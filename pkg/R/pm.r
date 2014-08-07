@@ -4,12 +4,7 @@ pm <- function(x, formula, family=binomial()) {
 
 
 pm.default <- function(x, formula, family=binomial()) {
-  if ("glm" %in% class(x)) {
-    out <- x
-    class(out) <- c(class(out),"pm")
-    return(out)
-  }
-
+  if (class(x) != "numeric") stop("Invalid set of coefficients!")
   if (class(formula) != "formula") stop("Invalid formula object!")
   if (class(family) != "family") stop("Invalid family object!")
   if (family$link=="logit" & !("(Intercept)" %in% names(x))) warning("The model does not have an intercept term!")

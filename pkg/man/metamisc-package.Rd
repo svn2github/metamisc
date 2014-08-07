@@ -2,7 +2,7 @@
 \alias{metamisc-package}
 \docType{package}
 \title{Diagnostic and prognostic meta-analysis}
-\description{This package provides functions for diagnostic and prognostic research. It allows to perform meta-analysis of univariate (e.g. added value prognostic marker), bivariate (e.g. diagnostic test accuracy) and multivariate (e.g. previously published prediction model) statistics. It allows external validation of a prediction model.}
+\description{This package provides functions for diagnostic and prognostic research. It allows to perform meta-analysis of univariate (e.g. added value of a prognostic marker), bivariate (e.g. diagnostic test accuracy) and multivariate (e.g. previously published prediction model) statistics. It allows external validation of a prediction model.}
 
 \details{
 %\tabular{ll}{
