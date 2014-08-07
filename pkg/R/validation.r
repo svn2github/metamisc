@@ -109,7 +109,7 @@ validation.default <- function(x, ds.ipd, time.calibration=NA) {
 }
 
 
-print.validation <- function(x) {
+print.validation <- function(x, ...) {
   cat("Validation Data\n*************************************\n")
   cat(paste("Study size: ", dim(x$predictions)[1], " subjects (", 
             x$cal$events["num.observed"], " events)\n", sep=""))
