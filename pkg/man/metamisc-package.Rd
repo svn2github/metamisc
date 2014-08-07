@@ -11,7 +11,7 @@
 %Date: \tab 2014-08-05\cr
 %License: \tab GPL-2 \cr
 %}
-The following functionality is currently implemented: univariate meta-analysis of summary data (\code{\link{uvmeta}}), bivariate meta-analysis of correlated outcomes (\code{\link{riley}}), bivariate meta-analysis of diagnostic test accuracy data (\code{\link{reitsma}}) and meta-analysis of risk prediction models (\code{\link{pmmeta}}).}
+The following functionality is currently implemented: univariate meta-analysis of summary data (\code{\link{uvmeta}}), bivariate meta-analysis of correlated outcomes (\code{\link{riley}}), bivariate meta-analysis of diagnostic test accuracy data (\code{reitsma}) and meta-analysis of risk prediction models (\code{\link{pmmeta}}).}
 \author{Thomas Debray <thomas.debray@gmail.com>}
 
 \references{
