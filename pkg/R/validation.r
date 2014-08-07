@@ -60,7 +60,6 @@ validation.default <- function(x, ds.ipd, time.calibration=NA) {
     yhat <- as.numeric(predict(x, newdata=ds.ipd, type="response"))
     outcome <- all.vars(formula(x))[1]
     family <- family(x)
-    coefs <- coefficients(x)
     y <- ds.ipd[,outcome]
     predictions <- as.data.frame(cbind(lp, yhat, y))
     
@@ -72,8 +71,7 @@ validation.default <- function(x, ds.ipd, time.calibration=NA) {
       val.surv <- F
       outcome <- all.vars(x$formula)[1]
       family <- x$family
-      coefs <- x$coefficients
-      predictions <- calc.lp(coefs, ds.ipd, x$formula)
+      predictions <- calc.lp(x$coefficients, ds.ipd, x$formula)
       
       #calibration slope and intercept
       m.intercept <- cal.intercept(predictions$y, predictions$lp, x$family)
@@ -108,7 +106,6 @@ validation.default <- function(x, ds.ipd, time.calibration=NA) {
     OEresults <- c(OE, exp(log(OE)+qnorm(0.025)*se.lnOE), exp(log(OE)+qnorm(0.975)*se.lnOE))
     names(OEresults) <- c("estimate", "2.5%", "97.5%")
     
-    out$coefficients = coefs
     out$predictions = predictions
     out$roc = roc.rule
     out$cal = list(events=events.results, OE=OEresults, slope=m.slope, intercept=m.intercept)
