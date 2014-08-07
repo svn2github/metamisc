@@ -53,7 +53,7 @@ data(DVTmodels)
 weights.Wells <- DVTmodels$weights["Wells",]
 coefs <- weights.Wells[!is.na(weights.Wells)]
 fmla <- as.formula(paste("dvt~0+",paste(names(coefs)[-1], collapse="+")))
-model.Wells <- as.model(coefs, fmla, binomial()) 
+model.Wells <- pmmodel(coefs, fmla, binomial()) 
 val.Wells <- validate(model.Wells, DVTipd)
 val.Wells
 

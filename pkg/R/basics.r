@@ -2,18 +2,6 @@ logit <- function(x) { if(is.numeric(x))  log(x/(1-x)) else stop("x is not numer
 
 inv.logit <- function(x) {  if(is.numeric(x)) 1/(1+exp(-x)) else stop("x is not numeric!") }
 
-as.model <- function(coefficients, formula, family=binomial()) {
-  if (class(formula) != "formula") stop("Invalid formula object!")
-  if (class(family) != "family") stop("Invalid family object!")
-  if (! ("(Intercept)" %in% names(coefficients))) warning("The model does not have an intercept term!")
-  out <- list()
-  out$coefficients <- coefficients
-  out$formula <- formula
-  out$family <- family
-  class(out) <- "pmmodel"
-  return(out)
-}
-
 validate <- function(x, ds.ipd, time.calibration=NA) {
   
   cal.intercept <- function(y, lp, family) {

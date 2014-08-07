@@ -1,14 +1,14 @@
-\name{as.model}
-\alias{as.model}
+\name{pmmodel}
+\alias{pmmodel}
 %- Also NEED an '\alias' for EACH other topic documented here.
-\title{Create an object of the class \code{pmmodel}
+\title{Create a prediction model object
 %%  ~~function to do ... ~~
 }
 \description{
 Create an object of the class \code{pmmodel}, for which several functions are available.
 }
 \usage{
-as.model(coefficients, formula, family=binomial())
+pmmodel(coefficients, formula, family=binomial())
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -50,7 +50,7 @@ coefs <- weights.Oudega[!is.na(weights.Oudega)]
 fmla <- as.formula(paste("dvt~",paste(names(coefs)[-1], collapse="+")))
 
 # create pmmodel object and validate the model in external data
-model.Oudega <- as.model(coefs, fmla, binomial())
+model.Oudega <- pmmodel(coefs, fmla, binomial())
 val.Oudega <- validate(model.Oudega, DVTipd)
 val.Oudega
 }

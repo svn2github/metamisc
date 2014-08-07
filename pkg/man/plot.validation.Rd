@@ -54,7 +54,7 @@ data(DVTmodels)
 weights.Oudega <- DVTmodels$weights["Oudega",]
 coefs <- weights.Oudega[!is.na(weights.Oudega)]
 fmla <- as.formula(paste("dvt~",paste(names(coefs)[-1], collapse="+")))
-model.Oudega <- as.model(coefs, fmla, binomial()) 
+model.Oudega <- pmmodel(coefs, fmla, binomial()) 
 val.Oudega <- validate(model.Oudega, DVTipd)
 plot(val.Oudega, type="calibration")
 
