@@ -48,9 +48,7 @@ Thomas Debray <thomas.debray@gmail.com>
 \examples{
 ## Load example
 data(DVTmodels)
-models <- list(Wells=DVTmodels[1,], ModifiedWells=DVTmodels[2,], 
-               Gagne=DVTmodels[3,], Hamilton=DVTmodels[4,], Oudega=DVTmodels[5,])
-outcome <- "dvt"
+
   
 ## Generate artificial validation dataset
   
