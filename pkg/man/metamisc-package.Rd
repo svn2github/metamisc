@@ -2,7 +2,7 @@
 \alias{metamisc-package}
 \docType{package}
 \title{Diagnostic and prognostic meta-analysis}
-\description{This package provides functions for diagnostic and prognostic research. It allows to perform meta-analysis of univariate (e.g. added value of a prognostic marker), bivariate (e.g. diagnostic test accuracy) and multivariate (e.g. previously published prediction model) statistics. It allows external validation of a prediction model.}
+\description{This package provides functions for diagnostic and prognostic research. It allows to perform meta-analysis of univariate (e.g. added value of a prognostic marker), bivariate (e.g. diagnostic test accuracy) and multivariate (e.g. previously published prediction model) statistics. Functionalities to visualize results and perform external validation are also implemented.}
 
 \details{
 %\tabular{ll}{
@@ -13,6 +13,7 @@
 %License: \tab GPL-2 \cr
 %}
 The following functionality is currently implemented: univariate meta-analysis of summary data (\code{\link{uvmeta}}), bivariate meta-analysis of correlated outcomes (\code{\link{riley}}), bivariate meta-analysis of diagnostic test accuracy data (\code{reitsma}), meta-analysis of risk prediction models (\code{\link{pmmeta}}) and external validation of a prediction model (\code{\link{validation}}).}
+
 \author{Thomas Debray <thomas.debray@gmail.com>}
 
 \references{
@@ -28,7 +29,7 @@ measures in diagnostic reviews. \emph{Journal of Clinical Epidemiology} 2005; \b
 Riley RD, Thompson JR, Abrams KR. An alternative model for bivariate random-effects meta-analysis when the within-study correlations are unknown. \emph{Biostatistics} 2008; \bold{9}: 172--186.
 }
 
-\keyword{ package }
+\keyword{package}
 \keyword{regression}
 \keyword{meta-analysis}
 \keyword{validation}

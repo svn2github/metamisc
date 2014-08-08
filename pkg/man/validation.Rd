@@ -7,13 +7,13 @@
 \description{Externally validate a prediction model, and calculate statistics for model discrimination and model calibration.}
 
 \usage{
-validation(x, ds.ipd, time.calibration=NA)
+validation(x, ds.ipd, time.cal=NA)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{x}{An object of class "\code{\link{pm}}", "\code{\link{glm}}" or "\code{\link{coxph}}".}
   \item{ds.ipd}{A validation dataset with information on the predictor and outcome variables of \code{x}. }
-  \item{time.calibration}{Not implemented at this stage.}
+  \item{time.cal}{Time point at which the model needs to be validated. Only used for prediction models of class "\code{\link{coxph}}".}
 }
 \details{
 %%  ~~ If necessary, more details than the description above ~~
@@ -21,8 +21,8 @@ validation(x, ds.ipd, time.calibration=NA)
 \value{
   \item{model}{The validated model.}
   \item{roc}{Model discrimination results, presented as an object of class "\code{roc}".}
-  \item{cal}{Model calibration results ("estimate") with corresponding standard error ("se") and/or 95\% confidence interval ("2.5\%" and "97.5\%"). The following statistics are included: actual and predicted number of events ("$events"), ratio observed versus expected number of events ("$O:E"), calibration slope ("$slope") and calibration-in-the-large ("$intercept")}
-  \item{predictions}{A data frame with the linear predictor ("lp"), predicted outcome ("yhat") and observed outcome ("y") for each subject from the validation dataset.}
+  \item{cal}{Model calibration results ("estimate") with corresponding standard error ("se") and/or 95\% confidence interval ("2.5\%" and "97.5\%"). The following statistics are included: actual and predicted number of events ("events"), ratio observed versus expected number of events ("O:E"), calibration slope ("slope") and calibration-in-the-large ("intercept")}
+  \item{predictions}{A data frame with the linear predictor ("lp"), predicted outcome ("yhat") and observed outcome ("y") for each subject from the validation dataset. For time-to-event models (e.g. \code{\link{coxph}}), the predicted and observed (Kaplan-Meier) outcomes are calculated using \code{time.cal}.}
 }
 \references{
 %% ~put references to the literature/web site here ~

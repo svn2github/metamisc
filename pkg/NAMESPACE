@@ -3,9 +3,12 @@ export("uvmeta")
 export("pmmeta")
 export("pm")
 export("validation")
+
 import("rjags")
 import("coda")
 import("pROC")
+import("mvtnorm")
+import("bbmle")
 
 #Riley methods
 S3method(print, riley)

@@ -1,9 +1,9 @@
-validation <- function(x, ds.ipd, time.calibration=NA) {
+validation <- function(x, ds.ipd, time.cal=NA) {
   UseMethod("validation")
 }
 
 
-validation.default <- function(x, ds.ipd, time.calibration=NA) {
+validation.default <- function(x, ds.ipd, time.cal=NA) {
   
   cal.intercept <- function(y, lp, family) {
     y <- as.numeric(y)
