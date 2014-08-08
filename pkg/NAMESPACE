@@ -4,6 +4,7 @@ export("pmmeta")
 export("pm")
 export("validation")
 
+import("ellipse")
 import("rjags")
 import("coda")
 import("pROC")
