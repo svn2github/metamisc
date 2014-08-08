@@ -5,8 +5,8 @@ Version: 0.1.2
 Date: 2014-08-05
 Author: Thomas Debray
 Maintainer: Thomas Debray <thomas.debray@gmail.com>
-Description: This package provides functions for diagnostic and prognostic research. It allows to perform meta-analysis of univariate (e.g. added value of a prognostic marker), bivariate (e.g. diagnostic test accuracy) and multivariate (e.g. previously published prediction model) statistics. Functionalities to visualize results and perform external validation are also implemented. 
+Description: This package provides functions for diagnostic and prognostic research. It allows to perform meta-analysis of univariate (e.g. added value of a prognostic marker), bivariate (e.g. diagnostic test accuracy) and multivariate (e.g. previously published prediction model) statistics. Functionalities to update and externally validate prediction models are also implemented.
 Imports: pROC, mvtnorm, ellipse
-Depends: stats, graphics, bbmle, rjags, coda
+Depends: stats, graphics, bbmle, rjags, coda, survival
 License: GPL-2
 URL: http://r-forge.r-project.org/projects/metamisc/

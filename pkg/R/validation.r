@@ -44,7 +44,6 @@ validation.default <- function(x, ds.ipd, time.cal=NA) {
     
     out$lp = x%*%beta[match(colnames(x), names.beta)]
     out$yhat <- inv.logit(out$lp)
-    print(out)
     return(out)
   }
   
@@ -80,8 +79,16 @@ validation.default <- function(x, ds.ipd, time.cal=NA) {
       return(out)
     }
   } else if ("coxph" %in% class(x)) {
-    #newdata=as.matrix(model.matrix(x, ds.ipd))
-    #out$lp = newdata%*%coefficients(x)[match(colnames(newdata), coefficients(x))]
+    if (missing (time.cal)) stop("No time point specified!!")
+    if (is.na(time.cal)) stop("Time point is missing!")
+    
+    #Extract baseline survival 
+    #n.time <- all.vars(x$formula)[1] #Time
+    #n.status <- all.vars(x$formula)[2] #Status
+    #fmla <- as.formula(paste("Surv(",n.time, ",",n.status, ") ~ 1"))
+    #curves <- survfit(fmla, data=ds.ipd) 
+    
+    
     return(out)
   } else {
     stop("Model type not supported!")

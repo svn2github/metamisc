@@ -52,7 +52,7 @@ plot(val.dvt, type="calibration")
 data(DVTmodels)
 weights.Wells <- DVTmodels$weights["Wells",]
 coefs <- weights.Wells[!is.na(weights.Wells)]
-fmla <- as.formula(paste("dvt~0+",paste(names(coefs)[-1], collapse="+")))
+fmla <- as.formula(paste("dvt~0+",paste(names(coefs), collapse="+")))
 model.Wells <- pm(coefs, fmla, binomial()) 
 val.Wells <- validation(model.Wells, DVTipd)
 val.Wells
