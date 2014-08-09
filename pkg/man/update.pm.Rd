@@ -7,13 +7,14 @@
 Update a prediction model.
 }
 \usage{
-\method{update}{pm}(x, data, method="is")
+\method{update}{pm}(x, data, method="is", ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{x}{An object of class "\code{\link{pm}}".}
   \item{data}{A data frame with information on predictor and outcome variables of the prediction model.}
   \item{method}{Character indicating the updating method. Choose "\code{i}" for an intercept update, or "\code{is}" for logistic calibration (update intercept + common slope).}
+  \item{\ldots}{Other arguments (currently not used).}
 }
 \details{
 %%  ~~ If necessary, more details than the description above ~~

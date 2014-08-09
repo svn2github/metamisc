@@ -50,7 +50,7 @@ data(DVTipd)
 # extract coefficients Oudega model
 weights.Oudega <- DVTmodels$weights["Oudega",]
 coefs <- weights.Oudega[!is.na(weights.Oudega)]
-fmla <- as.formula(paste("dvt~",paste(names(coefs), collapse="+")))
+fmla <- as.formula(paste("dvt~",paste(names(coefs)[-1], collapse="+")))
 
 # create pm object and validate the model in external data
 model.Oudega <- pm(coefs, fmla, binomial())
