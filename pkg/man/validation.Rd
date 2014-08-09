@@ -7,16 +7,16 @@
 \description{Externally validate a prediction model, and calculate statistics for model discrimination and model calibration.}
 
 \usage{
-validation(x, ds.ipd, time.cal=NA)
+validation(x, data, time.cal=NA)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{x}{An object of class "\code{\link{pm}}", "\code{\link{glm}}" or "\code{\link{coxph}}".}
-  \item{ds.ipd}{A validation dataset with information on the predictor and outcome variables of \code{x}. }
+  \item{data}{A validation dataset with information on the predictor and outcome variables of \code{x}. }
   \item{time.cal}{Time point at which the model needs to be validated. Only used for prediction models of class "\code{\link{coxph}}".}
 }
 \details{
-%%  ~~ If necessary, more details than the description above ~~
+Confidence intervals for the calibration intercept and calibration slope are estimated using \emph{t} values.
 }
 \value{
   \item{model}{The validated model.}
@@ -25,7 +25,11 @@ validation(x, ds.ipd, time.cal=NA)
   \item{predictions}{A data frame with the linear predictor ("lp"), predicted outcome ("yhat") and observed outcome ("y") for each subject from the validation dataset. For time-to-event models (e.g. \code{\link{coxph}}), the predicted and observed (Kaplan-Meier) outcomes are calculated using \code{time.cal}.}
 }
 \references{
-%% ~put references to the literature/web site here ~
+Steyerberg EW. Clinical Prediction Models: A Practical Approach to Development, Validation, and Updating. New York 2009: Springer.
+
+Steyerberg EW, Vickers AJ, Cook NR, Gerds T, Gonen M, Obuchowski N, Pencina MJ, Kattan MW. Assessing the Performance of Prediction Models: A Framework for Traditional and Novel Measures. \emph{Epidemiology} 2010; \bold{21}: 128--138. DOI: 10.1097/EDE.0b013e3181c30fb2.
+
+
 }
 \author{Thomas Debray <thomas.debray@gmail.com>}
 

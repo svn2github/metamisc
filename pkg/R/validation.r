@@ -1,9 +1,9 @@
-validation <- function(x, ds.ipd, time.cal=NA) {
+validation <- function(x, data, time.cal=NA) {
   UseMethod("validation")
 }
 
 
-validation.default <- function(x, ds.ipd, time.cal=NA) {
+validation.default <- function(x, data, time.cal=NA) {
   
   cal.intercept <- function(y, lp, family) {
     y <- as.numeric(y)
@@ -47,7 +47,7 @@ validation.default <- function(x, ds.ipd, time.cal=NA) {
     return(out)
   }
   
-  if (missing("ds.ipd")) stop("No validation data provided!")
+  if (missing(data)) stop("No validation data provided!")
 
   val.surv <- T
   out <- list()
@@ -55,11 +55,11 @@ validation.default <- function(x, ds.ipd, time.cal=NA) {
   class(out) <- "validation"
   if ("glm" %in% class(x)) {
     val.surv <- F
-    lp   <- as.numeric(predict(x, newdata=ds.ipd, type="link")) #calculate linear predictor
-    yhat <- as.numeric(predict(x, newdata=ds.ipd, type="response"))
+    lp   <- as.numeric(predict(x, newdata=data, type="link")) #calculate linear predictor
+    yhat <- as.numeric(predict(x, newdata=data, type="response"))
     outcome <- all.vars(formula(x))[1]
     family <- family(x)
-    y <- ds.ipd[,outcome]
+    y <- data[,outcome]
     predictions <- as.data.frame(cbind(lp, yhat, y))
     
     #calibration slope and intercept
@@ -70,7 +70,7 @@ validation.default <- function(x, ds.ipd, time.cal=NA) {
       val.surv <- F
       outcome <- all.vars(x$formula)[1]
       family <- x$family
-      predictions <- calc.lp(x$coefficients, ds.ipd, x$formula)
+      predictions <- calc.lp(x$coefficients, data, x$formula)
       
       #calibration slope and intercept
       m.intercept <- cal.intercept(predictions$y, predictions$lp, x$family)
@@ -116,7 +116,7 @@ validation.default <- function(x, ds.ipd, time.cal=NA) {
     out$predictions = predictions
     out$roc = roc.rule
     out$cal = list(events=events.results, OE=OEresults, slope=m.slope, intercept=m.intercept)
-    out$ds.ipd = ds.ipd
+    out$data = data
   }
   
   ## TODO: write code for time-to-event models 
