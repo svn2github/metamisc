@@ -40,7 +40,7 @@ Steyerberg EW, Vickers AJ, Cook NR, Gerds T, Gonen M, Obuchowski N, Pencina MJ, 
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-%% ~~objects to See Also as \code{\link{help}}, ~~~
+The results from a validation can be displayed graphically using the command \code{plot}.
 }
 \examples{
 data(DVTipd)

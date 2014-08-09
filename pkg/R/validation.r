@@ -391,8 +391,6 @@ plot.validation <- function (x, type="discrimination", ...) {
     box()
   }
   
-  if (sum(c("glm", "pm") %in% class(x$model))==0) stop(paste("Plot function not implemented for validated models of type \"",class(x$model), "\"!", sep=""))
-  
   if (type=="discrimination") {
     plot(0, 0, type = "n",  xlab = "1-specificity", ylab = "Sensitivity", xlim = c(0,1), ylim = c(0,1), main="Discrimination")
     lines(rev(1-x$roc$sp), rev(x$roc$se), lwd=2)
