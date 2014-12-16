@@ -49,5 +49,6 @@ adjust(model.Wells, data=DVTipd, method="is")
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
-\keyword{ ~kwd1 }
-\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
+\keyword{ updating }
+\keyword{ prediction }
+\kewyord{ regression }
