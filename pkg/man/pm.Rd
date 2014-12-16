@@ -40,7 +40,7 @@ pm(x, formula, family=binomial())
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-A prediction model can be updated using "\code{\link{update}}" and externally validated using "\code{\link{validation}}".
+A prediction model can be updated using "\code{\link{adjust}}" and externally validated using "\code{\link{validation}}".
 %% ~~objects to See Also as \code{\link{help}}, ~~~
 }
 \examples{

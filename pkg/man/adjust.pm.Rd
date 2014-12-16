@@ -45,7 +45,7 @@ fmla <- as.formula(paste("dvt~0+",paste(names(coefs), collapse="+")))
 model.Wells <- pm(coefs, fmla, binomial()) 
 
 #Update common slope and add intercept term to Wells model
-update(model.Wells, data=DVTipd, method="is")
+adjust(model.Wells, data=DVTipd, method="is")
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
