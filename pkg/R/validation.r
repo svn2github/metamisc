@@ -79,6 +79,7 @@ validation.default <- function(x, data, time.cal=NA) {
       return(out)
     }
   } else if ("coxph" %in% class(x)) {
+    stop("Model type not supported yet!")
     if (missing (time.cal)) stop("No time point specified!!")
     if (is.na(time.cal)) stop("Time point is missing!")
     
@@ -144,7 +145,7 @@ print.validation <- function(x, ...) {
   
 }
 
-plot.validation <- function (x, type="discrimination", ...) {
+plot.validation <- function (x, type="discrimination", main, ...) {
   
   #This code was copied from package "rms" to avoid unneeded loading of other functionalities
   cut2 <- function (x, cuts, m = 150, g, levels.mean = FALSE, digits, minmax = TRUE, 
@@ -396,6 +397,7 @@ plot.validation <- function (x, type="discrimination", ...) {
     lines(rev(1-x$roc$sp), rev(x$roc$se), lwd=2)
     lines(c(0,1), c(0,1), lty=2)
   } else if (type=="calibration") {
-    plot.calibration(x, main="Calibration", ...)
+    if(missing(main)) main="Calibration"
+    plot.calibration(x, main=main, ...)
   }
 }

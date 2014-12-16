@@ -7,12 +7,13 @@
 Display the ROC curve or calibration curve of an externally validated prediction model.
 }
 \usage{
-\method{plot}{validation}(x, type="discrimination", \ldots)
+\method{plot}{validation}(x, type="discrimination", main, \ldots)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{x}{An object of class "\code{validation}"}
   \item{type}{A character indicating whether to plot the ROC curve ("discrimination") or calibration curve ("calibration").}
+  \item{main}{Title for the plot, defaults to "discrimination" or "calibration".}
   \item{\ldots}{Additional arguments for \code{\link{plot}}.}
 }
 \details{

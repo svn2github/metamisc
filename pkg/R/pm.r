@@ -21,7 +21,7 @@ pm.default <- function(x, formula, family=binomial()) {
   return(out)
 }
 
-update.pm <- function(x, data, method="is", ...) {
+adjust.pm <- function(x, data, method="is", ...) {
   
   if (missing(data)) stop("No updating data provided!")
   if (missing(method)) stop("No updating method provided!")
@@ -47,6 +47,7 @@ update.pm <- function(x, data, method="is", ...) {
   predictions <- calc.lp (x$coefficients, data, x$formula)
   
   if (method=="i") {
+    lp <- predictions$lp
     m.ll <- glm("y~1", offset=lp, data=predictions, family=x$family)
     x$k.upd <- 1
     if ("(Intercept)" %in% names(x$coefficients)) {
