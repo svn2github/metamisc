@@ -1,5 +1,5 @@
-\name{adjust.pm}
-\alias{adjust.pm}
+\name{upd.pm}
+\alias{upd.pm}
 
 \title{Update a prediction model}
 
@@ -7,7 +7,7 @@
 Update a prediction model.
 }
 \usage{
-\method{adjust}{pm}(x, data, method="is", ...)
+\method{upd}{pm}(x, data, method="is", ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -45,7 +45,7 @@ fmla <- as.formula(paste("dvt~0+",paste(names(coefs), collapse="+")))
 model.Wells <- pm(coefs, fmla, binomial()) 
 
 #Update common slope and add intercept term to Wells model
-adjust(model.Wells, data=DVTipd, method="is")
+upd(model.Wells, data=DVTipd, method="is")
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

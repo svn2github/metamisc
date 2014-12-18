@@ -28,7 +28,7 @@ S3method(plot, validation)
 
 ## Basic methods
 S3method(pm, default)
-S3method(adjust, pm)
+S3method(upd, pm)
 
 #uvmeta methods
 S3method(print, uvmeta)

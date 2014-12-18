@@ -21,7 +21,7 @@ pm.default <- function(x, formula, family=binomial()) {
   return(out)
 }
 
-adjust.pm <- function(x, data, method="is", ...) {
+upd.pm <- function(x, data, method="is", ...) {
   
   if (missing(data)) stop("No updating data provided!")
   if (missing(method)) stop("No updating method provided!")
