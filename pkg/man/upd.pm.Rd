@@ -47,8 +47,3 @@ model.Wells <- pm(coefs, fmla, binomial())
 #Update common slope and add intercept term to Wells model
 upd(model.Wells, data=DVTipd, method="is")
 }
-% Add one or more standard keywords, see file 'KEYWORDS' in the
-% R documentation directory.
-\keyword{ updating }
-\keyword{ prediction }
-\kewyord{ regression }

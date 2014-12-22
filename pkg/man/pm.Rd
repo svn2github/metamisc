@@ -1,9 +1,8 @@
 \name{pm}
 \alias{pm}
-%- Also NEED an '\alias' for EACH other topic documented here.
-\title{Create a prediction model object
-%%  ~~function to do ... ~~
-}
+
+\title{Create a prediction model object}
+
 \description{
 Create an object of the class \code{pm}, for which several functions are available. This function is currently only possible for generalized linear regression models.
 }
@@ -59,7 +58,7 @@ val.Oudega
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
-\keyword{ prediction }
-\keyword{ regression }
-\keyword{ updating }
-\keyword{ validation }
+\keyword{prediction}
+\keyword{regression}
+\keyword{updating}
+\keyword{validation}
