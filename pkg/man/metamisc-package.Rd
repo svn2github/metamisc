@@ -8,8 +8,8 @@
 %\tabular{ll}{
 %Package: \tab metamisc\cr
 %Type: \tab Package\cr
-%Version: \tab 0.1.2\cr
-%Date: \tab 2014-12-16\cr
+%Version: \tab 0.1.3\cr
+%Date: \tab 2017-03-01\cr
 %License: \tab GPL-2 \cr
 %}
 The following functionality is currently implemented: univariate meta-analysis of summary data (\code{\link{uvmeta}}), bivariate meta-analysis of correlated outcomes (\code{\link{riley}}), bivariate meta-analysis of diagnostic test accuracy data (\code{reitsma}), meta-analysis of risk prediction models (\code{\link{pmmeta}}) and external validation of a prediction model (\code{\link{validation}}).}
@@ -20,6 +20,8 @@ The following functionality is currently implemented: univariate meta-analysis o
 Debray TPA, Koffijberg H, Vergouwe Y, Moons KGM, Steyerberg EW. Aggregating published prediction models with individual participant data: a comparison of different approaches. \emph{Statistics in Medicine} 2012; \bold{31}: 2697--2712. DOI: 10.1002/sim.5412.
 
 Debray TPA, Koffijberg H, Nieboer D, Vergouwe Y, Steyerberg EW, Moons KGM. Meta-analysis and aggregation of multiple published prediction models. \emph{Statistics in Medicine} 2014; \bold{33}: 2341--2362. DOI: 10.1002/sim.6080.
+
+Debray TPA, Damen JAAG, Snell KIE, Ensor J, Hooft L, Reitsma JB, et al. A guide to systematic review and meta-analysis of prediction model performance. \emph{BMJ}. 2017; \bold{356}:i6460. 
 
 DerSimonian R, Laird N. Meta-analysis in clinical trials. \emph{Controlled Clinical Trials} 1986; \bold{7}: 177--188.
 
