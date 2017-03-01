@@ -1,8 +1,5 @@
 export("riley")
 export("uvmeta")
-export("pmmeta")
-export("pm")
-export("validation")
 
 import("ellipse")
 import("rjags")
@@ -19,15 +16,6 @@ S3method(vcov, riley)
 S3method(logLik, riley)
 S3method(plot, riley)
 S3method(riley, default)
-
-##validation methods
-S3method(validation, default)
-S3method(print, validation)
-S3method(plot, validation)
-
-## Basic methods
-S3method(pm, default)
-S3method(upd, pm)
 
 #uvmeta methods
 S3method(print, uvmeta)
