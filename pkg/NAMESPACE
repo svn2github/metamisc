@@ -1,8 +1,10 @@
 export("riley")
 export("uvmeta")
+export("valmeta")
 
 import("ellipse")
 import("rjags")
+import("metafor")
 import("coda")
 import("mvtnorm")
 import("bbmle")
@@ -23,5 +25,6 @@ S3method(plot, uvmeta)
 S3method(summary, uvmeta)
 S3method(uvmeta, default)
 
-#pmmeta methods
-
+#valmeta methods
+S3method(print, valmeta)
+S3method(valmeta, default)
