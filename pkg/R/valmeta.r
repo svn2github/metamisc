@@ -7,16 +7,16 @@ valmeta <- function(x, ...) {
 # By default try meta-analysis of c-statistic
 valmeta.default <- function(cstat, cstat.se, cstat.95CI,
                             N, O, method="REML", knha=TRUE, verbose=FALSE, 
-                            method.restore.se="Newcombe.4", scale = "logit", ...) {
+                            method.restore.c.se="Newcombe.4", scale.c = "logit", ...) {
 
-  ds <- cbind(cstat, cstat.se)
-  
   out <- list()
+  out$cstat <- list()
   out$call <- match.call()
   out$method <- method
-  out$method.restore.se <- method.restore.se 
-  out$scale <- scale
+  out$cstat$method.restore.se <- method.restore.c.se 
+  out$cstat$scale <- scale.c
   class(out) <- "valmeta"
+  class(out$cstat) <- "vmasum"
   
   if (missing(cstat.se) & missing(cstat.95CI)) {
     stop("No sampling error was provided for the c-statistic!")
@@ -35,7 +35,7 @@ valmeta.default <- function(cstat, cstat.se, cstat.95CI,
   logit <- function(x) { log(x/(1-x)) }
   
   #Update SE(c.index) using Method 4 of Newcombe
-  restore.c.var<- function(cstat, N.subjects, N.events, restore.method="Newcombe.4", scale=scale) {
+  restore.c.var<- function(cstat, N.subjects, N.events, restore.method="Newcombe.4", scale=scale.c) {
     n <- N.events #Number of events
     m <- N.subjects-N.events #Number of non-events
     
@@ -65,12 +65,12 @@ valmeta.default <- function(cstat, cstat.se, cstat.95CI,
     num.estimated.var.c <- 0
     
     # Apply necessary data transformations
-    if (scale == "identity") {
+    if (scale.c == "identity") {
       theta <- cstat
       theta.var <- (cstat.se)**2
       theta.var.CI <- ((cstat.95CI[,2] - cstat.95CI[,1])/(2*qnorm(0.975)))**2 #Derive from 95% CI
       theta.var <- ifelse(is.na(theta.var), theta.var.CI, theta.var)
-    } else if (scale == "logit") {
+    } else if (scale.c == "logit") {
       theta <- log(cstat/(1-cstat))
       theta.var <- (cstat.se/(cstat*(1-cstat)))**2
       theta.var.CI <- ((logit(cstat.95CI[,2]) - logit(cstat.95CI[,1]))/(2*qnorm(0.975)))**2
@@ -84,44 +84,45 @@ valmeta.default <- function(cstat, cstat.se, cstat.95CI,
       # Restore missing estimates of the standard error of the c-statistic using information on c, N and O
       if (!missing(O) & !missing(N)) {
         if (verbose) cat("Attempting to restore missing information on the standard error of the c-statistic\n")
-        theta.var.hat <- restore.c.var(cstat=cstat, N.subjects=N, N.events=O, restore.method=method.restore.se, scale=scale)
+        theta.var.hat <- restore.c.var(cstat=cstat, N.subjects=N, N.events=O, restore.method=method.restore.c.se, scale=scale.c)
         num.estimated.var.c <- length(which(is.na(theta.var) & !is.na(theta.var.hat)))
         theta.var <- ifelse(is.na(theta.var), theta.var.hat, theta.var)
       }
     }
-    ds <- cbind(ds, theta, theta.var)
+    ds <- cbind(theta, theta.var)
     
-    out$data <- ds
-    out$num.estimated.var.c <- num.estimated.var.c
+    out$cstat$data <- ds
+    out$cstat$num.estimated.var.c <- num.estimated.var.c
     
     # Apply the meta-analysis
     fit <- rma(yi=theta, vi=theta.var, data=ds, method=method, knha=knha) 
     preds <- predict(fit)
     
     results <- as.data.frame(array(NA, dim=c(1,5)))
-    if (scale == "logit") {
+    if (scale.c == "logit") {
       results <- c(inv.logit(coefficients(fit)), inv.logit(c(preds$ci.lb, preds$ci.ub, preds$cr.lb, preds$cr.ub)))
     } else {
       results <- c(coefficients(fit), c(preds$ci.lb, preds$ci.ub, preds$cr.lb, preds$cr.ub))
     }
     names(results) <- c("estimate", "95CIl", "95CIu", "95PIl", "95PIu")
     
-    out$rma <- fit
-    out$results.c <- results
+    out$cstat$rma <- fit
+    out$cstat$results <- results
   }
   
   return(out)
 }
 
 print.valmeta <- function(x, ...) {
-  if (!is.null(x$results.c)) {
-    cat("Model Results for the c-statistic:\n\n")
-    print(x$results.c)
-    if (x$num.estimated.var.c > 0)
-      cat(paste("\nWarning: For ", x$num.estimated.var.c, " validation(s), the standard error was estimated using method '", x$method.restore.se, "'.\n", sep=""))
-  }
-  
-  
+  if (!is.null(x$cstat$results)) {
+      print(x$cstat)}
+}
+
+print.vmasum <- function(x, ...) {
+  cat("Model Results for the c-statistic:\n\n")
+  print(x$results)
+  if (x$num.estimated.var.c > 0)
+    cat(paste("\nWarning: For ", x$num.estimated.var.c, " validation(s), the standard error was estimated using method '", x$method.restore.se, "'.\n", sep=""))
 }
 
 
