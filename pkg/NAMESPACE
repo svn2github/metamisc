@@ -10,6 +10,9 @@ import("mvtnorm")
 import("bbmle")
 import("survival")
 
+importFrom("graphics", "abline", "axis", "box", "lines", "par", "points", "polygon", "text")
+importFrom("stats", "coefficients", "dnorm", "optim", "pchisq", "qnorm", "qt")
+
 #Riley methods
 S3method(print, riley)
 S3method(summary, riley)
@@ -27,4 +30,6 @@ S3method(uvmeta, default)
 
 #valmeta methods
 S3method(print, valmeta)
-S3method(valmeta, default)
+S3method(plot, valmeta)
+S3method(print, vmasum )
+#S3method(valmeta, default)

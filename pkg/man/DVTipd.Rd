@@ -28,13 +28,10 @@ A hypothetical dataset with 500 subjects suspected of having deep vein thrombosi
   }
 }
 \details{
-%%  ~~ If necessary, more details than the __description__ above ~~
+Hypothetical dataset derived from the Individual Participant Data Meta-Analysis from Geersing \emph{et al} (2014). The dataset consists of consecutive outpatients with suspected deep vein thrombosis, with documented information on the presence or absence of proximal deep vein thrombosis (\code{dvt}) by an acceptable reference test. Acceptable such tests were either compression ultrasonography or venography at initial presentation, or, if venous imaging was not performed, an uneventful follow-up for at least three months.
 }
 \source{
-%%  ~~ reference to a publication or URL from which the data were obtained ~~
-}
-\references{
-%%  ~~ possibly secondary sources and usages ~~
+Geersing GJ, Zuithoff NPA, Kearon C, Anderson DR, Ten Cate-Hoek AJ, Elf JL, et al. Exclusion of deep vein thrombosis using the Wells rule in clinically important subgroups: individual patient data meta-analysis. \emph{BMJ}. 2014;348:g1340. 
 }
 \examples{
 data(DVTipd)

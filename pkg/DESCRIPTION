@@ -1,11 +1,11 @@
 Package: metamisc
 Type: Package
-Title: Diagnostic and prognostic meta-analysis (metamisc)
+Title: Diagnostic and Prognostic Meta-Analysis (Metamisc)
 Version: 0.1.3
 Date: 2017-03-01
 Author: Thomas Debray
 Maintainer: Thomas Debray <thomas.debray@gmail.com>
-Description: This package provides functions for diagnostic and prognostic research. It allows to perform meta-analysis of univariate (e.g. added value of a prognostic marker), bivariate (e.g. diagnostic test accuracy) and multivariate (e.g. previously published prediction model) statistics. Functionalities to update and externally validate prediction models are also implemented.
+Description: Meta-analysis of diagnostic and prognostic modeling studies. Summarize estimates of diagnostic test accuracy and prediction model performance. Validate, update and combine published prediction models. 
 Imports: metafor, mvtnorm, ellipse
 Depends: stats, graphics, bbmle, rjags, coda, survival
 License: GPL-2

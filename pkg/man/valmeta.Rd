@@ -9,18 +9,14 @@ Meta-analysis of prediction model performance
 This function allows to meta-analyze the performance of a prediction model, and to obtain summary estimates of the c-statistic, the total observed-expected ratio and the calibration slope. Where appropriate, data transformations are applied and missing information is derived from available quantities.
 }
 \usage{
-valmeta(x, ...)
-valmeta.default(cstat, cstat.se, cstat.95CI,
-                N, O, method="REML", knha=TRUE, verbose=FALSE, 
-                method.restore.se="Newcombe.4", scale = "logit", 
-                ...)
+valmeta(cstat, cstat.se, cstat.95CI,
+        N, O, method="REML", knha=TRUE, verbose=FALSE, 
+        method.restore.c.se="Newcombe.4", scale.c = "logit", 
+        ...)
 
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{x}{
-%%     ~~Describe \code{x} here~~
-}
   \item{cstat}{vector with the estimated c-statistic for each valiation}
   \item{cstat.se}{vector with the standard error of the estimated c-statistics}
   \item{cstat.95CI}{2-dimensional array with the lower (first column) and upper (second column) boundary of the 95\% confidence interval of the estimated c-statistics}
@@ -31,6 +27,7 @@ valmeta.default(cstat, cstat.se, cstat.95CI,
   \item{verbose}{if TRUE then messages generated during the fitting process will be displayed.}
   \item{method.restore.c.se}{character string specifying which method should be used to restore missing estimates for the standard error of the c-statistic. So far, only method 2 (\code{"Newcombe.2"}) and method 4 (\code{"Newcombe.4"}) are supported. These methods have been described by Newcombe in 2006.}
   \item{scale.c}{character string specifying whether the meta-analysis should use transformed values of the c-statistic and the corresponding standard error. Options are \code{scale="logit"} (logistic transformation) or \code{"identity"} (no transformation).}
+  \item{...}{Additional arguments which can be passed to \code{rma} or \code{runjags}.}
 }
 \details{
 \bold{Meta-analysis of the c-statistic}
@@ -63,18 +60,8 @@ Hanley JA, McNeil BJ. The meaning and use of the area under a receiver operating
 Newcombe RG. Confidence intervals for an effect size measure based on the Mann-Whitney statistic. Part 2: asymptotic methods and evaluation. \emph{Stat Med}. 2006 Feb 28;25(4):559--73. 
 
 }
-\author{
-%%  ~~who you are~~
-}
-\note{
-%%  ~~further notes~~
-}
+\author{Thomas Debray <thomas.debray@gmail.com>}
 
-%% ~Make other sections like Warning with \section{Warning }{....} ~
-
-\seealso{
-%% ~~objects to See Also as \code{\link{help}}, ~~~
-}
 \examples{
 data(EuroSCORE)
 attach(EuroSCORE)
@@ -82,11 +69,13 @@ attach(EuroSCORE)
 #Execute a random effects meta-analysis on the logit scale
 fit <- valmeta(cstat=c.index, cstat.se=se.c.index, N=n, O=n.events)
 fit
+plot(fit)
 
 #Detach the dataset
 detach(EuroSCORE)
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
-\keyword{ ~kwd1 }
-\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
+\keyword{ meta-analysis }
+\keyword{ discrimination }
+\keyword{ calibration }

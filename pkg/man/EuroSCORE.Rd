@@ -31,12 +31,10 @@ Published in 2012, EuroSCORE II was developed using logistic regression in a dat
 }
 \source{
 Guida P, Mastro F, Scrascia G, Whitlock R, Paparella D. Performance of the European System for Cardiac Operative Risk Evaluation II: a meta-analysis of 22 studies involving 145,592 cardiac surgery procedures. \emph{J Thorac Cardiovasc Surg}. 2014 Dec; \bold{148}(6):3049--3057.e1. 
+}
 
-}
-\references{
-%%  ~~ possibly secondary sources and usages ~~
-}
 \examples{
 data(EuroSCORE)
 }
 \keyword{datasets}
+\keyword{EuroSCORE}

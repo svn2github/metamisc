@@ -1,11 +1,4 @@
-valmeta <- function(x, ...) {
-    UseMethod("valmeta")
-  #For OE ratio lets use valmeta.data.frame
-}
-  
-
-# By default try meta-analysis of c-statistic
-valmeta.default <- function(cstat, cstat.se, cstat.95CI,
+valmeta <- function(cstat, cstat.se, cstat.95CI,
                             N, O, method="REML", knha=TRUE, verbose=FALSE, 
                             method.restore.c.se="Newcombe.4", scale.c = "logit", ...) {
 
@@ -95,7 +88,7 @@ valmeta.default <- function(cstat, cstat.se, cstat.95CI,
     out$cstat$num.estimated.var.c <- num.estimated.var.c
     
     # Apply the meta-analysis
-    fit <- rma(yi=theta, vi=theta.var, data=ds, method=method, knha=knha) 
+    fit <- rma(yi=theta, vi=theta.var, data=ds, method=method, knha=knha, ...) 
     preds <- predict(fit)
     
     results <- as.data.frame(array(NA, dim=c(1,5)))
@@ -125,5 +118,22 @@ print.vmasum <- function(x, ...) {
     cat(paste("\nWarning: For ", x$num.estimated.var.c, " validation(s), the standard error was estimated using method '", x$method.restore.se, "'.\n", sep=""))
 }
 
-
+plot.valmeta <- function(x, ...) {
+  inv.logit <- function(x) {1/(1+exp(-x)) }
+  
+  if (!is.null(x$cstat)) {
+    if (!is.null(x$cstat$rma)) {
+      # Forest plot for the c-statistic
+      if (x$cstat$scale=="logit") {
+        forest(x$cstat$rma, transf=inv.logit, xlab="c-statistic", addcred=T, ...)
+      } else {
+        forest(x$cstat$rma, xlab="c-statistic", addcred=T, ...)
+      }
+    } else {
+      warning("Forest plot not implemented yet for the Bayesian meta-analysis!")
+    }
+  }
+  
+  
+}
 
