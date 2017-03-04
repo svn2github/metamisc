@@ -63,11 +63,15 @@ valmeta <- function(cstat, cstat.se, cstat.95CI,
       theta <- cstat
       theta.var <- (cstat.se)**2
       theta.var.CI <- ((cstat.95CI[,2] - cstat.95CI[,1])/(2*qnorm(0.975)))**2 #Derive from 95% CI
+      theta.cil <- cstat.95CI[,1]
+      theta.ciu <- cstat.95CI[,2]
       theta.var <- ifelse(is.na(theta.var), theta.var.CI, theta.var)
     } else if (scale.c == "logit") {
       theta <- log(cstat/(1-cstat))
       theta.var <- (cstat.se/(cstat*(1-cstat)))**2
       theta.var.CI <- ((logit(cstat.95CI[,2]) - logit(cstat.95CI[,1]))/(2*qnorm(0.975)))**2
+      theta.cil <- logit(cstat.95CI[,1])
+      theta.ciu <- logit(cstat.95CI[,2])
       theta.var <- ifelse(is.na(theta.var), theta.var.CI, theta.var)
     } else {
       stop("No appropriate transformation defined")
@@ -87,8 +91,12 @@ valmeta <- function(cstat, cstat.se, cstat.95CI,
       # Replace remaining missing values in theta.var by very large values
       theta.var <- ifelse(is.na(theta.var), 10e6, theta.var)
     }
-    theta.cil <- theta+qnorm(0.025)*sqrt(theta.var)
-    theta.ciu <- theta+qnorm(0.975)*sqrt(theta.var)
+    
+    #Only calculate 95% CI for which no original values were available
+    theta.cil[is.na(theta.cil)] <- (theta+qnorm(0.025)*sqrt(theta.var))[is.na(theta.cil)]
+    theta.ciu[is.na(theta.ciu)] <- (theta+qnorm(0.975)*sqrt(theta.var))[is.na(theta.ciu)]
+    
+
     ds <- cbind(theta, sqrt(theta.var), theta.cil, theta.ciu)
     colnames(ds) <- c("theta", "theta.se", "theta.95CIl", "theta.95CIu")
     out$cstat$data <- ds
