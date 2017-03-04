@@ -4,6 +4,7 @@ export("valmeta")
 
 import("ellipse")
 import("rjags")
+import("runjags")
 import("metafor")
 import("coda")
 import("mvtnorm")

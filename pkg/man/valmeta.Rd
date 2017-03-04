@@ -1,6 +1,6 @@
 \name{valmeta}
 \alias{valmeta}
-\alias{valmeta.default}
+
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
 Meta-analysis of prediction model performance
@@ -9,10 +9,9 @@ Meta-analysis of prediction model performance
 This function allows to meta-analyze the performance of a prediction model, and to obtain summary estimates of the c-statistic, the total observed-expected ratio and the calibration slope. Where appropriate, data transformations are applied and missing information is derived from available quantities.
 }
 \usage{
-valmeta(cstat, cstat.se, cstat.95CI,
-        N, O, method="REML", knha=TRUE, verbose=FALSE, 
-        method.restore.c.se="Newcombe.4", scale.c = "logit", 
-        ...)
+valmeta(cstat, cstat.se, cstat.95CI, N, O, method="REML", 
+        knha=TRUE, verbose=FALSE, method.restore.c.se="Newcombe.4", 
+        scale.c = "logit", n.chains = 4, \ldots)
 
 }
 %- maybe also 'usage' for other objects documented here.
@@ -27,7 +26,8 @@ valmeta(cstat, cstat.se, cstat.95CI,
   \item{verbose}{if TRUE then messages generated during the fitting process will be displayed.}
   \item{method.restore.c.se}{character string specifying which method should be used to restore missing estimates for the standard error of the c-statistic. So far, only method 2 (\code{"Newcombe.2"}) and method 4 (\code{"Newcombe.4"}) are supported. These methods have been described by Newcombe in 2006.}
   \item{scale.c}{character string specifying whether the meta-analysis should use transformed values of the c-statistic and the corresponding standard error. Options are \code{scale="logit"} (logistic transformation) or \code{"identity"} (no transformation).}
-  \item{...}{Additional arguments which can be passed to \code{rma} or \code{runjags}.}
+  \item{n.chains}{the number of chains to use in the Gibbs sampler (\code{method="BAYES"}). More chains will improve the sensitivity of the convergence diagnostic, but will cause the simulation to run more slowly. The default number of chains is 4.}
+  \item{\ldots}{Additional arguments that are passed to \code{rma} or \code{runjags} (if \code{method="BAYES"}).}
 }
 \details{
 \bold{Meta-analysis of the c-statistic}
@@ -36,9 +36,10 @@ The c-statistic is a measure of discrimination, and indicates the ability of a p
 
 \bold{Meta-analysis models}
 
-Most meta-analysis models are implemented using \emph{metafor}, and can directly be specified using the parameter \code{method}. More information on these can be obtained by typing '\code{?rma}'.
+The type of (fixed effect or random effects) meta-analysis model can directly be specified using the parameter \code{method}. Most models are implemented using \code{rma} (from the '\code{metafor}' package), except when performing a Bayesian meta-analysis using the Gibbs sampler (\code{method="BAYES"}). 
 }
 \value{
+An object of class \code{valmeta} with the following elements:
 \item{cstat}{object of class \code{vmasum} containing the meta-analysis results of the c-statistic.}
 \item{method}{character string specifying whether a fixed- or a random-effects model was fitted.}
 %\item{results}{vector with the summary c-statistic, the corresponding standard error, 95\% confidence interval and 95\% prediction interval.}
@@ -53,14 +54,19 @@ Most meta-analysis models are implemented using \emph{metafor}, and can directly
 %% ...
 }
 \references{
-Debray TPA, Damen JAAG, Snell KIE, Ensor J, Hooft L, Reitsma JB, et al. A guide to systematic review and meta-analysis of prediction model performance. \emph{BMJ}. 2017;356:i6460. 
+Debray TPA, Damen JAAG, Snell KIE, Ensor J, Hooft L, Reitsma JB, et al. A guide to systematic review and meta-analysis of prediction model performance. \emph{BMJ}. 2017; 356:i6460. 
 
-Hanley JA, McNeil BJ. The meaning and use of the area under a receiver operating characteristic (ROC) curve. \emph{Radiology}. 1982 Apr;143(1):29--36. 
+Hanley JA, McNeil BJ. The meaning and use of the area under a receiver operating characteristic (ROC) curve. \emph{Radiology}. 1982; 143(1):29--36. 
 
-Newcombe RG. Confidence intervals for an effect size measure based on the Mann-Whitney statistic. Part 2: asymptotic methods and evaluation. \emph{Stat Med}. 2006 Feb 28;25(4):559--73. 
+Newcombe RG. Confidence intervals for an effect size measure based on the Mann-Whitney statistic. Part 2: asymptotic methods and evaluation. \emph{Stat Med}. 2006; 25(4):559--73. 
 
+Viechtbauer W. Conducting Meta-Analyses in R with the metafor Package. \emph{Journal of Statistical Software}. 2010; 36(3). Available from: \url{http://www.jstatsoft.org/v36/i03/}
 }
 \author{Thomas Debray <thomas.debray@gmail.com>}
+
+\seealso{
+\code{\link{plot.valmeta}}
+}
 
 \examples{
 data(EuroSCORE)

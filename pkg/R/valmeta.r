@@ -1,6 +1,8 @@
 valmeta <- function(cstat, cstat.se, cstat.95CI,
-                            N, O, method="REML", knha=TRUE, verbose=FALSE, 
-                            method.restore.c.se="Newcombe.4", scale.c = "logit", ...) {
+                    N, O, method="REML", knha=TRUE, verbose=FALSE, 
+                    method.restore.c.se="Newcombe.4", scale.c = "logit", 
+                    n.chains = 4,
+                    ...) {
 
   out <- list()
   out$cstat <- list()
@@ -54,9 +56,8 @@ valmeta <- function(cstat, cstat.se, cstat.95CI,
     return(out)
   }
   
-  if (method != "BAYES") { # Use of rma
-    num.estimated.var.c <- 0
-    
+  
+  if(!missing(cstat)) {
     # Apply necessary data transformations
     if (scale.c == "identity") {
       theta <- cstat
@@ -72,6 +73,8 @@ valmeta <- function(cstat, cstat.se, cstat.95CI,
       stop("No appropriate transformation defined")
     }
     
+    num.estimated.var.c <- 0
+    
     # Restore missing standard errors
     if (NA %in% theta.var) {
       # Restore missing estimates of the standard error of the c-statistic using information on c, N and O
@@ -83,26 +86,85 @@ valmeta <- function(cstat, cstat.se, cstat.95CI,
       }
     }
     ds <- cbind(theta, theta.var)
-    
     out$cstat$data <- ds
     out$cstat$num.estimated.var.c <- num.estimated.var.c
     
-    # Apply the meta-analysis
-    fit <- rma(yi=theta, vi=theta.var, data=ds, method=method, knha=knha, ...) 
-    preds <- predict(fit)
-    
-    results <- as.data.frame(array(NA, dim=c(1,5)))
-    if (scale.c == "logit") {
-      results <- c(inv.logit(coefficients(fit)), inv.logit(c(preds$ci.lb, preds$ci.ub, preds$cr.lb, preds$cr.ub)))
+    if (method != "BAYES") { # Use of rma
+      
+      # Apply the meta-analysis
+      fit <- rma(yi=theta, vi=theta.var, data=ds, method=method, knha=knha, ...) 
+      preds <- predict(fit)
+      
+      results <- as.data.frame(array(NA, dim=c(1,5)))
+      if (scale.c == "logit") {
+        results <- c(inv.logit(coefficients(fit)), inv.logit(c(preds$ci.lb, preds$ci.ub, preds$cr.lb, preds$cr.ub)))
+      } else {
+        results <- c(coefficients(fit), c(preds$ci.lb, preds$ci.ub, preds$cr.lb, preds$cr.ub))
+      }
+      names(results) <- c("estimate", "95CIl", "95CIu", "95PIl", "95PIu")
+      
+      out$cstat$rma <- fit
+      out$cstat$results <- results
     } else {
-      results <- c(coefficients(fit), c(preds$ci.lb, preds$ci.ub, preds$cr.lb, preds$cr.ub))
+      # Perform a Bayesian meta-analysis
+      model <- .generateBugsCstat(link=scale.c, ...)
+      
+      mvmeta_dat <- list(theta = theta,
+                         theta.var = theta.var,
+                         Nstudies = length(theta))
+      jags.model <- run.jags(model=model, 
+                             monitor = c("mu.tobs", "mu.obs", "pred.obs", "bsTau", "priorTau"), 
+                             data = mvmeta_dat, 
+                             n.chains = n.chains,
+                             ...)
+      fit <- jags.model$summaries
+      
+      results <- c(fit["mu.obs","Mean"], fit["mu.obs", c("Lower95", "Upper95")], fit["pred.obs", c("Lower95", "Upper95")])
+      names(results) <- c("estimate", "95CIl", "95CIu", "95PIl", "95PIu")
+      
+      out$cstat$runjags <- jags.model
+      out$cstat$results <- results
     }
-    names(results) <- c("estimate", "95CIl", "95CIu", "95PIl", "95PIu")
-    
-    out$cstat$rma <- fit
-    out$cstat$results <- results
   }
   
+  return(out)
+}
+
+.generateBugsCstat <- function(link="logit", #Choose between 'log', 'logit' and 'binom'
+                               prior="dunif", #Choose between dunif (uniform) or dhalft (half student T)
+                               prior.bound=c(0,2), #boundaries for uniform prior
+                               prior.sigma=0.5, ...) # standard deviation for student T prior
+  {
+
+  prior.prec <- 1/(prior.sigma*prior.sigma)
+  out <- "model {\n " 
+  out <- paste(out, "for (i in 1:Nstudies)\n  {\n")
+  out <- paste(out, "    theta[i] ~ dnorm(alpha[i], wsprec[i])\n")
+  out <- paste(out, "    alpha[i] ~ dnorm(mu.tobs, bsprec)\n")
+  out <- paste(out, "    wsprec[i] <- 1/(theta.var[i])\n")
+  out <- paste(out, " }\n")
+  out <- paste(out, " bsprec <- 1/(bsTau*bsTau)\n")
+  
+  if (prior=="dunif") {
+    out <- paste(out, "  priorTau ~ dunif(", prior.bound[1], ",", prior.bound[2], ")\n", sep="") 
+    out <- paste(out, "  bsTau ~ dunif(", prior.bound[1], ",", prior.bound[2], ")\n", sep="") 
+  } else if (prior=="dhalft") {
+    out <- paste(out, "  priorTau ~ dt(0,", prior.prec, ",3)T(0,10)\n", sep="") 
+    out <- paste(out, "  bsTau ~ dt(0,", prior.prec, ",3)T(0,10)\n", sep="") 
+    
+  } else {
+    stop("Specified prior not implemented")
+  }
+  
+  if (link == "logit") {
+    out <- paste(out, "  mu.tobs ~ dnorm(0.0,1.0E-6)\n", sep="")
+    out <- paste(out, "  mu.obs <- 1/(1+exp(-mu.tobs))\n", sep="")
+    out <- paste(out, "  pred.obs <- 1/(1+exp(-pred.tobs))\n", sep="")
+    out <- paste(out, "  pred.tobs ~ dnorm(mu.tobs, bsprec)\n", sep="")
+  } else {
+    stop("Specified link function not implemented")
+  }
+  out <- paste(out, "}", sep="")
   return(out)
 }
 
@@ -115,7 +177,20 @@ print.vmasum <- function(x, ...) {
   cat("Model Results for the c-statistic:\n\n")
   print(x$results)
   if (x$num.estimated.var.c > 0)
-    cat(paste("\nWarning: For ", x$num.estimated.var.c, " validation(s), the standard error was estimated using method '", x$method.restore.se, "'.\n", sep=""))
+    cat(paste("\nNote: For ", x$num.estimated.var.c, " validation(s), the standard error was estimated using method '", x$method.restore.se, "'.\n", sep=""))
+  if (!is.null(x$runjags)) {
+    # Check if model converged
+    psrf.ul <-  x$runjags$psrf$psrf[,"97.5% quantile"]
+    psrf.target <- x$runjags$psrf$psrf.target
+    
+    if(sum(psrf.ul > psrf.target)>1) {
+      warning(paste("Model did not properly converge! The upper bound of the convergence diagnostic (psrf) exceeds", 
+                    psrf.target, "for the parameters", 
+              paste(rownames(x$runjags$psrf$psrf)[which(psrf.ul > psrf.target)], " (psrf=", 
+                    round(x$runjags$psrf$psrf[which(psrf.ul > psrf.target),2],2), ")", collapse=", ", sep=""),
+              ". Consider re-running the analysis by increasing the optional arguments 'adapt', 'burnin' and/or 'sample'."  ))
+    }
+  }
 }
 
 plot.valmeta <- function(x, ...) {
@@ -127,13 +202,34 @@ plot.valmeta <- function(x, ...) {
       if (x$cstat$scale=="logit") {
         forest(x$cstat$rma, transf=inv.logit, xlab="c-statistic", addcred=T, ...)
       } else {
-        forest(x$cstat$rma, xlab="c-statistic", addcred=T, ...)
+        forest(x$cstat$rma, transf=NULL, xlab="c-statistic", addcred=T, ...)
       }
     } else {
+      #mu.scaled <- x$cstat$runjags$summary$statistics["mu.tobs","Mean"]
+      #slab <- seq(1, nrow(x$cstat$data))
+
+      #rma <- list()
+      #class(rma) <- c("rma.uni", "rma")
+      #rma$int.only <- T
+      #rma$slab.null <- T
+      #rma$yi <- rma$yi.f <- x$cstat$data[,"theta"]
+      #attr(rma$yi,"slab") <- attr(rma$yi.f,"slab") <- slab
+      #attr(rma$yi,"measure") <- attr(rma$yi.f,"measure") <- "GEN"
+      #rma$slab <- slab
+      #rma$coef.na <- F
+      #names(rma$coef.na) <- "X"
+      #rma$k.f <- rma$k <- nrow(x$cstat$data)
+      #rma$vi <- rma$vi.f <- x$cstat$data[,"theta.var"]
+      #rma$X.f <- rma$X <- array(1, dim=c(nrow(x$cstat$data),1))
+      #names(rma$X.f) <- names(rma$X) <- c("intrcpt")
+      #rma$b <- array(mu.scaled, dim=c(1,1))
+      #rownames(rma$b) <- "intrcpt"
+      #rma$tau2 <- x$cstat$runjags$summary$statistics["bsTau","Mean"]**2
+      #rma$weighted <- T
+      #forest(rma, transf=inv.logit, xlab="c-statistic", addcred=T, ...)
       warning("Forest plot not implemented yet for the Bayesian meta-analysis!")
+      #create own version of forest plot
     }
   }
-  
-  
 }
 
