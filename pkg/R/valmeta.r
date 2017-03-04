@@ -233,7 +233,7 @@ plot.valmeta <- function(x, ...) {
       height <- par.usr[4] - par.usr[3]
       
       k <- dim(x$cstat$data)[1]
-      slab <- x$cstat$slab
+      slab <- c(x$cstat$slab, "RE Model")
       yi <- x$cstat$data[,"theta"]
       ci.lb <- x$cstat$data[,"theta.95CIl"]
       ci.ub <- x$cstat$data[,"theta.95CIu"]
@@ -244,11 +244,18 @@ plot.valmeta <- function(x, ...) {
         ci.ub <- sapply(ci.ub, inv.logit)
       }
       
-      rows <- seq(k,1)
+      #Add the meta-analysis summary to the results
+      #Note that no transormations are needed here, as summaries are always presented on original scale
+      yi <- c(yi, x$cstat$results["estimate"])
+      ci.lb <- c(ci.lb, x$cstat$results["95CIl"])
+      ci.ub <- c(ci.ub, x$cstat$results["95CIu"])
+      
+      rows <- c(seq(k,1),-1)
       
       annotext <- round(cbind(yi, ci.lb, ci.ub), 2)
       annotext <- matrix(apply(annotext, 2, format, nsmall = 2), ncol = 3)
       annotext <- paste(annotext[,1], "[", annotext[,2], ",", annotext[,3], "]")
+      
       
       par.mar <- par("mar")
       par.mar.adj <- par.mar - c(0, 3, 1, 1)
@@ -259,11 +266,10 @@ plot.valmeta <- function(x, ...) {
       par.usr <- par("usr")
       height <- par.usr[4] - par.usr[3]
       lheight <- strheight("O")
-      cex.adj <- ifelse(k * lheight > height * 0.8, height/(1.25 * 
-                                                              k * lheight), 1)
+      cex.adj <- ifelse(k * lheight > height * 0.8, height/(1.25 * k * lheight), 1)
       cex <- par("cex") * cex.adj
       
-      plot(NA, NA, xlim=xlim, ylim=c(0,k), ylab="", xlab="c-statistic",yaxt = "n", xaxt = "n", xaxs = "i", bty = "n", ...)
+      plot(NA, NA, xlim=xlim, ylim=c(-2,k), ylab="", xlab="c-statistic",yaxt = "n", xaxt = "n", xaxs = "i", bty = "n", ...)
       for (i in 1:k) {
         points(yi[i], rows[i], pch = 15, ...)
         
@@ -276,11 +282,13 @@ plot.valmeta <- function(x, ...) {
         segments(ci.ub[i], rows[i] - (height/150) * cex * 
                    efac[1], ci.ub[i], rows[i] + (height/150) * cex * 
                    efac[1], ...)
-        
-        text(xlim[1], rows, slab, pos = 4, cex = cex, ...)
-        text(x = xlim[2], rows, labels = annotext, pos = 2, cex = cex, ...)
-        
       }
+      text(xlim[1], rows, slab, pos = 4, cex = cex, ...)
+      text(x = xlim[2], rows, labels = annotext, pos = 2, cex = cex, ...)
+      
+      # Add meta-analysis summary
+      abline(h = 0, lty = 1, ...)
+
       axis(side = 1, at = c(0,0.2,0.4,0.6,0.8,1), labels = c(0, 0.2, 0.4, 0.6, 0.8, 1), cex.axis = 1, ...)
     }
   }
