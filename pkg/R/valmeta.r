@@ -84,9 +84,15 @@ valmeta <- function(cstat, cstat.se, cstat.95CI,
         num.estimated.var.c <- length(which(is.na(theta.var) & !is.na(theta.var.hat)))
         theta.var <- ifelse(is.na(theta.var), theta.var.hat, theta.var)
       }
+      # Replace remaining missing values in theta.var by very large values
+      theta.var <- ifelse(is.na(theta.var), 10e6, theta.var)
     }
-    ds <- cbind(theta, theta.var)
+    theta.cil <- theta+qnorm(0.025)*sqrt(theta.var)
+    theta.ciu <- theta+qnorm(0.975)*sqrt(theta.var)
+    ds <- cbind(theta, sqrt(theta.var), theta.cil, theta.ciu)
+    colnames(ds) <- c("theta", "theta.se", "theta.95CIl", "theta.95CIu")
     out$cstat$data <- ds
+    out$cstat$slab <- paste("Study",seq(1, length(theta)))
     out$cstat$num.estimated.var.c <- num.estimated.var.c
     
     if (method != "BAYES") { # Use of rma
@@ -113,16 +119,22 @@ valmeta <- function(cstat, cstat.se, cstat.95CI,
                          theta.var = theta.var,
                          Nstudies = length(theta))
       jags.model <- run.jags(model=model, 
-                             monitor = c("mu.tobs", "mu.obs", "pred.obs", "bsTau", "priorTau"), 
+                             monitor = c("mu.tobs", "mu.obs", "pred.obs", "bsTau", "priorTau", "PED"), 
                              data = mvmeta_dat, 
                              n.chains = n.chains,
+                             silent.jags = !verbose,
                              ...)
       fit <- jags.model$summaries
+      
+      
+      #Extract PED
+      fit.dev <- extract(jags.model,"PED")
       
       results <- c(fit["mu.obs","Mean"], fit["mu.obs", c("Lower95", "Upper95")], fit["pred.obs", c("Lower95", "Upper95")])
       names(results) <- c("estimate", "95CIl", "95CIu", "95PIl", "95PIu")
       
       out$cstat$runjags <- jags.model
+      out$cstat$PED <- sum(fit.dev$deviance)+sum(fit.dev$penalty)
       out$cstat$results <- results
     }
   }
@@ -174,11 +186,12 @@ print.valmeta <- function(x, ...) {
 }
 
 print.vmasum <- function(x, ...) {
-  cat("Model Results for the c-statistic:\n\n")
+  cat("Model results for the c-statistic:\n\n")
   print(x$results)
-  if (x$num.estimated.var.c > 0)
-    cat(paste("\nNote: For ", x$num.estimated.var.c, " validation(s), the standard error was estimated using method '", x$method.restore.se, "'.\n", sep=""))
   if (!is.null(x$runjags)) {
+    #Print penalized expected deviance
+    cat(paste("\nPenalized expected deviance: ", round(x$PED,2), "\n"))
+    
     # Check if model converged
     psrf.ul <-  x$runjags$psrf$psrf[,"97.5% quantile"]
     psrf.target <- x$runjags$psrf$psrf.target
@@ -191,6 +204,9 @@ print.vmasum <- function(x, ...) {
               ". Consider re-running the analysis by increasing the optional arguments 'adapt', 'burnin' and/or 'sample'."  ))
     }
   }
+  if (x$num.estimated.var.c > 0)
+    cat(paste("\nNote: For ", x$num.estimated.var.c, " validation(s), the standard error was estimated using method '", x$method.restore.se, "'.\n", sep=""))
+  
 }
 
 plot.valmeta <- function(x, ...) {
@@ -205,30 +221,67 @@ plot.valmeta <- function(x, ...) {
         forest(x$cstat$rma, transf=NULL, xlab="c-statistic", addcred=T, ...)
       }
     } else {
-      #mu.scaled <- x$cstat$runjags$summary$statistics["mu.tobs","Mean"]
-      #slab <- seq(1, nrow(x$cstat$data))
-
-      #rma <- list()
-      #class(rma) <- c("rma.uni", "rma")
-      #rma$int.only <- T
-      #rma$slab.null <- T
-      #rma$yi <- rma$yi.f <- x$cstat$data[,"theta"]
-      #attr(rma$yi,"slab") <- attr(rma$yi.f,"slab") <- slab
-      #attr(rma$yi,"measure") <- attr(rma$yi.f,"measure") <- "GEN"
-      #rma$slab <- slab
-      #rma$coef.na <- F
-      #names(rma$coef.na) <- "X"
-      #rma$k.f <- rma$k <- nrow(x$cstat$data)
-      #rma$vi <- rma$vi.f <- x$cstat$data[,"theta.var"]
-      #rma$X.f <- rma$X <- array(1, dim=c(nrow(x$cstat$data),1))
-      #names(rma$X.f) <- names(rma$X) <- c("intrcpt")
-      #rma$b <- array(mu.scaled, dim=c(1,1))
-      #rownames(rma$b) <- "intrcpt"
-      #rma$tau2 <- x$cstat$runjags$summary$statistics["bsTau","Mean"]**2
-      #rma$weighted <- T
-      #forest(rma, transf=inv.logit, xlab="c-statistic", addcred=T, ...)
-      warning("Forest plot not implemented yet for the Bayesian meta-analysis!")
-      #create own version of forest plot
+      col <- c("black", "gray50")
+      border <- "black"
+      lty <- c("solid", "dotted", "solid")
+      cex <- 0.8
+      efac <- 1
+      efac <- rep(efac, 2)
+      xlim <- c(-0.5, 1.5)
+      
+      par.usr <- par("usr")
+      height <- par.usr[4] - par.usr[3]
+      
+      k <- dim(x$cstat$data)[1]
+      slab <- x$cstat$slab
+      yi <- x$cstat$data[,"theta"]
+      ci.lb <- x$cstat$data[,"theta.95CIl"]
+      ci.ub <- x$cstat$data[,"theta.95CIu"]
+      
+      if (x$cstat$scale=="logit") {
+        yi <- sapply(yi, inv.logit)
+        ci.lb <- sapply(ci.lb, inv.logit)
+        ci.ub <- sapply(ci.ub, inv.logit)
+      }
+      
+      rows <- seq(k,1)
+      
+      annotext <- round(cbind(yi, ci.lb, ci.ub), 2)
+      annotext <- matrix(apply(annotext, 2, format, nsmall = 2), ncol = 3)
+      annotext <- paste(annotext[,1], "[", annotext[,2], ",", annotext[,3], "]")
+      
+      par.mar <- par("mar")
+      par.mar.adj <- par.mar - c(0, 3, 1, 1)
+      par.mar.adj[par.mar.adj < 0] <- 0
+      par(mar = par.mar.adj)
+      on.exit(par(mar = par.mar))
+      
+      par.usr <- par("usr")
+      height <- par.usr[4] - par.usr[3]
+      lheight <- strheight("O")
+      cex.adj <- ifelse(k * lheight > height * 0.8, height/(1.25 * 
+                                                              k * lheight), 1)
+      cex <- par("cex") * cex.adj
+      
+      plot(NA, NA, xlim=xlim, ylim=c(0,k), ylab="", xlab="c-statistic",yaxt = "n", xaxt = "n", xaxs = "i", bty = "n", ...)
+      for (i in 1:k) {
+        points(yi[i], rows[i], pch = 15, ...)
+        
+        segments(ci.lb[i], rows[i], ci.ub[i], rows[i], ...)
+        
+        segments(ci.lb[i], rows[i] - (height/150) * cex * 
+                   efac[1], ci.lb[i], rows[i] + (height/150) * cex * 
+                   efac[1], ...)
+        
+        segments(ci.ub[i], rows[i] - (height/150) * cex * 
+                   efac[1], ci.ub[i], rows[i] + (height/150) * cex * 
+                   efac[1], ...)
+        
+        text(xlim[1], rows, slab, pos = 4, cex = cex, ...)
+        text(x = xlim[2], rows, labels = annotext, pos = 2, cex = cex, ...)
+        
+      }
+      axis(side = 1, at = c(0,0.2,0.4,0.6,0.8,1), labels = c(0, 0.2, 0.4, 0.6, 0.8, 1), cex.axis = 1, ...)
     }
   }
 }
