@@ -90,7 +90,8 @@ fit
 plot(fit)
 
 # Execute a random effects meta-analysis of the total O:E ratio
-valmeta(N=n, O=n.events, E=e.events)
+valmeta(N=n, O=n.events, E=e.events) # Option 1
+valmeta(N=n, O=(Po/100)*n, E=(Pe/100)*n) # Option 2
 
 # Execute a random effects meta-analysis of the c-statistic and the total O:E ratio
 valmeta(cstat=c.index, cstat.se=se.c.index, 
