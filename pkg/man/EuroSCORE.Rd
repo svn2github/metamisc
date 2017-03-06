@@ -16,8 +16,8 @@ This data set contains estimates on the predictive performance of the European s
     \item{\code{n.events}}{The total number of observed events}
     \item{\code{c.index}}{The estimated concordance statistic}
     \item{\code{se.c.index}}{The standard error of the concordance statistic}
-    \item{\code{c.index.95CIl}}{The lower bound of the 95\% confidence interval of the concordance statistic}
-    \item{\code{c.index.95CIu}}{The upper bound of the 95\% confidence interval of the concordance statistic}
+    \item{\code{c.index.95CIl}}{The lower bound of the 95\% confidence interval of the estimated concordance statistic}
+    \item{\code{c.index.95CIu}}{The upper bound of the 95\% confidence interval of the estimated concordance statistic}
     \item{\code{Po}}{The overall observed event probability (on a scale from 0 to 100)}
     \item{\code{Pe}}{The overall expected event probability (on a scale from 0 to 100)}
     \item{\code{SD.Pe}}{The standard error of \code{Pe}}
