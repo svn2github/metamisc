@@ -32,7 +32,10 @@ This data set contains estimates on the predictive performance of the European s
 Published in 2012, EuroSCORE II was developed using logistic regression in a dataset comprising 16,828 adult patients undergoing major cardiac surgery from 154 hospitals in 43 countries over a 12-weewk period (May-July) in 2010.  EuroSCORE II was developed to predict in-hospital mortality for patients undergoing any type of cardiac surgery. In 2014, a systematic review of published evidence on the performance value of the euroSCORE II was undertaken by Guida \emph{et al}. Twenty-two validations, including more 145,592 patients from 21 external validation articles (one study included two validations) and a split-sample validation contained within original development article were included in the review; 23 validation studies in total.
 }
 \source{
-Guida P, Mastro F, Scrascia G, Whitlock R, Paparella D. Performance of the European System for Cardiac Operative Risk Evaluation II: a meta-analysis of 22 studies involving 145,592 cardiac surgery procedures. \emph{J Thorac Cardiovasc Surg}. 2014 Dec; \bold{148}(6):3049--3057.e1. 
+Guida P, Mastro F, Scrascia G, Whitlock R, Paparella D. Performance of the European System for Cardiac Operative Risk Evaluation II: a meta-analysis of 22 studies involving 145,592 cardiac surgery procedures. \emph{J Thorac Cardiovasc Surg}. 2014; \bold{148}(6):3049--3057.e1. 
+
+Nashef SAM, Roques F, Sharples LD, Nilsson J, Smith C, Goldstone AR, et al. EuroSCORE II. \emph{Eur J Cardiothorac Surg}. 2012; \bold{41}(4):734-744; discussion 744-745. 
+
 }
 
 \examples{

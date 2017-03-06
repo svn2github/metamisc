@@ -1,30 +1,23 @@
-valmeta <- function(cstat, cstat.se, cstat.95CI,
-                    N, O, method="REML", knha=TRUE, verbose=FALSE, 
+valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.95CI,
+                    N, O, E, method="REML", knha=TRUE, verbose=FALSE, 
                     method.restore.c.se="Newcombe.4", scale.c = "logit", 
-                    n.chains = 4,
+                    scale.oe = "log", n.chains = 4,
                     ...) {
 
   out <- list()
-  out$cstat <- list()
   out$call <- match.call()
   out$method <- method
-  out$cstat$method.restore.se <- method.restore.c.se 
-  out$cstat$scale <- scale.c
   class(out) <- "valmeta"
-  class(out$cstat) <- "vmasum"
   
-  if (missing(cstat.se) & missing(cstat.95CI)) {
-    stop("No sampling error was provided for the c-statistic!")
+  N.studies.OE <- 0
+  
+  if (!missing(OE)) {
+    N.studies.OE <- length(OE)
+  } else if (!missing(E)) {
+    N.studies.OE <- length(E)
   }
-  if (missing(cstat.95CI)) {
-    cstat.95CI <- array(NA, dim=c(length(cstat),2))
-  }
-  if (missing(cstat.se)) {
-    cstat.se <- array(NA, dim=length(cstat))
-  }
-  if (dim(cstat.95CI)[2] != 2 | dim(cstat.95CI)[1] != length(cstat)) {
-    stop("Invalid dimension for variable 'cstat.95CI'!")
-  }
+  
+  
 
   inv.logit <- function(x) {  if(is.numeric(x)) 1/(1+exp(-x)) else stop("x is not numeric!") }
   logit <- function(x) { log(x/(1-x)) }
@@ -58,23 +51,46 @@ valmeta <- function(cstat, cstat.se, cstat.95CI,
   
   
   if(!missing(cstat)) {
+    if (missing(cstat.se) & missing(cstat.95CI)) {
+      stop("No sampling error was provided for the c-statistic!")
+    }
+    if (missing(cstat.95CI)) {
+      cstat.95CI <- array(NA, dim=c(length(cstat),2))
+    }
+    if (is.null(dim(cstat.95CI))) {
+      warning("Invalid dimension for 'cstat.95CI', argument ignored.")
+      cstat.95CI <- array(NA, dim=c(length(cstat),2))
+    }
+    if (dim(cstat.95CI)[2] != 2 | dim(cstat.95CI)[1] != length(cstat)) {
+      warning("Invalid dimension for 'cstat.95CI', argument ignored.")
+      cstat.95CI <- array(NA, dim=c(length(cstat),2))
+    }
+    if (missing(cstat.se)) {
+      cstat.se <- array(NA, dim=length(cstat))
+    }
+    
+    out$cstat <- list()
+    out$cstat$method.restore.se <- method.restore.c.se 
+    out$cstat$scale <- scale.c
+    class(out$cstat) <- "vmasum"
+    
     # Apply necessary data transformations
     if (scale.c == "identity") {
       theta <- cstat
       theta.var <- (cstat.se)**2
-      theta.var.CI <- ((cstat.95CI[,2] - cstat.95CI[,1])/(2*qnorm(0.975)))**2 #Derive from 95% CI
       theta.cil <- cstat.95CI[,1]
       theta.ciu <- cstat.95CI[,2]
-      theta.var <- ifelse(is.na(theta.var), theta.var.CI, theta.var)
+      theta.var.CI <- ((theta.ciu - theta.cil)/(2*qnorm(0.975)))**2 #Derive from 95% CI
+      theta.var <- ifelse(is.na(theta.var), theta.var.CI, theta.var) #Prioritize reported SE
     } else if (scale.c == "logit") {
       theta <- log(cstat/(1-cstat))
       theta.var <- (cstat.se/(cstat*(1-cstat)))**2
-      theta.var.CI <- ((logit(cstat.95CI[,2]) - logit(cstat.95CI[,1]))/(2*qnorm(0.975)))**2
       theta.cil <- logit(cstat.95CI[,1])
       theta.ciu <- logit(cstat.95CI[,2])
-      theta.var <- ifelse(is.na(theta.var), theta.var.CI, theta.var)
+      theta.var.CI <- ((theta.ciu - theta.cil)/(2*qnorm(0.975)))**2
+      theta.var <- ifelse(is.na(theta.var.CI), theta.var, theta.var.CI) #Prioritize variance from 95% CI
     } else {
-      stop("No appropriate transformation defined")
+      stop(paste("No appropriate transformation defined: '", scale.c, "'", sep=""))
     }
     
     num.estimated.var.c <- 0
@@ -154,6 +170,84 @@ valmeta <- function(cstat, cstat.se, cstat.95CI,
     }
   }
   
+  ##### Prepare data for OE ratio
+  if(N.studies.OE > 0) {
+    if (missing(N)) {
+      N <- array(NA, dim=N.studies.OE)
+    }
+    if (missing(OE)) {
+      OE <- array(NA, dim=N.studies.OE)
+    }
+    if (missing(OE.95CI)) {
+      OE.95CI <- array(NA, dim=c(N.studies.OE,2))
+    }
+    if (is.null(dim(OE.95CI))) {
+      warning("Invalid dimension for 'OE.95CI', argument ignored.")
+      OE.95CI <- array(NA, dim=c(N.studies.OE,2))
+    }
+    if (dim(OE.95CI)[2] != 2 | dim(OE.95CI)[1] != N.studies.OE) {
+      warning("Invalid dimension for 'OE.95CI', argument ignored.")
+      OE.95CI <- array(NA, dim=c(N.studies.OE,2))
+    }
+    
+    out$oe$scale <- scale.oe
+    class(out$oe) <- "vmasum"
+    
+    # Apply necessary data transformations
+    if (scale.oe == "identity") {
+      theta <- OE
+      theta <- ifelse(is.na(theta), O/E, theta)
+      theta.var <- O*(1-(O/N))/(E**2) #BMJ eq 20 (binomial var)
+      theta.var <- ifelse(is.na(theta.var), (O/(E**2)), theta.var) #BMJ eq 30 (Poisson var)
+      theta.cil <- OE.95CI[,1]
+      theta.ciu <- OE.95CI[,2]
+      theta.var.CI <- ((theta.ciu - theta.cil)/(2*qnorm(0.975)))**2 #Derive from 95% CI
+      theta.var <- ifelse(is.na(theta.var), theta.var.CI, theta.var) #Prioritize reported SE
+    } else if (scale.oe == "log") {
+      theta <- log(OE)
+      theta <- ifelse(is.na(theta), log(O/E), theta)
+      theta.var <- (1-(O/N))/O #BMJ eq 27 (binomial var)
+      theta.var <- ifelse(is.na(theta.var), (1/O), theta.var) #BMJ eq 36 (Poisson var)
+      theta.cil <- log(OE.95CI[,1])
+      theta.ciu <- log(OE.95CI[,2])
+      theta.var.CI <- ((theta.ciu - theta.cil)/(2*qnorm(0.975)))**2
+      theta.var <- ifelse(is.na(theta.var.CI), theta.var, theta.var.CI) #Prioritize variance from 95% CI
+    } else {
+      stop(paste("No appropriate transformation defined: '", scale.oe, "'", sep=""))
+    }
+    
+    #Only calculate 95% CI for which no original values were available
+    theta.cil[is.na(theta.cil)] <- (theta+qnorm(0.025)*sqrt(theta.var))[is.na(theta.cil)]
+    theta.ciu[is.na(theta.ciu)] <- (theta+qnorm(0.975)*sqrt(theta.var))[is.na(theta.ciu)]
+    
+    ds <- cbind(theta, sqrt(theta.var), theta.cil, theta.ciu)
+    colnames(ds) <- c("theta", "theta.se", "theta.95CIl", "theta.95CIu")
+    out$oe$data <- ds
+    out$oe$slab <- paste("Study",seq(1, length(theta)))
+
+    if (method != "BAYES") { # Use of rma
+      
+      # Apply the meta-analysis
+      fit <- rma(yi=theta, vi=theta.var, data=ds, method=method, knha=knha, ...) 
+      preds <- predict(fit)
+      
+      results <- as.data.frame(array(NA, dim=c(1,5)))
+      if (scale.oe == "log") {
+        results <- c(exp(coefficients(fit)), exp(c(preds$ci.lb, preds$ci.ub, preds$cr.lb, preds$cr.ub)))
+      } else {
+        results <- c(coefficients(fit), c(preds$ci.lb, preds$ci.ub, preds$cr.lb, preds$cr.ub))
+      }
+      names(results) <- c("estimate", "95CIl", "95CIu", "95PIl", "95PIu")
+      
+      out$oe$rma <- fit
+      out$oe$results <- results
+    } else {
+      stop("Bayesian method not implemented yet!")
+    }
+  }
+  
+  
+  
   return(out)
 }
 
@@ -214,11 +308,22 @@ valmeta <- function(cstat, cstat.se, cstat.95CI,
 
 print.valmeta <- function(x, ...) {
   if (!is.null(x$cstat$results)) {
-      print(x$cstat)}
+    cat("Model results for the c-statistic:\n\n")
+    print(x$cstat)
+    if (x$cstat$num.estimated.var.c > 0)
+      cat(paste("\nNote: For ", x$cstat$num.estimated.var.c, " validation(s), the standard error was estimated using method '", x$cstat$method.restore.se, "'.\n", sep=""))
+    
+    if (!is.null(x$oe$results)) {
+      cat("\n\n")
+    }
+    }
+  if (!is.null(x$oe$results)) {
+    cat("Model results for the total O:E ratio:\n\n")
+    print(x$oe)
+  }
 }
 
 print.vmasum <- function(x, ...) {
-  cat("Model results for the c-statistic:\n\n")
   print(x$results)
   if (!is.null(x$runjags)) {
     #Print penalized expected deviance
@@ -236,9 +341,7 @@ print.vmasum <- function(x, ...) {
               ". Consider re-running the analysis by increasing the optional arguments 'adapt', 'burnin' and/or 'sample'."  ))
     }
   }
-  if (x$num.estimated.var.c > 0)
-    cat(paste("\nNote: For ", x$num.estimated.var.c, " validation(s), the standard error was estimated using method '", x$method.restore.se, "'.\n", sep=""))
-  
+    
 }
 
 plot.valmeta <- function(x, ...) {
@@ -344,6 +447,21 @@ plot.valmeta <- function(x, ...) {
       abline(h = 0, lty = 1, ...)
 
       axis(side = 1, at = c(0,0.2,0.4,0.6,0.8,1), labels = c(0, 0.2, 0.4, 0.6, 0.8, 1), cex.axis = 1, ...)
+    }
+    if (!is.null(x$oe)) {
+      readline(prompt="Press [enter] to continue")
+    }
+  }
+  if (!is.null(x$oe)) {
+    if (!is.null(x$oe$rma)) {
+      # Forest plot for the c-statistic
+      if (x$oe$scale=="log") {
+        forest(x$oe$rma, transf=exp, xlab="Total O:E ratio", addcred=T, refline=1, ...)
+      } else {
+        forest(x$oe$rma, transf=NULL, xlab="Total O:E ratio", addcred=T, refline=1, ...)
+      }
+    } else {
+      warning("Plot function not implemented yet for Bayesian MA")
     }
   }
 }
