@@ -40,7 +40,7 @@ The c-statistic is a measure of discrimination, and indicates the ability of a p
 
 \bold{Meta-analysis of the total observed versus expected ratio (O:E ratio)}
 
-The total O:E ratio provides a rough indication of the overall model calibration (across the entire range of predicted risks). A meta-analysis for the O:E ratio will be performed if the total number of observed (\code{O}) and expected (\code{E}) events are defined, or if their ratio (\code{OE}) is provided. Ideally, to improve estimation of the standard error, values for \code{N} should also be provided. Note that unless \code{method="BAYES"}, the number of expected events is treated a fixed constant. By default, extracted O:E ratios are rescaled using the (natural) log transformation to improve the validity of the Normality assumptions in the meta-analysis models. 
+The total O:E ratio provides a rough indication of the overall model calibration (across the entire range of predicted risks). A meta-analysis for the O:E ratio will be performed if the total number of observed (\code{O}) and expected (\code{E}) events are defined, or if their ratio (\code{OE}) is provided. If no values are provided for \code{N}, the Poisson (rather than the binomial) distribution is for calculating the standard error of the number of observed events. Note that unless \code{method="BAYES"}, the number of expected events is treated a fixed constant. By default, extracted O:E ratios are rescaled using the (natural) log transformation to improve the validity of the Normality assumptions in the meta-analysis models. 
 
 
 \bold{Meta-analysis models}
@@ -82,25 +82,26 @@ Viechtbauer W. Conducting Meta-Analyses in R with the metafor Package. \emph{Jou
 data(EuroSCORE)
 attach(EuroSCORE)
 
-# Meta-analysis of the c-statistic
+# Meta-analysis of the c-statistic (random effects)
 fit <- valmeta(cstat=c.index, cstat.se=se.c.index, 
                cstat.95CI=cbind(c.index.95CIl,c.index.95CIu), 
                N=n, O=n.events)
 fit
 plot(fit)
 
-# Meta-analysis of the total O:E ratio
-valmeta(N=n, O=n.events, E=e.events) # Option 1
-valmeta(N=n, O=(Po/100)*n, E=(Pe/100)*n) # Option 2
-valmeta(O=n.events, E=e.events) # Option 3: use Poisson approximation
+# Meta-analysis of the total O:E ratio (random effects)
+valmeta(O=n.events, E=e.events, N=n) # Option 1
+valmeta(O=n.events, E=e.events) # Option 2 
+valmeta(O=(Po/100)*n, E=(Pe/100)*n, N=n) # Option 3
 
-# Execute a random effects meta-analysis of the c-statistic and the total O:E ratio
+
+# Meta-analysis of the c-statistic and the total O:E ratio (random effects)
 valmeta(cstat=c.index, cstat.se=se.c.index, 
         cstat.95CI=cbind(c.index.95CIl,c.index.95CIu), 
         N=n, O=n.events, E=e.events)
 
 \dontrun{
-# Execute a Bayesian random effects meta-analysis of the c-statistic
+# Bayesian meta-analysis of the c-statistic (random effects)
 fit2 <- valmeta(cstat=c.index, cstat.se=se.c.index, 
                 cstat.95CI=cbind(c.index.95CIl,c.index.95CIu),
                 N=n, O=n.events, method="BAYES")
