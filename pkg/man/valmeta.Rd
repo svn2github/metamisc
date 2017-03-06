@@ -82,16 +82,17 @@ Viechtbauer W. Conducting Meta-Analyses in R with the metafor Package. \emph{Jou
 data(EuroSCORE)
 attach(EuroSCORE)
 
-# Execute a random effects meta-analysis of the c-statistic
+# Meta-analysis of the c-statistic
 fit <- valmeta(cstat=c.index, cstat.se=se.c.index, 
                cstat.95CI=cbind(c.index.95CIl,c.index.95CIu), 
                N=n, O=n.events)
 fit
 plot(fit)
 
-# Execute a random effects meta-analysis of the total O:E ratio
+# Meta-analysis of the total O:E ratio
 valmeta(N=n, O=n.events, E=e.events) # Option 1
 valmeta(N=n, O=(Po/100)*n, E=(Pe/100)*n) # Option 2
+valmeta(O=n.events, E=e.events) # Option 3: use Poisson approximation
 
 # Execute a random effects meta-analysis of the c-statistic and the total O:E ratio
 valmeta(cstat=c.index, cstat.se=se.c.index, 
