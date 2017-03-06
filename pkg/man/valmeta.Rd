@@ -90,12 +90,12 @@ fit
 plot(fit)
 
 # Execute a random effects meta-analysis of the total O:E ratio
-valmeta(N=n, O=n.events, E=(Pe/100)*n)
+valmeta(N=n, O=n.events, E=e.events)
 
 # Execute a random effects meta-analysis of the c-statistic and the total O:E ratio
 valmeta(cstat=c.index, cstat.se=se.c.index, 
         cstat.95CI=cbind(c.index.95CIl,c.index.95CIu), 
-        N=n, O=n.events, E=(Pe/100)*n)
+        N=n, O=n.events, E=e.events)
 
 \dontrun{
 # Execute a Bayesian random effects meta-analysis of the c-statistic

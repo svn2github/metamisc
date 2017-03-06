@@ -193,6 +193,8 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.95CI,
     out$oe$scale <- scale.oe
     class(out$oe) <- "vmasum"
     
+    #TODO: allow confidence intervals of OE ratio
+    #TODO: allow E/O ratio
     # Apply necessary data transformations
     if (scale.oe == "identity") {
       theta <- OE
