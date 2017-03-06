@@ -40,7 +40,9 @@ As indicated by \code{metafor}, the labels, annotations, and symbols may become 
 data(EuroSCORE)
 attach(EuroSCORE)
 
-fit <- valmeta(cstat=c.index, cstat.se=se.c.index, N=n, O=n.events)
+fit <- valmeta(cstat=c.index, cstat.se=se.c.index, 
+               cstat.95CI=cbind(c.index.95CIl,c.index.95CIu),
+               N=n, O=n.events)
 plot(fit)
 
 detach(EuroSCORE)

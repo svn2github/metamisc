@@ -73,14 +73,17 @@ data(EuroSCORE)
 attach(EuroSCORE)
 
 # Execute a random effects meta-analysis on the logit scale
-fit <- valmeta(cstat=c.index, cstat.se=se.c.index, N=n, O=n.events)
+fit <- valmeta(cstat=c.index, cstat.se=se.c.index, 
+               cstat.95CI=cbind(c.index.95CIl,c.index.95CIu), 
+               N=n, O=n.events)
 fit
 plot(fit)
 
 \dontrun{
 # Execute a Bayesian random effects meta-analysis
-fit2 <- valmeta(cstat=c.index, cstat.se=se.c.index, N=n, 
-                O=n.events, method="BAYES")
+fit2 <- valmeta(cstat=c.index, cstat.se=se.c.index, 
+                cstat.95CI=cbind(c.index.95CIl,c.index.95CIu),
+                N=n, O=n.events, method="BAYES")
 plot(fit2)} 
 
 #Detach the dataset
