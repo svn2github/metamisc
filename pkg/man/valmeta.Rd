@@ -72,10 +72,16 @@ Viechtbauer W. Conducting Meta-Analyses in R with the metafor Package. \emph{Jou
 data(EuroSCORE)
 attach(EuroSCORE)
 
-#Execute a random effects meta-analysis on the logit scale
+# Execute a random effects meta-analysis on the logit scale
 fit <- valmeta(cstat=c.index, cstat.se=se.c.index, N=n, O=n.events)
 fit
 plot(fit)
+
+\dontrun{
+# Execute a Bayesian random effects meta-analysis
+fit2 <- valmeta(cstat=c.index, cstat.se=se.c.index, N=n, 
+                O=n.events, method="BAYES")
+plot(fit2)} 
 
 #Detach the dataset
 detach(EuroSCORE)

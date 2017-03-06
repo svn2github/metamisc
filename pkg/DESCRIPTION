@@ -2,7 +2,7 @@ Package: metamisc
 Type: Package
 Title: Diagnostic and Prognostic Meta-Analysis (Metamisc)
 Version: 0.1.3
-Date: 2017-03-04
+Date: 2017-03-06
 Author: Thomas Debray
 Maintainer: Thomas Debray <thomas.debray@gmail.com>
 Description: Meta-analysis of diagnostic and prognostic modeling studies. Summarize estimates of diagnostic test accuracy and prediction model performance. Validate, update and combine published prediction models. 

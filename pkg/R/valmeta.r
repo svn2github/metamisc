@@ -123,6 +123,12 @@ valmeta <- function(cstat, cstat.se, cstat.95CI,
       # Perform a Bayesian meta-analysis
       model <- .generateBugsCstat(link=scale.c, ...)
       
+      # Generate initial values from the relevant distributions
+      model.pars <- list()
+      model.pars[[1]] <- list(param="mu.tobs", param.f=rnorm, param.args=list(n=1, mean=0, sd=sqrt(1E6)))
+      model.pars[[2]] <- list(param="bsTau", param.f=runif, param.args=list(n=1, min=0, max=2))
+      inits <- .generateInits(n.chains=n.chains, model.pars=model.pars)
+      
       mvmeta_dat <- list(theta = theta,
                          theta.var = theta.var,
                          Nstudies = length(theta))
@@ -131,6 +137,7 @@ valmeta <- function(cstat, cstat.se, cstat.95CI,
                              data = mvmeta_dat, 
                              n.chains = n.chains,
                              silent.jags = !verbose,
+                             inits=inits,
                              ...)
       fit <- jags.model$summaries
       
@@ -149,6 +156,23 @@ valmeta <- function(cstat, cstat.se, cstat.95CI,
   
   return(out)
 }
+
+.generateInits <- function(n.chains, model.pars)
+{
+  inits <- list()
+  for (i in 1:n.chains) {
+    inits.i <- list()
+    for (j in 1:length(model.pars)) {
+      parname <- model.pars[[j]]$param
+      fprior <- model.pars[[j]]$param.f
+      fargs <- model.pars[[j]]$param.args
+      inits.i[[parname]] = do.call(fprior, fargs)
+    }
+    inits[[i]] <- inits.i
+  }
+  return(inits)
+}
+
 
 .generateBugsCstat <- function(link="logit", #Choose between 'log', 'logit' and 'binom'
                                prior="dunif", #Choose between dunif (uniform) or dhalft (half student T)
@@ -254,9 +278,15 @@ plot.valmeta <- function(x, ...) {
       
       #Add the meta-analysis summary to the results
       #Note that no transormations are needed here, as summaries are always presented on original scale
-      yi <- c(yi, x$cstat$results["estimate"])
-      ci.lb <- c(ci.lb, x$cstat$results["95CIl"])
-      ci.ub <- c(ci.ub, x$cstat$results["95CIu"])
+      b <- x$cstat$results["estimate"]
+      yi <- c(yi, b)
+      b.ci.lb <- x$cstat$results["95CIl"]
+      b.ci.ub <- x$cstat$results["95CIu"]
+      b.cr.lb <- x$cstat$results["95PIl"]
+      b.cr.ub <- x$cstat$results["95PIu"]
+      ci.lb <- c(ci.lb, b.ci.lb)
+      ci.ub <- c(ci.ub, b.ci.ub)
+      
       
       rows <- c(seq(k,1),-1)
       
@@ -294,7 +324,23 @@ plot.valmeta <- function(x, ...) {
       text(xlim[1], rows, slab, pos = 4, cex = cex, ...)
       text(x = xlim[2], rows, labels = annotext, pos = 2, cex = cex, ...)
       
-      # Add meta-analysis summary
+      # Add prediction interval
+      segments(b.cr.lb, -1, b.cr.ub, -1, lty = lty[2], col = col[2], ...)
+      segments(b.cr.lb, -1 - (height/150) * cex * efac[1], 
+               b.cr.lb, -1 + (height/150) * cex * efac[1], 
+               col = col[2], ...)
+      segments(b.cr.ub, -1 - (height/150) * cex * efac[1], 
+               b.cr.ub, -1 + (height/150) * cex * efac[1], 
+               col = col[2], ...)
+      
+      # Add diamond for summary estimate
+      polygon(x = c(b.ci.lb, b, b.ci.ub, b), y = c(-1, -1 + 
+                                                     (height/100) * cex * efac[2], -1, -1 - (height/100) * 
+                                                     cex * efac[2]), col = col[1], border = border, ...)
+      
+
+      
+      # Add separation line between forest plot and meta-analysis results
       abline(h = 0, lty = 1, ...)
 
       axis(side = 1, at = c(0,0.2,0.4,0.6,0.8,1), labels = c(0, 0.2, 0.4, 0.6, 0.8, 1), cex.axis = 1, ...)
