@@ -70,11 +70,10 @@ fit1
 
 
 #Bayesian random-effects meta-analysis
-## Not run: 
+\dontrun{
 fit2 <- uvmeta(r,vars,method="bayes")
 fit2
-plot(fit2$samples) #Analyze the MCMC samples
-## End(Not run)
+plot(fit2$samples) #Analyze the MCMC samples}
 
 }
 
