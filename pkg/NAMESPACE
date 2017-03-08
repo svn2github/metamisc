@@ -11,9 +11,11 @@ import("mvtnorm")
 import("bbmle")
 import("survival")
 
-importFrom("graphics", "abline", "axis", "box", "lines", "par", "points", "polygon", "text")
-importFrom("stats", "coefficients", "dnorm", "optim", "pchisq", "qnorm", "qt")
+importFrom("graphics", "abline", "axis", "box", "lines", "par", "points", "polygon", "text", "segments", "strheight")
+importFrom("stats", "coefficients", "dnorm", "optim", "pchisq", "qnorm", "qt", "rnorm", "runif")
 
+  
+  
 #Riley methods
 S3method(print, riley)
 S3method(summary, riley)
