@@ -1,9 +1,11 @@
+#TODO: A package listed in "Suggests" or "Enhances" should be used conditionally 
+# in examples or tests if it cannot straightforwardly be installed on the major R platforms.
+
 valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.95CI,
                     N, O, E, method="REML", knha=TRUE, verbose=FALSE, 
                     method.restore.c.se="Newcombe.4", scale.c = "logit", 
                     scale.oe = "log", n.chains = 4,
                     ...) {
-
   out <- list()
   out$call <- match.call()
   out$method <- method
@@ -21,6 +23,17 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.95CI,
 
   inv.logit <- function(x) {  if(is.numeric(x)) 1/(1+exp(-x)) else stop("x is not numeric!") }
   logit <- function(x) { log(x/(1-x)) }
+  
+  # Check if we need to load runjags
+  if (method=="BAYES") {
+    if (!requireNamespace("runjags", quietly = TRUE)) {
+      stop("The package 'runjags' is currently not installed!")
+    } 
+    if (!requireNamespace("rjags", quietly = TRUE)) {
+      stop("The package 'rjags' is currently not installed!")
+    } 
+  }
+  
   
   #Update SE(c.index) using Method 4 of Newcombe
   restore.c.var<- function(cstat, N.subjects, N.events, restore.method="Newcombe.4", scale=scale.c) {
@@ -143,12 +156,12 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.95CI,
       model.pars <- list()
       model.pars[[1]] <- list(param="mu.tobs", param.f=rnorm, param.args=list(n=1, mean=0, sd=sqrt(1E6)))
       model.pars[[2]] <- list(param="bsTau", param.f=runif, param.args=list(n=1, min=0, max=2))
-      inits <- .generateInits(n.chains=n.chains, model.pars=model.pars)
+      inits <- generateMCMCinits(n.chains=n.chains, model.pars=model.pars)
       
       mvmeta_dat <- list(theta = theta,
                          theta.var = theta.var,
                          Nstudies = length(theta))
-      jags.model <- run.jags(model=model, 
+      jags.model <- runjags::run.jags(model=model, 
                              monitor = c("mu.tobs", "mu.obs", "pred.obs", "bsTau", "priorTau", "PED"), 
                              data = mvmeta_dat, 
                              n.chains = n.chains,
@@ -159,7 +172,7 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.95CI,
       
       
       #Extract PED
-      fit.dev <- extract(jags.model,"PED")
+      fit.dev <- runjags::extract(jags.model,"PED")
       
       results <- c(fit["mu.obs","Mean"], fit["mu.obs", c("Lower95", "Upper95")], fit["pred.obs", c("Lower95", "Upper95")])
       names(results) <- c("estimate", "95CIl", "95CIu", "95PIl", "95PIu")
@@ -253,23 +266,6 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.95CI,
   return(out)
 }
 
-.generateInits <- function(n.chains, model.pars)
-{
-  inits <- list()
-  for (i in 1:n.chains) {
-    inits.i <- list()
-    for (j in 1:length(model.pars)) {
-      parname <- model.pars[[j]]$param
-      fprior <- model.pars[[j]]$param.f
-      fargs <- model.pars[[j]]$param.args
-      inits.i[[parname]] = do.call(fprior, fargs)
-    }
-    inits[[i]] <- inits.i
-  }
-  return(inits)
-}
-
-
 .generateBugsCstat <- function(link="logit", #Choose between 'log', 'logit' and 'binom'
                                prior="dunif", #Choose between dunif (uniform) or dhalft (half student T)
                                prior.bound=c(0,2), #boundaries for uniform prior
@@ -332,7 +328,7 @@ print.vmasum <- function(x, ...) {
     cat(paste("\nPenalized expected deviance: ", round(x$PED,2), "\n"))
     
     # Check if model converged
-    psrf.ul <-  x$runjags$psrf$psrf[,"97.5% quantile"]
+    psrf.ul <-  x$runjags$psrf$psrf[,"Upper C.I."]
     psrf.target <- x$runjags$psrf$psrf.target
     
     if(sum(psrf.ul > psrf.target)>1) {

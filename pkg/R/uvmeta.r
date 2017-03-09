@@ -8,6 +8,22 @@ uvmeta <- function(r, vars, model="random", method="MOM", labels, na.action,
 uvmeta.default <- function(r, vars, model="random", method="MOM", labels, na.action, 
                            pars, verbose=FALSE, ...)
 {
+  generateMCMCinits <- function(n.chains, model.pars)
+  {
+    inits <- list()
+    for (i in 1:n.chains) {
+      inits.i <- list()
+      for (j in 1:length(model.pars)) {
+        parname <- model.pars[[j]]$param
+        fprior <- model.pars[[j]]$param.f
+        fargs <- model.pars[[j]]$param.args
+        inits.i[[parname]] = do.call(fprior, fargs)
+      }
+      inits[[i]] <- inits.i
+    }
+    return(inits)
+  }
+  
   calcProfile <- function (mleObj, pars) {
     levels = c(pars$level, 0.50)
     quantiles = c(((1-pars$level)/2),0.50,((1-(1-pars$level)/2)))
@@ -31,10 +47,17 @@ uvmeta.default <- function(r, vars, model="random", method="MOM", labels, na.act
   pars.default <- list(level = 0.95,
                        hp.mu.mean = 0, 
                        hp.mu.var = 1000,
-                       n.chains=4, #JAGS (# chains)
-                       n.adapt=5000, #JAGS
-                       n.init=5000,  #JAGS burn-in
-                       n.iter=10000) #JAGS
+                       n.chains=4) 
+  
+  # Check if we need to load runjags
+  if (method=="BAYES") {
+    if (!requireNamespace("runjags", quietly = TRUE)) {
+      stop("The package 'runjags' is currently not installed!")
+    } 
+    if (!requireNamespace("rjags", quietly = TRUE)) {
+      stop("The package 'rjags' is currently not installed!")
+    } 
+  }
   
   if (length(r)!=length(vars)) {
     stop("The vectors 'r' and 'vars' have different lengths!")
@@ -173,69 +196,52 @@ uvmeta.default <- function(r, vars, model="random", method="MOM", labels, na.act
   } else if (method == "reml") {
     stop("REML not implemented yet")
   }
-  else if (method == "bayes") { 
-    samples <- NA
-    
-    #Start with fixed effects model to calculate Q and I square statistic
-    modelfile <-  system.file(package="metamisc", "model", "uvmeta_fixef.bug")
-   
-    jags <- jags.model(modelfile,
-                       data = list('r' = ds$theta,
-                                   'vars' = ds$v,
-                                   'hp.mu.mean' = pars.default$hp.mu.mean,
-                                   'hp.mu.prec' = 1/pars.default$hp.mu.var,
-                                   'k' = numstudies), #prior precision matrix
-                       n.chains = pars.default$n.chains,
-                       n.adapt = pars.default$n.adapt,
-                       quiet = !verbose)
-    update(jags, pars.default$n.init) #initialize burn-in
-    samples <- coda.samples(jags, c('mu','Q','Isq','theta.new'),n.iter=pars.default$n.iter)
-    results <- summary(samples,quantiles=quantiles) 
-    
-    results.overview <- as.data.frame(array(NA,dim=c(dim(results[[1]])[1], length(quantiles)+2)))
+  else if (method == "BAYES") { 
+    results.overview <- as.data.frame(array(NA,dim=c(2, length(quantiles)+2)))
     colnames(results.overview) <- c("Estimate","Var",paste(quantiles*100,"%",sep=""))
-    rownames(results.overview) <- rownames(results[[2]])
-    results.overview[,1] <- (results[[1]])[,"Mean"]
-    results.overview[,2] <- (results[[1]])[,"SD"]**2
-    for (i in 1:length(quantiles)) {
-      results.overview[,(i+2)] <- (results[[2]])[,i]
-    }
-    results.overview["tausq",] <- 0
-    results.overview = results.overview[c("mu","tausq","Q","Isq"),]
+    rownames(results.overview) <- c("mu", "tausq")
     
-    if (model=="random") {
-      modelfile <- system.file(package="metamisc", "model", "uvmeta_ranef.bug")
-      jags <- jags.model(modelfile,
-                         data = list('r' = ds$theta,
-                                     'vars' = ds$v,
-                                     'k' = numstudies,
-                                     'hp.mu.mean' = pars.default$hp.mu.mean,
-                                     'hp.mu.prec' = 1/pars.default$hp.mu.var), #prior precision matrix
-                         n.chains = pars.default$n.chains,
-                         n.adapt = pars.default$n.adapt,
-                         quiet = !verbose)
-      update(jags, pars.default$n.init) #initialize
-      samples <- coda.samples(jags, c('mu','tausq','theta.new'),n.iter=pars.default$n.iter)
-      
-      results <- summary(samples,quantiles=quantiles) 
-      
-      #Update 'mu' and 'tausq'
-      results.overview[c("mu","tausq"),1] <- (results[[1]])[c("mu","tausq"),"Mean"]
-      results.overview[c("mu","tausq"),2] <- (results[[1]])[c("mu","tausq"),"SD"]**2
-    }
+    modelfile <- system.file(package="metamisc", "model", "uvmeta_ranef.bug")
+    uvmeta_dat <- list('r' = ds$theta,
+                       'vars' = ds$v,
+                       'k' = numstudies,
+                       'hp.mu.mean' = pars.default$hp.mu.mean,
+                       'hp.mu.prec' = 1/pars.default$hp.mu.var)
+    
+    model.pars <- list()
+    model.pars[[1]] <- list(param="mu", param.f=rnorm, param.args=list(n=1, mean=pars.default$hp.mu.mean, sd=sqrt(pars.default$hp.mu.var)))
+    model.pars[[2]] <- list(param="tau", param.f=runif, param.args=list(n=1, min=0, max=100))
+    inits <- generateMCMCinits(n.chains=pars.default$n.chains, model.pars=model.pars)
+    
+    jags.model <- runjags::run.jags(model=modelfile, 
+                                    monitor = c("mu", "tausq", "theta.new", "PED"), 
+                                    data = uvmeta_dat, 
+                                    silent.jags = !verbose,
+                                    inits=inits,
+                                    ...)
+    results <- jags.model$summaries
+    
+    #Extract PED
+    fit.dev <- runjags::extract(jags.model,"PED")
+    
+    #Update 'mu' and 'tausq'
+    results.overview[c("mu","tausq"),1] <- results[c("mu","tausq"),"Mean"]
+    results.overview[c("mu","tausq"),2] <- results[c("mu","tausq"),"SD"]**2
+    results.overview[c("mu","tausq"),3] <- results[c("mu","tausq"),"Lower95"]
+    results.overview[c("mu","tausq"),4] <- results[c("mu","tausq"),"Median"]
+    results.overview[c("mu","tausq"),5] <- results[c("mu","tausq"),"Upper95"]
     
     # Calculate prediction interval
-    pred.int <- (results[[2]])["theta.new",]
+    pred.int <- results["theta.new",c("Lower95", "Median", "Upper95")]
+    names(pred.int) <- c("2.5%" , "50%", "97.5%")
     
     # Calculate deviance
-    m.deviance <- dic.samples(jags, n.iter=pars.default$n.iter) # Deviance Information Criterion
-    pD <- sum(m.deviance$deviance) # deviance information criterion
-    popt <- pD + sum(m.deviance$penalty) #penalized expected deviance
+    popt <-  sum(fit.dev$deviance)+sum(fit.dev$penalty) #pD + sum(m.deviance$penalty) #penalized expected deviance
+
+    est <- list(results=results.overview, model="random", df=dfr, numstudies=numstudies, pred.int=pred.int, popt=popt, runjags=jags.model)
+
+  
     
-    
-    est <- list(results=results.overview, model=model, df=dfr, numstudies=numstudies, pred.int=pred.int, pD=pD, popt=popt, samples=samples)
-  } else {
-    stop("Invalid meta-analysis method!")
   }
   attr(est$results,"level") <- pars.default$level
   est$data <- ds
@@ -297,7 +303,7 @@ print.uvmeta <- function(x, ...)
 {
   out <- (x$results)
   text.model <- if (x$model=="fixed") "Fixed" else "Random"
-  text.method <- if(x$method=="bayes") "credibility" else "confidence"
+  text.method <- if(x$method=="BAYES") "credibility" else "confidence"
   cat(paste(text.model,"effects estimates with corresponding", text.method, "intervals:\n\n"))
 	print(out)
   if (x$model=="random") {
@@ -306,8 +312,20 @@ print.uvmeta <- function(x, ...)
   }
   if(x$method=="ml" | x$method=="pl") { #display MLE
     cat(paste("\nLog-likelihood: ", round(x$loglik,2),"\n"))
-  } else if (x$method=="bayes") {
-    cat(paste("\nDeviance information criterion (DIC): ", round(x$pD,3),"\nPenalized expected deviance: ", round(x$popt,3),"\n"))
+  } else if (x$method=="BAYES") {
+    cat(paste("\nPenalized expected deviance: ", round(x$popt,3),"\n"))
+    
+    # Check if model converged
+    psrf.ul <-  x$runjags$psrf$psrf[,"Upper C.I."]
+    psrf.target <- x$runjags$psrf$psrf.target
+    
+    if(sum(psrf.ul > psrf.target)>1) {
+      warning(paste("Model did not properly converge! The upper bound of the convergence diagnostic (psrf) exceeds", 
+                    psrf.target, "for the parameters", 
+                    paste(rownames(x$runjags$psrf$psrf)[which(psrf.ul > psrf.target)], " (psrf=", 
+                          round(x$runjags$psrf$psrf[which(psrf.ul > psrf.target),2],2), ")", collapse=", ", sep=""),
+                    ". Consider re-running the analysis by increasing the optional arguments 'adapt', 'burnin' and/or 'sample'.", sep=""))
+    }
   }
   
 	out

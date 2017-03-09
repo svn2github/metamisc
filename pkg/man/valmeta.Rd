@@ -45,7 +45,7 @@ The total O:E ratio provides a rough indication of the overall model calibration
 
 \bold{Meta-analysis models}
 
-The type of (fixed effect or random effects) meta-analysis model can directly be specified using the parameter \code{method}. Most models are implemented using \code{rma} (from the '\code{metafor}' package), except when performing a Bayesian meta-analysis using the Gibbs sampler (\code{method="BAYES"}). By default, the meta-analysis assumes random effects and adopts REML estimation. Further, confidence intervals for the average performance are based on the Hartung-Knapp-Sidik-Jonkman (HKSJ) method, to better account for the uncertainty in the estimated between-study heterogeneity (Debray, BMJ 2016).
+The type of (fixed effect or random effects) meta-analysis model can directly be specified using the parameter \code{method}. Most models are estimated using \code{metafor}, and the resulting \code{rma} object is saved as output to facilitate further analyses. For Bayesian meta-analysis models that involve the Gibbs sampler (\code{method="BAYES"}), the R packages \code{runjags} and \code{rjags} must be installed. By default, the meta-analysis assumes random effects and adopts REML estimation. Further, confidence intervals for the average performance are based on the Hartung-Knapp-Sidik-Jonkman (HKSJ) method, to better account for the uncertainty in the estimated between-study heterogeneity (Debray, BMJ 2016).
 }
 \value{
 An object of class \code{valmeta} with the following elements:
@@ -100,13 +100,16 @@ valmeta(cstat=c.index, cstat.se=se.c.index,
         cstat.95CI=cbind(c.index.95CIl,c.index.95CIu), 
         N=n, O=n.events, E=e.events)
 
+fit2 <- valmeta(cstat=c.index, cstat.se=se.c.index, 
+                cstat.95CI=cbind(c.index.95CIl,c.index.95CIu),
+                N=n, O=n.events, method="BAYES")
+                
 \dontrun{
 # Bayesian meta-analysis of the c-statistic (random effects)
 fit2 <- valmeta(cstat=c.index, cstat.se=se.c.index, 
                 cstat.95CI=cbind(c.index.95CIl,c.index.95CIu),
                 N=n, O=n.events, method="BAYES")
 plot(fit2)} 
-
 
 #Detach the dataset
 detach(EuroSCORE)
