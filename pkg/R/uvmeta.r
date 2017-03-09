@@ -8,22 +8,7 @@ uvmeta <- function(r, vars, model="random", method="MOM", labels, na.action,
 uvmeta.default <- function(r, vars, model="random", method="MOM", labels, na.action, 
                            pars, verbose=FALSE, ...)
 {
-  generateMCMCinits <- function(n.chains, model.pars)
-  {
-    inits <- list()
-    for (i in 1:n.chains) {
-      inits.i <- list()
-      for (j in 1:length(model.pars)) {
-        parname <- model.pars[[j]]$param
-        fprior <- model.pars[[j]]$param.f
-        fargs <- model.pars[[j]]$param.args
-        inits.i[[parname]] = do.call(fprior, fargs)
-      }
-      inits[[i]] <- inits.i
-    }
-    return(inits)
-  }
-  
+
   calcProfile <- function (mleObj, pars) {
     levels = c(pars$level, 0.50)
     quantiles = c(((1-pars$level)/2),0.50,((1-(1-pars$level)/2)))

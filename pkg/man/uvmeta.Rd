@@ -24,8 +24,12 @@ uvmeta(r, vars, model="random", method="MOM", labels, na.action, pars,
   \item{\dots}{arguments to be passed on to other functions including \code{run.jags}}
 }
 
-\details{The Bayesian approach uses an uninformative Normal prior for the mean and an uninformative uniform prior for the variance of the pooled effect size (Higgins 2009).  For random effects models, a prediction interval for the pooled effect size is displayed. This interval predicts in what range future effect sizes will fall given what has already been observed (Higgins 2009, Riley 2011).  
-For Bayesian meta-analysis models that involve the Gibbs sampler (\code{method="BAYES"}), the R packages \code{runjags} and \code{rjags} must be installed.
+\details{For random effects models, a prediction interval for the pooled effect size is displayed. This interval predicts in what range future effect sizes will fall given what has already been observed (Higgins 2009, Riley 2011).  
+
+\bold{Bayesian meta-analysis models}
+
+
+For Bayesian meta-analysis models that involve the Gibbs sampler (\code{method="BAYES"}), the R packages \code{runjags} and \code{rjags} must be installed. The Bayesian approach uses an uninformative Normal prior for the mean and a uniform prior for the between-study variance of the pooled effect size (Higgins 2009). By default, the Normal prior has a mean of 0 and a variance of 1000. These hyperparameters can, however, be altered through the variables \code{hp.mu.mean} and \code{hp.mu.var} in the argument \code{pars}. The prior distribution of the between-study standard deviation is given by a uniform distribution, bounded between 0 and 100. Future versions of \code{metamisc} will allow to alter these boundaries.
 }
 
 \value{ An object of the class \code{uvmeta} for which many standard methods are available. If \code{method="BAYES"}, the results contain an object of the class \code{runjags}. }
