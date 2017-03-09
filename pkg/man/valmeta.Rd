@@ -100,10 +100,6 @@ valmeta(cstat=c.index, cstat.se=se.c.index,
         cstat.95CI=cbind(c.index.95CIl,c.index.95CIu), 
         N=n, O=n.events, E=e.events)
 
-fit2 <- valmeta(cstat=c.index, cstat.se=se.c.index, 
-                cstat.95CI=cbind(c.index.95CIl,c.index.95CIu),
-                N=n, O=n.events, method="BAYES")
-                
 \dontrun{
 # Bayesian meta-analysis of the c-statistic (random effects)
 fit2 <- valmeta(cstat=c.index, cstat.se=se.c.index, 
