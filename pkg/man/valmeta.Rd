@@ -34,12 +34,12 @@ valmeta(cstat, cstat.se, cstat.95CI, OE, OE.95CI, N, O, E, method="REML",
   \item{\ldots}{Additional arguments that are passed to \code{rma} or \code{runjags} (if \code{method="BAYES"}).}
 }
 \details{
-Unless specified otherwise, all meta-analysis models assume random effects and are fitted  using restricted maximum likelihood estimation with the \code{metafor} package (Viechtbauer 2010).  Further, confidence intervals for the average performance are based on the Hartung-Knapp-Sidik-Jonkman method, to better account for the uncertainty in the estimated between-study heterogeneity (Debray 2016).
+Unless specified otherwise, all meta-analysis models assume random effects and are fitted  using restricted maximum likelihood estimation with the \code{metafor} package (Viechtbauer 2010).  Further, confidence intervals for the average performance are based on the Hartung-Knapp-Sidik-Jonkman method, to better account for the uncertainty in the estimated between-study heterogeneity (Debray 2016). A Bayesian meta-analysis can be performed by specifying \code{method="BAYES"}. In that case, the R packages \code{runjags} and \code{rjags} must be installed. Details on the prior distributions and assumptions are provided below.
 
 
-\bold{Meta-analysis of the concordance statistic}
+\bold{Meta-analysis of the concordance statistic (c-statistic)}
 
-The c-statistic is a measure of discrimination, and indicates the ability of a prediction model to distinguish between patients developing and not developing the outcome. The c-statistic typically ranges from 0.5 (no discriminative ability) to 1 (perfect discriminative ability). A meta-analysis for the concordance statistic will be performed if the c-statistics (\code{cstat}) and their respective standard errors (\code{cstat.se}) are defined. For studies where the standard error is unknown, it can be derived from the 95\% confidence interval, or from \code{cstat}, \code{O} and \code{N} (Newcombe 2006). By default, c-statistics are rescaled using the logit transformation to improve the validity of Normality assumptions.
+The c-statistic is a measure of discrimination, and indicates the ability of a prediction model to distinguish between patients developing and not developing the outcome. The c-statistic typically ranges from 0.5 (no discriminative ability) to 1 (perfect discriminative ability). A meta-analysis for the c-statistic will be performed if the c-statistics (\code{cstat}) and their respective standard errors (\code{cstat.se}) are defined. For studies where the standard error is unknown, it can be derived from the 95\% confidence interval, or from \code{cstat}, \code{O} and \code{N} (Newcombe 2006). By default, c-statistics are rescaled using the logit transformation to improve the validity of Normality assumptions.
 
 \bold{Mta-analysis of the total observed versus expected ratio (O:E ratio)}
 
