@@ -212,21 +212,31 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.95CI,
     if (scale.oe == "identity") {
       theta <- OE
       theta <- ifelse(is.na(theta), O/E, theta)
-      theta.var <- O*(1-(O/N))/(E**2) #BMJ eq 20 (binomial var)
-      theta.var <- ifelse(is.na(theta.var), (O/(E**2)), theta.var) #BMJ eq 30 (Poisson var)
       theta.cil <- OE.95CI[,1]
       theta.ciu <- OE.95CI[,2]
-      theta.var.CI <- ((theta.ciu - theta.cil)/(2*qnorm(0.975)))**2 #Derive from 95% CI
-      theta.var <- ifelse(is.na(theta.var), theta.var.CI, theta.var) #Prioritize reported SE
+      theta.var <- ((theta.ciu - theta.cil)/(2*qnorm(0.975)))**2 #Derive from 95% CI
+      
+      #Check if continuitiy corrections are needed
+      cc <- which(E==0 & is.na(theta.var))
+      E[cc] <- 0.5
+      N[cc] <- N[cc]+0.5
+      O[cc] <- O[cc]+0.5
+      theta.var <- ifelse(is.na(theta.var), O*(1-(O/N))/(E**2), theta.var) #BMJ eq 20 (binomial var)
+      theta.var <- ifelse(is.na(theta.var), (O/(E**2)), theta.var) #BMJ eq 30 (Poisson var)
     } else if (scale.oe == "log") {
       theta <- log(OE)
       theta <- ifelse(is.na(theta), log(O/E), theta)
-      theta.var <- (1-(O/N))/O #BMJ eq 27 (binomial var)
-      theta.var <- ifelse(is.na(theta.var), (1/O), theta.var) #BMJ eq 36 (Poisson var)
       theta.cil <- log(OE.95CI[,1])
       theta.ciu <- log(OE.95CI[,2])
-      theta.var.CI <- ((theta.ciu - theta.cil)/(2*qnorm(0.975)))**2
-      theta.var <- ifelse(is.na(theta.var.CI), theta.var, theta.var.CI) #Prioritize variance from 95% CI
+      theta.var <- ((theta.ciu - theta.cil)/(2*qnorm(0.975)))**2
+      
+      #Check if continuitiy corrections are needed
+      cc <- which(O==0 & is.na(theta.var))
+      E[cc] <- 0.5
+      N[cc] <- N[cc]+0.5
+      O[cc] <- O[cc]+0.5
+      theta.var <- ifelse(is.na(theta.var), (1-(O/N))/O, theta.var) #BMJ eq 27 (binomial var)
+      theta.var <- ifelse(is.na(theta.var), (1/O), theta.var) #BMJ eq 36 (Poisson var)
     } else {
       stop(paste("No appropriate transformation defined: '", scale.oe, "'", sep=""))
     }

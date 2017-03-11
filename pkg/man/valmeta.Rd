@@ -34,18 +34,21 @@ valmeta(cstat, cstat.se, cstat.95CI, OE, OE.95CI, N, O, E, method="REML",
   \item{\ldots}{Additional arguments that are passed to \code{rma} or \code{runjags} (if \code{method="BAYES"}).}
 }
 \details{
-\bold{Meta-analysis of the c-statistic}
-
-The c-statistic is a measure of discrimination, and indicates the ability of a prediction model to distinguish between patients developing and not developing the outcome. The c-statistic typically ranges from 0.5 (no discriminative ability) to 1 (perfect discriminative ability). Because the c-statistic is highly dependent on patient spectrum (case-mix), between-study heterogeneity likely to occur in a meta-analysis. For this reason, it is generally recommended to adopt random-effects models (Debray, BMJ 2016). By default, extracted c-statistics are rescaled using the logistic transformation to improve the validity of the Normality assumptions in the meta-analysis models. 
-
-\bold{Meta-analysis of the total observed versus expected ratio (O:E ratio)}
-
-The total O:E ratio provides a rough indication of the overall model calibration (across the entire range of predicted risks). A meta-analysis for the O:E ratio will be performed if the total number of observed (\code{O}) and expected (\code{E}) events are defined, or if their ratio (\code{OE}) is provided. If no values are provided for \code{N}, the Poisson (rather than the binomial) distribution is for calculating the standard error of the number of observed events. Note that unless \code{method="BAYES"}, the number of expected events is treated a fixed constant. By default, extracted O:E ratios are rescaled using the (natural) log transformation to improve the validity of the Normality assumptions in the meta-analysis models. 
+Unless specified otherwise, all meta-analysis models assume random effects and are fitted  using restricted maximum likelihood estimation with the \code{metafor} package (Viechtbauer 2010).  Further, confidence intervals for the average performance are based on the Hartung-Knapp-Sidik-Jonkman method, to better account for the uncertainty in the estimated between-study heterogeneity (Debray 2016).
 
 
-\bold{Meta-analysis models}
+\bold{Meta-analysis of the concordance statistic}
 
-The type of (fixed effect or random effects) meta-analysis model can directly be specified using the parameter \code{method}. Most models are estimated using \code{metafor}, and the resulting \code{rma} object is saved as output to facilitate further analyses. For Bayesian meta-analysis models that involve the Gibbs sampler (\code{method="BAYES"}), the R packages \code{runjags} and \code{rjags} must be installed. By default, the meta-analysis assumes random effects and adopts REML estimation. Further, confidence intervals for the average performance are based on the Hartung-Knapp-Sidik-Jonkman (HKSJ) method, to better account for the uncertainty in the estimated between-study heterogeneity (Debray, BMJ 2016).
+The c-statistic is a measure of discrimination, and indicates the ability of a prediction model to distinguish between patients developing and not developing the outcome. The c-statistic typically ranges from 0.5 (no discriminative ability) to 1 (perfect discriminative ability). A meta-analysis for the concordance statistic will be performed if the c-statistics (\code{cstat}) and their respective standard errors (\code{cstat.se}) are defined. For studies where the standard error is unknown, it can be derived from the 95\% confidence interval, or from \code{cstat}, \code{O} and \code{N} (Newcombe 2006). By default, c-statistics are rescaled using the logit transformation to improve the validity of Normality assumptions.
+
+\bold{Mta-analysis of the total observed versus expected ratio (O:E ratio)}
+
+The total O:E ratio provides a rough indication of the overall model calibration (across the entire range of predicted risks). A meta-analysis for the O:E ratio will be performed if the total number of observed (\code{O}) and expected (\code{E}) events are defined, or if their ratio (\code{OE}) is provided. If the standard error of the O:E ratio is not provided, it can be approximated from the 95\% confidence interval. Alternatively, if the number of expected events is treated as a fixed constant, the standard error can be derived from the error variance of the binomial or Poisson (if \code{O} << \code{N}) distribution. In that case, continuitiy corrections are applied for studies where \code{E=0} (if \code{scale.oe = "identity"}) or \code{O=0} (if \code{scale.oe = "log"}) by adding 0.5 to \code{O}, \code{E} and \code{N}. Standard errors are always prioritized as source of within-study variability in case multiple sources are available (e.g. from confidence intervals).   By default, O:E ratios are rescaled using the (natural) log transformation to improve the validity of Normality assumptions.
+
+
+\bold{Bayesian meta-analysis}
+
+For Bayesian meta-analysis models that involve the Gibbs sampler (\code{method="BAYES"}), the R packages \code{runjags} and \code{rjags} must be installed.  
 }
 \value{
 An object of class \code{valmeta} with the following elements:
@@ -90,8 +93,8 @@ fit
 plot(fit)
 
 # Meta-analysis of the total O:E ratio (random effects)
-valmeta(O=n.events, E=e.events, N=n) # Option 1
-valmeta(O=n.events, E=e.events) # Option 2 
+valmeta(O=n.events, E=e.events, N=n)     # Option 1
+valmeta(O=n.events, E=e.events)          # Option 2 
 valmeta(O=(Po/100)*n, E=(Pe/100)*n, N=n) # Option 3
 
 
