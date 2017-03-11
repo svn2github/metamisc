@@ -4,8 +4,21 @@
 valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.95CI,
                     N, O, E, method="REML", knha=TRUE, verbose=FALSE, 
                     method.restore.c.se="Newcombe.4", scale.c = "logit", 
-                    scale.oe = "log", n.chains = 4,
+                    scale.oe = "log", n.chains = 4, pars,
                     ...) {
+  pars.default <- list(hp.mu.mean = 0, 
+                       hp.mu.var = 1E6,
+                       hp.tau.min = 0,
+                       hp.tau.max = 2) 
+  
+  if (!missing(pars)) {
+    for (i in 1:length(pars)) {
+      element <- ls(pars)[i]
+      pars.default[[element]] <- pars[[i]]
+    }
+  }
+  
+  
   out <- list()
   out$call <- match.call()
   out$method <- method
@@ -150,19 +163,19 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.95CI,
       out$cstat$results <- results
     } else {
       # Perform a Bayesian meta-analysis
-      model <- .generateBugsCstat(link=scale.c, ...)
+      model <- .generateBugsCstat(link=scale.c, pars, ...)
       
       # Generate initial values from the relevant distributions
       model.pars <- list()
-      model.pars[[1]] <- list(param="mu.tobs", param.f=rnorm, param.args=list(n=1, mean=0, sd=sqrt(1E6)))
-      model.pars[[2]] <- list(param="bsTau", param.f=runif, param.args=list(n=1, min=0, max=2))
+      model.pars[[1]] <- list(param="mu.tobs", param.f=rnorm, param.args=list(n=1, mean=pars$hp.mu.mean, sd=sqrt(pars$hp.mu.var)))
+      model.pars[[2]] <- list(param="bsTau", param.f=runif, param.args=list(n=1, min=pars$hp.tau.min, max=pars$hp.tau.max))
       inits <- generateMCMCinits(n.chains=n.chains, model.pars=model.pars)
       
       mvmeta_dat <- list(theta = theta,
                          theta.var = theta.var,
                          Nstudies = length(theta))
       jags.model <- runjags::run.jags(model=model, 
-                             monitor = c("mu.tobs", "mu.obs", "pred.obs", "bsTau", "priorTau", "PED"), 
+                             monitor = c("mu.tobs", "mu.obs", "pred.obs", "bsTau", "PED"), 
                              data = mvmeta_dat, 
                              n.chains = n.chains,
                              silent.jags = !verbose,
@@ -188,6 +201,12 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.95CI,
     if (missing(N)) {
       N <- array(NA, dim=N.studies.OE)
     }
+    if (missing(O)) {
+      O <- array(NA, dim=N.studies.OE)
+    }
+    if (missing(E)) {
+      E <- array(NA, dim=N.studies.OE)
+    }
     if (missing(OE)) {
       OE <- array(NA, dim=N.studies.OE)
     }
@@ -205,6 +224,10 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.95CI,
     
     out$oe$scale <- scale.oe
     class(out$oe) <- "vmasum"
+    
+    # Derive O or E from OE where possible
+    O <- ifelse(is.na(O), OE*E, O)
+    E <- ifelse(is.na(E), O/OE, E)
     
     #TODO: allow confidence intervals of OE ratio
     #TODO: allow E/O ratio
@@ -277,12 +300,14 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.95CI,
 }
 
 .generateBugsCstat <- function(link="logit", #Choose between 'log', 'logit' and 'binom'
+                               pars, 
                                prior="dunif", #Choose between dunif (uniform) or dhalft (half student T)
-                               prior.bound=c(0,2), #boundaries for uniform prior
                                prior.sigma=0.5, ...) # standard deviation for student T prior
   {
 
   prior.prec <- 1/(prior.sigma*prior.sigma)
+  hp.mu.prec <- 1/pars$hp.mu.var
+  
   out <- "model {\n " 
   out <- paste(out, "for (i in 1:Nstudies)\n  {\n")
   out <- paste(out, "    theta[i] ~ dnorm(alpha[i], wsprec[i])\n")
@@ -292,18 +317,16 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.95CI,
   out <- paste(out, " bsprec <- 1/(bsTau*bsTau)\n")
   
   if (prior=="dunif") {
-    out <- paste(out, "  priorTau ~ dunif(", prior.bound[1], ",", prior.bound[2], ")\n", sep="") 
-    out <- paste(out, "  bsTau ~ dunif(", prior.bound[1], ",", prior.bound[2], ")\n", sep="") 
+    out <- paste(out, "  bsTau ~ dunif(", pars$hp.tau.min, ",", pars$hp.tau.max, ")\n", sep="") 
   } else if (prior=="dhalft") {
-    out <- paste(out, "  priorTau ~ dt(0,", prior.prec, ",3)T(0,10)\n", sep="") 
-    out <- paste(out, "  bsTau ~ dt(0,", prior.prec, ",3)T(0,10)\n", sep="") 
+    out <- paste(out, "  bsTau ~ dt(0,", prior.prec, ",3)T(", pars$hp.tau.min, ",", pars$hp.tau.max, ")\n", sep="") 
     
   } else {
     stop("Specified prior not implemented")
   }
   
   if (link == "logit") {
-    out <- paste(out, "  mu.tobs ~ dnorm(0.0,1.0E-6)\n", sep="")
+    out <- paste(out, "  mu.tobs ~ dnorm(", pars$hp.mu.mean, ",", hp.mu.prec, ")\n", sep="")
     out <- paste(out, "  mu.obs <- 1/(1+exp(-mu.tobs))\n", sep="")
     out <- paste(out, "  pred.obs <- 1/(1+exp(-pred.tobs))\n", sep="")
     out <- paste(out, "  pred.tobs ~ dnorm(mu.tobs, bsprec)\n", sep="")

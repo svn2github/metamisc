@@ -11,7 +11,7 @@ This function allows to meta-analyze the performance of a prediction model, and 
 \usage{
 valmeta(cstat, cstat.se, cstat.95CI, OE, OE.95CI, N, O, E, method="REML", 
         knha=TRUE, verbose=FALSE, method.restore.c.se="Newcombe.4", 
-        scale.c = "logit", scale.oe = "log", n.chains = 4, \ldots)
+        scale.c = "logit", scale.oe = "log", n.chains = 4, pars, \ldots)
 
 }
 %- maybe also 'usage' for other objects documented here.
@@ -31,6 +31,7 @@ valmeta(cstat, cstat.se, cstat.95CI, OE, OE.95CI, N, O, E, method="REML",
   \item{scale.c}{character string specifying whether the meta-analysis should use transformed values of the c-statistic and the corresponding standard error. Options are \code{scale="logit"} (logistic transformation) or \code{"identity"} (no transformation).}
   \item{scale.oe}{character string specifying whether the meta-analysis should use transformed values of the total observed:expected ratio and the corresponding standard error. Options are \code{scale="log"} (log transformation) or \code{"identity"} (no transformation).}
   \item{n.chains}{the number of chains to use in the Gibbs sampler (\code{method="BAYES"}). More chains will improve the sensitivity of the convergence diagnostic, but will cause the simulation to run more slowly. The default number of chains is 4.}
+  \item{pars}{A list with additional arguments.  The following parameters configure the MCMC sampling procedure:  \code{hp.mu.mean} (Hyperparameter: mean of the prior distribution of the random effects model, defaults to zero), \code{hp.mu.var} (Hyperparameter: variance of the prior distribution of the random effects model, defaults to 1E6), \code{hp.tau.min} (Hyperparameter: minimum value for the between-study standard deviation, defaults to 0), \code{hp.tau.max} (Hyperparameter: maximum value for the between-study standard deviation, defaults to 2)}
   \item{\ldots}{Additional arguments that are passed to \code{rma} or \code{runjags} (if \code{method="BAYES"}).}
 }
 \details{
