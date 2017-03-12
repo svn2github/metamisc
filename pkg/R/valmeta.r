@@ -1,15 +1,15 @@
 #TODO: A package listed in "Suggests" or "Enhances" should be used conditionally 
 # in examples or tests if it cannot straightforwardly be installed on the major R platforms.
 
-valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.95CI,
+valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.se,
                     N, O, E, method="REML", knha=TRUE, verbose=FALSE, 
-                    method.restore.c.se="Newcombe.4", scale.c = "logit", 
-                    scale.oe = "log", n.chains = 4, pars,
+                    scale.c = "logit", scale.oe = "log", slab, n.chains = 4, pars, 
                     ...) {
   pars.default <- list(hp.mu.mean = 0, 
                        hp.mu.var = 1E6,
                        hp.tau.min = 0,
-                       hp.tau.max = 2) 
+                       hp.tau.max = 2,
+                       method.restore.c.se="Newcombe.4") 
   
   if (!missing(pars)) {
     for (i in 1:length(pars)) {
@@ -25,11 +25,12 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.95CI,
   class(out) <- "valmeta"
   
   N.studies.OE <- 0
-  
   if (!missing(OE)) {
     N.studies.OE <- length(OE)
   } else if (!missing(E)) {
     N.studies.OE <- length(E)
+  } else if (!missing(citl)) {
+    N.studies.OE <- length(citl)
   }
   
   
@@ -75,6 +76,13 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.95CI,
     return(out)
   }
   
+  restore.oe.var <- function(citl, citl.se, Po) {
+    nom <- ((Po-1)**2)*((Po**2)+1)*((exp(Po+citl))**2)*(citl.se**2)
+    denom <- (Po*(-exp(citl))+Po+exp(citl))**2
+    out <- nom/denom
+    return(out)
+  }
+  
   
   if(!missing(cstat)) {
     if (missing(cstat.se) & missing(cstat.95CI)) {
@@ -96,9 +104,15 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.95CI,
     }
     
     out$cstat <- list()
-    out$cstat$method.restore.se <- method.restore.c.se 
+    out$cstat$method.restore.se <- pars.default$method.restore.c.se 
     out$cstat$scale <- scale.c
     class(out$cstat) <- "vmasum"
+    
+    if(missing(slab)) {
+      out$cstat$slab <- paste("Study",seq(1, length(cstat)))
+    } else {
+      out$cstat$slab <- slab
+    }
     
     # Apply necessary data transformations
     if (scale.c == "identity") {
@@ -126,7 +140,7 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.95CI,
       # Restore missing estimates of the standard error of the c-statistic using information on c, N and O
       if (!missing(O) & !missing(N)) {
         if (verbose) cat("Attempting to restore missing information on the standard error of the c-statistic\n")
-        theta.var.hat <- restore.c.var(cstat=cstat, N.subjects=N, N.events=O, restore.method=method.restore.c.se, scale=scale.c)
+        theta.var.hat <- restore.c.var(cstat=cstat, N.subjects=N, N.events=O, restore.method=pars.default$method.restore.c.se, scale=scale.c)
         num.estimated.var.c <- length(which(is.na(theta.var) & !is.na(theta.var.hat)))
         theta.var <- ifelse(is.na(theta.var), theta.var.hat, theta.var)
       }
@@ -142,13 +156,12 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.95CI,
     ds <- cbind(theta, sqrt(theta.var), theta.cil, theta.ciu)
     colnames(ds) <- c("theta", "theta.se", "theta.95CIl", "theta.95CIu")
     out$cstat$data <- ds
-    out$cstat$slab <- paste("Study",seq(1, length(theta)))
     out$cstat$num.estimated.var.c <- num.estimated.var.c
     
     if (method != "BAYES") { # Use of rma
       
       # Apply the meta-analysis
-      fit <- rma(yi=theta, vi=theta.var, data=ds, method=method, knha=knha, ...) 
+      fit <- rma(yi=theta, vi=theta.var, data=ds, method=method, knha=knha, slab=out$cstat$slab, ...) 
       preds <- predict(fit)
       
       results <- as.data.frame(array(NA, dim=c(1,5)))
@@ -199,16 +212,25 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.95CI,
   ##### Prepare data for OE ratio
   if(N.studies.OE > 0) {
     if (missing(N)) {
-      N <- array(NA, dim=N.studies.OE)
+      N <- rep(NA, length=N.studies.OE)
     }
     if (missing(O)) {
-      O <- array(NA, dim=N.studies.OE)
+      O <- rep(NA, length=N.studies.OE)
     }
     if (missing(E)) {
-      E <- array(NA, dim=N.studies.OE)
+      E <- rep(NA, length=N.studies.OE)
     }
     if (missing(OE)) {
-      OE <- array(NA, dim=N.studies.OE)
+      OE <- rep(NA, length=N.studies.OE)
+    }
+    if (missing(OE.se)) {
+      OE.se <- rep(NA, length=N.studies.OE)
+    }
+    if (missing(citl)) {
+      citl <- rep(NA, length=N.studies.OE)
+    }
+    if (missing(citl.se)) {
+      citl.se <- rep(NA, length=N.studies.OE)
     }
     if (missing(OE.95CI)) {
       OE.95CI <- array(NA, dim=c(N.studies.OE,2))
@@ -225,6 +247,12 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.95CI,
     out$oe$scale <- scale.oe
     class(out$oe) <- "vmasum"
     
+    if(missing(slab)) {
+      out$oe$slab <- paste("Study",seq(1, N.studies.OE))
+    } else {
+      out$oe$slab <- slab
+    }
+    
     # Derive O or E from OE where possible
     O <- ifelse(is.na(O), OE*E, O)
     E <- ifelse(is.na(E), O/OE, E)
@@ -235,9 +263,12 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.95CI,
     if (scale.oe == "identity") {
       theta <- OE
       theta <- ifelse(is.na(theta), O/E, theta)
+      theta <- ifelse(is.na(theta), -(exp(citl)*(O/N)-exp(citl)-(O/N)), theta) #derive from CITL
+      theta.var <- OE.se**2
       theta.cil <- OE.95CI[,1]
       theta.ciu <- OE.95CI[,2]
-      theta.var <- ((theta.ciu - theta.cil)/(2*qnorm(0.975)))**2 #Derive from 95% CI
+      theta.var <- ifelse(is.na(theta.var), ((theta.ciu - theta.cil)/(2*qnorm(0.975)))**2, theta.var) #Derive from 95% CI
+      theta.var <- ifelse(is.na(theta.var), (((O/N)**2)+1)*((exp(citl))**2)*(citl.se**2), theta.var)
       
       #Check if continuitiy corrections are needed
       cc <- which(E==0 & is.na(theta.var))
@@ -249,9 +280,12 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.95CI,
     } else if (scale.oe == "log") {
       theta <- log(OE)
       theta <- ifelse(is.na(theta), log(O/E), theta)
+      theta <- ifelse(is.na(theta), log(-(exp(citl)*(O/N)-exp(citl)-(O/N))), theta) #derive from CITL
+      theta.var <- (OE.se/theta)**2
       theta.cil <- log(OE.95CI[,1])
       theta.ciu <- log(OE.95CI[,2])
-      theta.var <- ((theta.ciu - theta.cil)/(2*qnorm(0.975)))**2
+      theta.var <- ifelse(is.na(theta.var), ((theta.ciu - theta.cil)/(2*qnorm(0.975)))**2, theta.var)
+      theta.var <- ifelse(is.na(theta.var),  restore.oe.var(citl=citl, citl.se=citl.se, Po=(O/N)), theta.var)
       
       #Check if continuitiy corrections are needed
       cc <- which(O==0 & is.na(theta.var))
@@ -271,12 +305,11 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.95CI,
     ds <- cbind(theta, sqrt(theta.var), theta.cil, theta.ciu)
     colnames(ds) <- c("theta", "theta.se", "theta.95CIl", "theta.95CIu")
     out$oe$data <- ds
-    out$oe$slab <- paste("Study",seq(1, length(theta)))
-
+    
     if (method != "BAYES") { # Use of rma
       
       # Apply the meta-analysis
-      fit <- rma(yi=theta, vi=theta.var, data=ds, method=method, knha=knha, ...) 
+      fit <- rma(yi=theta, vi=theta.var, data=ds, method=method, knha=knha, slab=out$oe$slab, ...) 
       preds <- predict(fit)
       
       results <- as.data.frame(array(NA, dim=c(1,5)))
