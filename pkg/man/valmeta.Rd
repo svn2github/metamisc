@@ -104,7 +104,7 @@ valmeta(O=(Po/100)*n, E=(Pe/100)*n, N=n) # Option 3
 # Meta-analysis of the c-statistic and the total O:E ratio (random effects)
 valmeta(cstat=c.index, cstat.se=se.c.index, 
         cstat.95CI=cbind(c.index.95CIl,c.index.95CIu), 
-        N=n, O=n.events, E=e.events)
+        N=n, O=n.events, E=e.events, slab=Study)
 
 \dontrun{
 # Bayesian meta-analysis of the c-statistic (random effects)
