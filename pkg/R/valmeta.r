@@ -1,6 +1,3 @@
-#TODO: A package listed in "Suggests" or "Enhances" should be used conditionally 
-# in examples or tests if it cannot straightforwardly be installed on the major R platforms.
-
 valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.se,
                     N, O, E, method="REML", knha=TRUE, verbose=FALSE, 
                     scale.c = "logit", scale.oe = "log", slab, n.chains = 4, pars, 
@@ -176,12 +173,12 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
       out$cstat$results <- results
     } else {
       # Perform a Bayesian meta-analysis
-      model <- .generateBugsCstat(link=scale.c, pars, ...)
+      model <- .generateBugsCstat(link=scale.c, pars=pars.default, ...)
       
       # Generate initial values from the relevant distributions
       model.pars <- list()
-      model.pars[[1]] <- list(param="mu.tobs", param.f=rnorm, param.args=list(n=1, mean=pars$hp.mu.mean, sd=sqrt(pars$hp.mu.var)))
-      model.pars[[2]] <- list(param="bsTau", param.f=runif, param.args=list(n=1, min=pars$hp.tau.min, max=pars$hp.tau.max))
+      model.pars[[1]] <- list(param="mu.tobs", param.f=rnorm, param.args=list(n=1, mean=pars.default$hp.mu.mean, sd=sqrt(pars.default$hp.mu.var)))
+      model.pars[[2]] <- list(param="bsTau", param.f=runif, param.args=list(n=1, min=pars.default$hp.tau.min, max=pars.default$hp.tau.max))
       inits <- generateMCMCinits(n.chains=n.chains, model.pars=model.pars)
       
       mvmeta_dat <- list(theta = theta,
@@ -432,7 +429,7 @@ plot.valmeta <- function(x, ...) {
       height <- par.usr[4] - par.usr[3]
       
       k <- dim(x$cstat$data)[1]
-      slab <- c(x$cstat$slab, "RE Model")
+      slab <- c(as.character(x$cstat$slab), "RE Model")
       yi <- x$cstat$data[,"theta"]
       ci.lb <- x$cstat$data[,"theta.95CIl"]
       ci.ub <- x$cstat$data[,"theta.95CIu"]
@@ -470,11 +467,12 @@ plot.valmeta <- function(x, ...) {
       
       par.usr <- par("usr")
       height <- par.usr[4] - par.usr[3]
+      
+      plot(NA, NA, xlim=xlim, ylim=c(-2,k), ylab="", xlab="c-statistic",yaxt = "n", xaxt = "n", xaxs = "i", bty = "n", ...)
       lheight <- strheight("O")
       cex.adj <- ifelse(k * lheight > height * 0.8, height/(1.25 * k * lheight), 1)
       cex <- par("cex") * cex.adj
       
-      plot(NA, NA, xlim=xlim, ylim=c(-2,k), ylab="", xlab="c-statistic",yaxt = "n", xaxt = "n", xaxs = "i", bty = "n", ...)
       for (i in 1:k) {
         points(yi[i], rows[i], pch = 15, ...)
         

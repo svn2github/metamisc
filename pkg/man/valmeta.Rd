@@ -110,7 +110,7 @@ valmeta(cstat=c.index, cstat.se=se.c.index,
 # Bayesian meta-analysis of the c-statistic (random effects)
 fit2 <- valmeta(cstat=c.index, cstat.se=se.c.index, 
                 cstat.95CI=cbind(c.index.95CIl,c.index.95CIu),
-                N=n, O=n.events, method="BAYES")
+                N=n, O=n.events, method="BAYES", slab=Study)
 plot(fit2)} 
 
 #Detach the dataset
