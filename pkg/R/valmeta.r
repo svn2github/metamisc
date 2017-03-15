@@ -232,6 +232,11 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
       theta.var <- ifelse(is.na(theta.var), ((theta.ciu - theta.cil)/(2*qnorm(0.975)))**2, theta.var) #Derive from 95% CI
       theta.var <- ifelse(is.na(theta.var), (((O/N)**2)+1)*((exp(citl))**2)*(citl.se**2), theta.var)
       
+      #Extrapolate theta 
+      #if (!missing(t.ma) & !missing(t.val)) {
+      #  thetaE <- extrapolateOE(Po=Po, Pe=Pe, var.Po=var.Po, t.val=t.val, t.ma=t.ma, N=N, scale="log")
+      #}
+      
       #Check if continuitiy corrections are needed
       cc <- which(E==0 & is.na(theta.var))
       E[cc] <- 0.5

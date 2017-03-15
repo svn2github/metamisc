@@ -36,6 +36,8 @@ This data set contains estimates on the performance of the Framingham model for 
 The Framingham model allows physicians to predict 10-year coronary heart disease (CHD) risk in patients without overt CHD. It was developed in 1998 from a middle-aged white population sample, and has subsequently been validated across different populations. The current dataset contains the original (internal validation) results, as well as 20 external validations which were identified through a systematic review. In this review, studies were eligible for inclusion if they described the validation of the original Framingham model and assessed its performance for fatal or nonfatal CHD in males from a general population setting.
 }
 \source{
+Damen JAAG, Hooft L, Schuit E, Debray TPA, Collins GS, Tzoulaki I, et al. Prediction models for cardiovascular disease risk in the general population: systematic review. \emph{BMJ}. 2016;i2416. 
+
 Wilson PW, D'Agostino RB, Levy D, Belanger AM, Silbershatz H, Kannel WB. Prediction of coronary heart disease using risk factor categories. \emph{Circulation}. 1998; \bold{97}(18):1837--47. 
 
 }
