@@ -10,7 +10,7 @@ This function allows to meta-analyze the performance of a prediction model, and 
 }
 \usage{
 valmeta(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.se,
-        N, O, E, method="REML", knha=TRUE, verbose=FALSE, 
+        N, O, E, t.val, t.ma, method="REML", knha=TRUE, verbose=FALSE, 
         scale.c = "logit", scale.oe = "log", slab, n.chains = 4, pars, \ldots)
 
 }
@@ -27,6 +27,8 @@ valmeta(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.se,
   \item{N}{vector with the total number of participants for each valiation}
   \item{O}{vector with the total number of observed events for each valiation}
   \item{E}{vector with the total number of expected events for each valiation}
+  \item{t.val}{optional vector for prognostic models, containing the time period for which performance was assessed}
+  \item{t.ma}{optional numeric value for prognostic models, containing the time period of primary interest for meta-analysis}
   \item{method}{character string specifying whether a fixed- or a random-effects model should be fitted. A fixed-effects model is fitted when using \code{method="FE"}. Random-effects models are fitted by setting method equal to one of the following: \code{"REML"} (Default), \code{"DL"}, \code{"HE"}, \code{"SJ"}, \code{"ML"}, \code{"EB"}, \code{"HS"}, \code{"GENQ"} or \code{"BAYES"}. See 'Details'.}
   \item{knha}{logical specifying whether the method by Knapp and Hartung (2003) should be used for adjusting test statistics and confidence intervals (default is TRUE). Type '\code{?rma}' for more details.}
   \item{verbose}{if TRUE then messages generated during the fitting process will be displayed.}
@@ -105,7 +107,7 @@ valmeta(O=(Po/100)*n, E=(Pe/100)*n, N=n) # Option 3
 valmeta(cstat=c.index, cstat.se=se.c.index, 
         cstat.95CI=cbind(c.index.95CIl,c.index.95CIu), 
         N=n, O=n.events, E=e.events, slab=Study)
-
+        
 \dontrun{
 # Bayesian meta-analysis of the c-statistic (random effects)
 fit2 <- valmeta(cstat=c.index, cstat.se=se.c.index, 

@@ -1,5 +1,5 @@
 valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.se,
-                    N, O, E, method="REML", knha=TRUE, verbose=FALSE, 
+                    N, O, E, t.val, t.ma, method="REML", knha=TRUE, verbose=FALSE, 
                     scale.c = "logit", scale.oe = "log", slab, n.chains = 4, pars, 
                     ...) {
   pars.default <- list(hp.mu.mean = 0, 
@@ -44,42 +44,6 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
       stop("The package 'rjags' is currently not installed!")
     } 
   }
-  
-  
-  #Update SE(c.index) using Method 4 of Newcombe
-  restore.c.var<- function(cstat, N.subjects, N.events, restore.method="Newcombe.4", scale=scale.c) {
-    n <- N.events #Number of events
-    m <- N.subjects-N.events #Number of non-events
-    
-    if (missing(restore.method)) {
-      restore.method <- "Newcombe.4"
-    }
-    
-    if (restore.method=="Hanley" | restore.method=="Newcombe.2") {
-      mstar <- m-1
-      nstar <- n-1
-    } else if (restore.method=="Newcombe.4") {
-      mstar <- nstar <- N.subjects/2-1
-    } else {
-      stop ("Method not implemented yet!")
-    }
-    
-    if (scale=="logit") {
-      out <- (((1+nstar*(1-cstat)/(2-cstat) + mstar*cstat/(1+cstat)))/(m*n*cstat*(1-cstat)))
-    } else {
-      out <- ((cstat*(1-cstat)*(1+nstar*(1-cstat)/(2-cstat) + mstar*cstat/(1+cstat)))/(m*n))
-    }
-    
-    return(out)
-  }
-  
-  restore.oe.var <- function(citl, citl.se, Po) {
-    nom <- ((Po-1)**2)*((Po**2)+1)*((exp(Po+citl))**2)*(citl.se**2)
-    denom <- (Po*(-exp(citl))+Po+exp(citl))**2
-    out <- nom/denom
-    return(out)
-  }
-  
   
   if(!missing(cstat)) {
     if (missing(cstat.se) & missing(cstat.95CI)) {
@@ -137,7 +101,8 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
       # Restore missing estimates of the standard error of the c-statistic using information on c, N and O
       if (!missing(O) & !missing(N)) {
         if (verbose) cat("Attempting to restore missing information on the standard error of the c-statistic\n")
-        theta.var.hat <- restore.c.var(cstat=cstat, N.subjects=N, N.events=O, restore.method=pars.default$method.restore.c.se, scale=scale.c)
+        theta.var.hat <- restore.c.var(cstat=cstat, N.subjects=N, N.events=O, 
+                                       restore.method=pars.default$method.restore.c.se, scale=scale.c)
         num.estimated.var.c <- length(which(is.na(theta.var) & !is.na(theta.var.hat)))
         theta.var <- ifelse(is.na(theta.var), theta.var.hat, theta.var)
       }
@@ -465,10 +430,11 @@ plot.valmeta <- function(x, ...) {
       par(mar = par.mar.adj)
       on.exit(par(mar = par.mar))
       
+      plot(NA, NA, xlim=xlim, ylim=c(-2,k), ylab="", xlab="c-statistic",yaxt = "n", xaxt = "n", xaxs = "i", bty = "n", ...)
+      abline(h = k - 2, lty = lty[3], ...)
+      
       par.usr <- par("usr")
       height <- par.usr[4] - par.usr[3]
-      
-      plot(NA, NA, xlim=xlim, ylim=c(-2,k), ylab="", xlab="c-statistic",yaxt = "n", xaxt = "n", xaxs = "i", bty = "n", ...)
       lheight <- strheight("O")
       cex.adj <- ifelse(k * lheight > height * 0.8, height/(1.25 * k * lheight), 1)
       cex <- par("cex") * cex.adj
