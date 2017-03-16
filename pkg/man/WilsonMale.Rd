@@ -12,8 +12,8 @@ This data set contains estimates on the performance of the Framingham model for 
   A data frame with 24 observations on the following 19 variables.
   \describe{
     \item{\code{AuthorYear}}{a vector describing the study authors}
-    \item{\code{Numberofparticipants_analysis}}{a numeric vector with the total number of patients on which performance estimates are based}
-    \item{\code{Numberofevents_analysis}}{a numeric vector with the total number of observed events}
+    \item{\code{n}}{a numeric vector with the total number of patients on which performance estimates are based}
+    \item{\code{n.events}}{a numeric vector with the total number of observed events}
     \item{\code{c.index}}{a numeric vector with the estimated concordance statistic of each validation}
     \item{\code{se.c.index}}{a numeric vector with the standard error of the concordance statistics}
     \item{\code{c.index.95CIl}}{a numeric vector with the lower bound of the 95\% confidence interval of the estimated concordance statistics}
