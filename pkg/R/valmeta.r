@@ -361,7 +361,7 @@ print.vmasum <- function(x, ...) {
     cat(paste("\nPenalized expected deviance: ", round(x$PED,2), "\n"))
     
     # Check if model converged
-    psrf.ul <-  x$runjags$psrf$psrf[,"Upper C.I."]
+    psrf.ul <-  x$runjags$psrf$psrf[,2]
     psrf.target <- x$runjags$psrf$psrf.target
     
     if(sum(psrf.ul > psrf.target)>1) {
@@ -376,126 +376,14 @@ print.vmasum <- function(x, ...) {
 }
 
 plot.valmeta <- function(x, ...) {
-  inv.logit <- function(x) {1/(1+exp(-x)) }
-  
   if (!is.null(x$cstat)) {
-    if (!is.null(x$cstat$rma)) {
-      # Forest plot for the c-statistic
-      if (x$cstat$scale=="logit") {
-        forest(x$cstat$rma, transf=inv.logit, xlab="c-statistic", addcred=T, ...)
-      } else {
-        forest(x$cstat$rma, transf=NULL, xlab="c-statistic", addcred=T, ...)
-      }
-    } else {
-      col <- c("black", "gray50")
-      border <- "black"
-      lty <- c("solid", "dotted", "solid")
-      cex <- 0.8
-      efac <- 1
-      efac <- rep(efac, 2)
-      xlim <- c(-0.5, 1.5)
-      
-      par.usr <- par("usr")
-      height <- par.usr[4] - par.usr[3]
-      
-      k <- dim(x$cstat$data)[1]
-      slab <- c(as.character(x$cstat$slab), "RE Model")
-      yi <- x$cstat$data[,"theta"]
-      ci.lb <- x$cstat$data[,"theta.95CIl"]
-      ci.ub <- x$cstat$data[,"theta.95CIu"]
-      
-      if (x$cstat$scale=="logit") {
-        yi <- sapply(yi, inv.logit)
-        ci.lb <- sapply(ci.lb, inv.logit)
-        ci.ub <- sapply(ci.ub, inv.logit)
-      }
-      
-      #Add the meta-analysis summary to the results
-      #Note that no transormations are needed here, as summaries are always presented on original scale
-      b <- x$cstat$results["estimate"]
-      yi <- c(yi, b)
-      b.ci.lb <- x$cstat$results["95CIl"]
-      b.ci.ub <- x$cstat$results["95CIu"]
-      b.cr.lb <- x$cstat$results["95PIl"]
-      b.cr.ub <- x$cstat$results["95PIu"]
-      ci.lb <- c(ci.lb, b.ci.lb)
-      ci.ub <- c(ci.ub, b.ci.ub)
-      
-      
-      rows <- c(seq(k,1),-1)
-      
-      annotext <- round(cbind(yi, ci.lb, ci.ub), 2)
-      annotext <- matrix(apply(annotext, 2, format, nsmall = 2), ncol = 3)
-      annotext <- paste(annotext[,1], "[", annotext[,2], ",", annotext[,3], "]")
-      
-      
-      par.mar <- par("mar")
-      par.mar.adj <- par.mar - c(0, 3, 1, 1)
-      par.mar.adj[par.mar.adj < 0] <- 0
-      par(mar = par.mar.adj)
-      on.exit(par(mar = par.mar))
-      
-      plot(NA, NA, xlim=xlim, ylim=c(-2,k), ylab="", xlab="c-statistic",yaxt = "n", xaxt = "n", xaxs = "i", bty = "n", ...)
-      abline(h = k - 2, lty = lty[3], ...)
-      
-      par.usr <- par("usr")
-      height <- par.usr[4] - par.usr[3]
-      lheight <- strheight("O")
-      cex.adj <- ifelse(k * lheight > height * 0.8, height/(1.25 * k * lheight), 1)
-      cex <- par("cex") * cex.adj
-      
-      for (i in 1:k) {
-        points(yi[i], rows[i], pch = 15, ...)
-        
-        segments(ci.lb[i], rows[i], ci.ub[i], rows[i], ...)
-        
-        segments(ci.lb[i], rows[i] - (height/150) * cex * 
-                   efac[1], ci.lb[i], rows[i] + (height/150) * cex * 
-                   efac[1], ...)
-        
-        segments(ci.ub[i], rows[i] - (height/150) * cex * 
-                   efac[1], ci.ub[i], rows[i] + (height/150) * cex * 
-                   efac[1], ...)
-      }
-      text(xlim[1], rows, slab, pos = 4, cex = cex, ...)
-      text(x = xlim[2], rows, labels = annotext, pos = 2, cex = cex, ...)
-      
-      # Add prediction interval
-      segments(b.cr.lb, -1, b.cr.ub, -1, lty = lty[2], col = col[2], ...)
-      segments(b.cr.lb, -1 - (height/150) * cex * efac[1], 
-               b.cr.lb, -1 + (height/150) * cex * efac[1], 
-               col = col[2], ...)
-      segments(b.cr.ub, -1 - (height/150) * cex * efac[1], 
-               b.cr.ub, -1 + (height/150) * cex * efac[1], 
-               col = col[2], ...)
-      
-      # Add diamond for summary estimate
-      polygon(x = c(b.ci.lb, b, b.ci.ub, b), y = c(-1, -1 + 
-                                                     (height/100) * cex * efac[2], -1, -1 - (height/100) * 
-                                                     cex * efac[2]), col = col[1], border = border, ...)
-      
-
-      
-      # Add separation line between forest plot and meta-analysis results
-      abline(h = 0, lty = 1, ...)
-
-      axis(side = 1, at = c(0,0.2,0.4,0.6,0.8,1), labels = c(0, 0.2, 0.4, 0.6, 0.8, 1), cex.axis = 1, ...)
-    }
+    plotForest(x$cstat, xlab="c-statistic", refline=0, ...)
     if (!is.null(x$oe)) {
       readline(prompt="Press [enter] to continue")
     }
   }
   if (!is.null(x$oe)) {
-    if (!is.null(x$oe$rma)) {
-      # Forest plot for the c-statistic
-      if (x$oe$scale=="log") {
-        forest(x$oe$rma, transf=exp, xlab="Total O:E ratio", addcred=T, refline=1, ...)
-      } else {
-        forest(x$oe$rma, transf=NULL, xlab="Total O:E ratio", addcred=T, refline=1, ...)
-      }
-    } else {
-      warning("Plot function not implemented yet for Bayesian MA")
-    }
+    plotForest(x$oe, xlab="OE ratio", refline=1, ...)
   }
 }
 
