@@ -36,7 +36,7 @@ valmeta(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.se,
   \item{scale.oe}{character string specifying whether the meta-analysis should use transformed values of the total observed:expected ratio and the corresponding standard error. Options are \code{scale="log"} (log transformation) or \code{"identity"} (no transformation).}
   \item{slab}{optional vector with labels for the \emph{k} studies.}
   \item{n.chains}{the number of chains to use in the Gibbs sampler (\code{method="BAYES"}). More chains will improve the sensitivity of the convergence diagnostic, but will cause the simulation to run more slowly. The default number of chains is 4.}
-  \item{pars}{A list with additional arguments.  The following parameters configure the MCMC sampling procedure:  \code{hp.mu.mean} (mean of the prior distribution of the random effects model, defaults to 0), \code{hp.mu.var} (variance of the prior distribution of the random effects model, defaults to 1E6), \code{hp.tau.min} (minimum value for the between-study standard deviation, defaults to 0), \code{hp.tau.max} (maximum value for the between-study standard deviation, defaults to 2), \code{method.restore.c.se} (method for restoring missing estimates for the standard error of the c-statistic. So far, only \code{"Newcombe.2"} and \code{"Newcombe.4"} are supported. These methods have been described by Newcombe in 2006.)}
+  \item{pars}{A list with additional arguments.  The following parameters configure the MCMC sampling procedure:  \code{hp.mu.mean} (mean of the prior distribution of the random effects model, defaults to 0), \code{hp.mu.var} (variance of the prior distribution of the random effects model, defaults to 1E6), \code{hp.tau.min} (minimum value for the between-study standard deviation, defaults to 0), \code{hp.tau.max} (maximum value for the between-study standard deviation, defaults to 2), \code{hp.tau.sigma} (standard deviation of the prior distribution for the between-study standard-deviation), \code{hp.tau.dist} (function for modeling the prior distribution for the between-study standard-deviation. Defaults to \code{"dunif"}), \code{method.restore.c.se} (method for restoring missing estimates for the standard error of the c-statistic. So far, only \code{"Newcombe.2"} and \code{"Newcombe.4"} are supported. These methods have been described by Newcombe in 2006.)}
   \item{\ldots}{Additional arguments that are passed to \code{rma} or \code{runjags} (if \code{method="BAYES"}).}
 }
 \details{
@@ -47,14 +47,14 @@ Unless specified otherwise, all meta-analysis models assume random effects and a
 
 The c-statistic is a measure of discrimination, and indicates the ability of a prediction model to distinguish between patients developing and not developing the outcome. The c-statistic typically ranges from 0.5 (no discriminative ability) to 1 (perfect discriminative ability). A meta-analysis for the c-statistic will be performed if the c-statistics (\code{cstat}) and their respective standard errors (\code{cstat.se}) are defined. For studies where the standard error is unknown, it can be derived from the 95\% confidence interval, or from \code{cstat}, \code{O} and \code{N} (Newcombe 2006). By default, c-statistics are rescaled using the logit transformation to improve the validity of Normality assumptions.
 
-\bold{Mta-analysis of the total observed versus expected ratio (O:E ratio)}
+\bold{Meta-analysis of the total observed versus expected ratio (O:E ratio)}
 
-The total O:E ratio provides a rough indication of the overall model calibration (across the entire range of predicted risks). By default, O:E ratios are rescaled using the (natural) log transformation to improve the validity of Normality assumptions. If the standard error of the O:E ratio is not provided, it can be approximated from the 95\% confidence interval. Alternatively, if the number of expected events is treated as a fixed constant, the standard error can be derived from the error variance of the binomial or Poisson (if \code{O} << \code{N}) distribution. In that case, continuitiy corrections are applied for studies where \code{E=0} (if \code{scale.oe = "identity"}) or \code{O=0} (if \code{scale.oe = "log"}) by adding 0.5 to \code{O}, \code{E} and \code{N}. Finally, the O:E ratio and its standard error can also be derived from the calibration-in-the-large statistic. Standard errors are always prioritized as source of within-study variability in case multiple sources are available (e.g. from confidence intervals).   
+The total O:E ratio provides a rough indication of the overall model calibration (across the entire range of predicted risks). By default, O:E ratios are rescaled using the (natural) log transformation to improve the validity of Normality assumptions. If the standard error of the O:E ratio is not provided, it can be approximated from the 95\% confidence interval. Alternatively, if the number of expected events is treated as a fixed constant, the standard error can be derived from the error variance of the binomial or Poisson (if \code{O} << \code{N}) distribution. In that case, continuitiy corrections are applied for studies where \code{E=0} (if \code{scale.oe = "identity"}) and \code{O=0} (if \code{scale.oe = "log"}) by adding 0.5 to \code{O}, \code{E} and \code{N}. Finally, the O:E ratio and its standard error can also be derived from the calibration-in-the-large statistic. Standard errors are always prioritized as source of within-study variability in case multiple sources are available (e.g. from confidence intervals).   
 
 
-\bold{Bayesian meta-analysis}
+\bold{Bayesian meta-analysis of the O:E ratio}
 
-For Bayesian meta-analysis models that involve the Gibbs sampler (\code{method="BAYES"}), the R packages \code{runjags} and \code{rjags} must be installed.  
+For Bayesian meta-analysis models that involve the Gibbs sampler (\code{method="BAYES"}), the R packages \code{runjags} and \code{rjags} must be installed. 
 }
 \value{
 An object of class \code{valmeta} with the following elements:
@@ -113,7 +113,12 @@ valmeta(cstat=c.index, cstat.se=se.c.index,
 fit2 <- valmeta(cstat=c.index, cstat.se=se.c.index, 
                 cstat.95CI=cbind(c.index.95CIl,c.index.95CIu),
                 N=n, O=n.events, method="BAYES", slab=Study)
-plot(fit2)} 
+plot(fit2)
+
+# Bayesian meta-analysis of the O:E ratio (random effects)
+fit3 <- valmeta(O=n.events, E=e.events, N=n, method="BAYES", slab=Study)
+plot(fit3)
+} 
 
 #Detach the dataset
 detach(EuroSCORE)

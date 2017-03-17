@@ -6,6 +6,8 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
                        hp.mu.var = 1E6,
                        hp.tau.min = 0,
                        hp.tau.max = 2,
+                       hp.tau.sima = 0.5,
+                       hp.tau.dist = "dunif",
                        method.restore.c.se="Newcombe.4") 
   
   if (!missing(pars)) {
@@ -231,7 +233,8 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
       theta.ciu <- OE.95CI[,2]
       theta.var <- ifelse(is.na(theta.var), ((theta.ciu - theta.cil)/(2*qnorm(0.975)))**2, theta.var) #Derive from 95% CI
       theta.var <- ifelse(is.na(theta.var), (((O/N)**2)+1)*((exp(citl))**2)*(citl.se**2), theta.var)
-      
+      theta.var <- ifelse(is.na(theta.var), O*(1-(O/N))/(E**2), theta.var) #BMJ eq 20 (binomial var)
+      theta.var <- ifelse(is.na(theta.var), (O/(E**2)), theta.var) #BMJ eq 30 (Poisson var)
       #Extrapolate theta 
       #if (!missing(t.ma) & !missing(t.val)) {
       #  thetaE <- extrapolateOE(Po=Po, Pe=Pe, var.Po=var.Po, t.val=t.val, t.ma=t.ma, N=N, scale="log")
@@ -242,8 +245,9 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
       E[cc] <- 0.5
       N[cc] <- N[cc]+0.5
       O[cc] <- O[cc]+0.5
-      theta.var <- ifelse(is.na(theta.var), O*(1-(O/N))/(E**2), theta.var) #BMJ eq 20 (binomial var)
-      theta.var <- ifelse(is.na(theta.var), (O/(E**2)), theta.var) #BMJ eq 30 (Poisson var)
+      theta <- ifelse(theta==Inf, log(O/E), theta)
+      theta.var <- ifelse(theta.var==Inf, O*(1-(O/N))/(E**2), theta.var) #BMJ eq 20 (binomial var)
+      theta.var <- ifelse(theta.var==Inf, (O/(E**2)), theta.var) #BMJ eq 30 (Poisson var)
     } else if (scale.oe == "log") {
       theta <- log(OE)
       theta <- ifelse(is.na(theta), log(O/E), theta)
@@ -253,14 +257,17 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
       theta.ciu <- log(OE.95CI[,2])
       theta.var <- ifelse(is.na(theta.var), ((theta.ciu - theta.cil)/(2*qnorm(0.975)))**2, theta.var)
       theta.var <- ifelse(is.na(theta.var),  restore.oe.var(citl=citl, citl.se=citl.se, Po=(O/N)), theta.var)
+      theta.var <- ifelse(is.na(theta.var), (1-(O/N))/O, theta.var) #BMJ eq 27 (binomial var)
+      theta.var <- ifelse(is.na(theta.var), (1/O), theta.var) #BMJ eq 36 (Poisson var)
       
       #Check if continuitiy corrections are needed
-      cc <- which(O==0 & is.na(theta.var))
+      cc <- which((O==0 | E==0) & is.na(theta.var))
       E[cc] <- 0.5
       N[cc] <- N[cc]+0.5
       O[cc] <- O[cc]+0.5
-      theta.var <- ifelse(is.na(theta.var), (1-(O/N))/O, theta.var) #BMJ eq 27 (binomial var)
-      theta.var <- ifelse(is.na(theta.var), (1/O), theta.var) #BMJ eq 36 (Poisson var)
+      theta <- ifelse(theta==Inf, log(O/E), theta)
+      theta.var <- ifelse(theta.var==Inf, (1-(O/N))/O, theta.var) #BMJ eq 27 (binomial var)
+      theta.var <- ifelse(theta.var==Inf, (1/O), theta.var) #BMJ eq 36 (Poisson var)
     } else {
       stop(paste("No appropriate transformation defined: '", scale.oe, "'", sep=""))
     }
@@ -290,7 +297,37 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
       out$oe$rma <- fit
       out$oe$results <- results
     } else {
-      stop("Bayesian method not implemented yet!")
+      # Perform a Bayesian meta-analysis
+      model <- generateBugsOE(link="log", pars=pars.default, ...)
+      
+      # Generate initial values from the relevant distributions
+      model.pars <- list()
+      model.pars[[1]] <- list(param="mu.tobs", param.f=rnorm, param.args=list(n=1, mean=pars.default$hp.mu.mean, sd=sqrt(pars.default$hp.mu.var)))
+      model.pars[[2]] <- list(param="bsTau", param.f=runif, param.args=list(n=1, min=pars.default$hp.tau.min, max=pars.default$hp.tau.max))
+      inits <- generateMCMCinits(n.chains=n.chains, model.pars=model.pars)
+      
+      mvmeta_dat <- list(theta=theta,
+                         theta.var=theta.var,
+                         Nstudies = N.studies.OE)
+      jags.model <- runjags::run.jags(model=model, 
+                                      monitor = c("mu.tobs", "mu.obs", "pred.obs", "bsTau", "PED"), 
+                                      data = mvmeta_dat, 
+                                      n.chains = n.chains,
+                                      silent.jags = !verbose,
+                                      inits=inits,
+                                      ...)
+      fit <- jags.model$summaries
+      
+      
+      #Extract PED
+      fit.dev <- runjags::extract(jags.model,"PED")
+      
+      results <- c(fit["mu.obs","Mean"], fit["mu.obs", c("Lower95", "Upper95")], fit["pred.obs", c("Lower95", "Upper95")])
+      names(results) <- c("estimate", "95CIl", "95CIu", "95PIl", "95PIu")
+      
+      out$oe$runjags <- jags.model
+      out$oe$PED <- sum(fit.dev$deviance)+sum(fit.dev$penalty)
+      out$oe$results <- results
     }
   }
   
@@ -301,11 +338,10 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
 
 .generateBugsCstat <- function(link="logit", #Choose between 'log', 'logit' and 'binom'
                                pars, 
-                               prior="dunif", #Choose between dunif (uniform) or dhalft (half student T)
-                               prior.sigma=0.5, ...) # standard deviation for student T prior
+                                ...) # standard deviation for student T prior
   {
 
-  prior.prec <- 1/(prior.sigma*prior.sigma)
+  hp.tau.prec <- 1/(pars$hp.tau.sima**2)
   hp.mu.prec <- 1/pars$hp.mu.var
   
   out <- "model {\n " 
@@ -316,10 +352,10 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
   out <- paste(out, " }\n")
   out <- paste(out, " bsprec <- 1/(bsTau*bsTau)\n")
   
-  if (prior=="dunif") {
+  if (pars$hp.tau.dist=="dunif") {
     out <- paste(out, "  bsTau ~ dunif(", pars$hp.tau.min, ",", pars$hp.tau.max, ")\n", sep="") 
-  } else if (prior=="dhalft") {
-    out <- paste(out, "  bsTau ~ dt(0,", prior.prec, ",3)T(", pars$hp.tau.min, ",", pars$hp.tau.max, ")\n", sep="") 
+  } else if (pars$hp.tau.dist=="dhalft") {
+    out <- paste(out, "  bsTau ~ dt(0,", hp.tau.prec, ",3)T(", pars$hp.tau.min, ",", pars$hp.tau.max, ")\n", sep="") 
     
   } else {
     stop("Specified prior not implemented")
@@ -347,7 +383,7 @@ print.valmeta <- function(x, ...) {
     if (!is.null(x$oe$results)) {
       cat("\n\n")
     }
-    }
+  }
   if (!is.null(x$oe$results)) {
     cat("Model results for the total O:E ratio:\n\n")
     print(x$oe)
@@ -377,13 +413,13 @@ print.vmasum <- function(x, ...) {
 
 plot.valmeta <- function(x, ...) {
   if (!is.null(x$cstat)) {
-    plotForest(x$cstat, xlab="c-statistic", refline=0, ...)
+    plotForest(x$cstat, xlab="c-statistic", ...)
     if (!is.null(x$oe)) {
       readline(prompt="Press [enter] to continue")
     }
   }
   if (!is.null(x$oe)) {
-    plotForest(x$oe, xlab="OE ratio", refline=1, ...)
+    plotForest(x$oe, xlab="O:E ratio", refline=1, ...)
   }
 }
 

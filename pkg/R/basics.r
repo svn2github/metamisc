@@ -87,17 +87,17 @@ extrapolateOE <- function(Po, Pe, var.Po, t.val, t.ma, N, scale="log") {
   return(out)
 }
 
-plotForest <- function(vmasum, xlab, refline=0, ...) {
+plotForest <- function(vmasum, xlab, ...) {
   inv.logit <- function(x) {1/(1+exp(-x)) }
   
   if (!is.null(vmasum$rma)) {
     # Forest plot
     if (vmasum$scale=="logit") {
-      forest(vmasum$rma, transf=inv.logit, xlab=xlab, addcred=T, refline=refline, ...)
+      forest(vmasum$rma, transf=inv.logit, xlab=xlab, addcred=T,  ...)
     } else if (vmasum$scale == "log") {
-      forest(vmasum$rma, transf=exp, xlab=xlab, addcred=T, refline=refline, ...)
+      forest(vmasum$rma, transf=exp, xlab=xlab, addcred=T, ...)
     } else if (vmasum$scale=="identity") {
-      forest(vmasum$rma, transf=NULL, xlab=xlab, addcred=T, refline=refline, ...)
+      forest(vmasum$rma, transf=NULL, xlab=xlab, addcred=T, ...)
     } else {
       stop ("Invalid scale!")
     }
@@ -108,7 +108,6 @@ plotForest <- function(vmasum, xlab, refline=0, ...) {
     cex <- 0.8
     efac <- 1
     efac <- rep(efac, 2)
-    xlim <- c(-0.5, 1.5)
     
     par.usr <- par("usr")
     height <- par.usr[4] - par.usr[3]
@@ -120,14 +119,31 @@ plotForest <- function(vmasum, xlab, refline=0, ...) {
     ci.ub <- vmasum$data[,"theta.95CIu"]
     
     if (vmasum$scale=="logit") {
+      xlim <- c(-0.5, 1.5)
       yi <- sapply(yi, inv.logit)
       ci.lb <- sapply(ci.lb, inv.logit)
       ci.ub <- sapply(ci.ub, inv.logit)
+      refline <- NA
     } else if (vmasum$scale=="log") {
       yi <- sapply(yi, exp)
       ci.lb <- sapply(ci.lb, exp)
       ci.ub <- sapply(ci.ub, exp)
+      refline <- 1
     }
+    
+    ylim <- c(-1.5, k + 3)
+    
+    plot.multp.l <- 1.2
+    plot.multp.r <- 1.2
+    rng <- max(ci.ub, na.rm = TRUE) - min(ci.lb, na.rm = TRUE)
+    xlim <- c(min(ci.lb, na.rm = TRUE) - rng * plot.multp.l, 
+              max(ci.ub, na.rm = TRUE) + rng * plot.multp.r)
+    xlim <- round(xlim, 2)
+      
+      
+
+    
+    
     
     #Add the meta-analysis summary to the results
     #Note that no transormations are needed here, as summaries are always presented on original scale
@@ -154,7 +170,7 @@ plotForest <- function(vmasum, xlab, refline=0, ...) {
     par(mar = par.mar.adj)
     on.exit(par(mar = par.mar))
     
-    plot(NA, NA, xlim=xlim, ylim=c(-2,k), ylab="", xlab="c-statistic",yaxt = "n", xaxt = "n", xaxs = "i", bty = "n", ...)
+    plot(NA, NA, xlim=xlim, ylim=ylim, ylab="", xlab=xlab, yaxt = "n", xaxt = "n", xaxs = "i", bty = "n", ...)
     
     par.usr <- par("usr")
     height <- par.usr[4] - par.usr[3]
@@ -192,12 +208,23 @@ plotForest <- function(vmasum, xlab, refline=0, ...) {
                                                    (height/100) * cex * efac[2], -1, -1 - (height/100) * 
                                                    cex * efac[2]), col = col[1], border = border, ...)
     
-    
+    # Add refline
+    if (is.numeric(refline)) {
+      segments(refline, ylim[1] - 5, refline, ylim[2] - 2, lty = "dotted", ...)
+    }
     
     # Add separation line between forest plot and meta-analysis results
     abline(h = 0, lty = 1, ...)
     
-    axis(side = 1, at = c(0,0.2,0.4,0.6,0.8,1), labels = c(0, 0.2, 0.4, 0.6, 0.8, 1), cex.axis = 1, ...)
+    # Add separation line on top of the figure
+    abline(h = ylim[2] - 2, lty = lty[3], ...)
+    
+    if (vmasum$scale=="logit") {
+      axis(side = 1, at = c(0,0.2,0.4,0.6,0.8,1), labels = c(0, 0.2, 0.4, 0.6, 0.8, 1), cex.axis = 1, ...)
+    } else if (vmasum$scale=="log") {
+      axis(side = 1, at = c(0:ceiling(max(exp(vmasum$data[,"theta.95CIu"]), na.rm=T))), labels = c(0:ceiling(max(exp(vmasum$data[,"theta.95CIu"]), na.rm=T))), cex.axis = 1, ...)
+    }
+    
   }
 
 }
