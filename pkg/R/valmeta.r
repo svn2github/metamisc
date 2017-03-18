@@ -1,14 +1,15 @@
 valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.se,
                     N, O, E, t.val, t.ma, method="REML", knha=TRUE, verbose=FALSE, 
-                    scale.c = "logit", scale.oe = "log", slab, n.chains = 4, pars, 
-                    ...) {
+                    slab, n.chains = 4, pars, ...) {
   pars.default <- list(hp.mu.mean = 0, 
                        hp.mu.var = 1E6,
                        hp.tau.min = 0,
                        hp.tau.max = 2,
-                       hp.tau.sima = 0.5,
+                       hp.tau.sigma = 0.5,
                        hp.tau.dist = "dunif",
-                       method.restore.c.se="Newcombe.4") 
+                       method.restore.c.se="Newcombe.4",
+                       model.cstat = "normal/logit", #Alternative: "normal/identity"
+                       model.oe = "normal/log") #Alternative: "poisson/log" or "normal/identity"
   
   if (!missing(pars)) {
     for (i in 1:length(pars)) {
@@ -68,7 +69,7 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
     
     out$cstat <- list()
     out$cstat$method.restore.se <- pars.default$method.restore.c.se 
-    out$cstat$scale <- scale.c
+    out$cstat$model <- pars.default$model.cstat
     class(out$cstat) <- "vmasum"
     
     if(missing(slab)) {
@@ -78,14 +79,14 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
     }
     
     # Apply necessary data transformations
-    if (scale.c == "identity") {
+    if (pars.default$model.cstat == "normal/identity") {
       theta <- cstat
       theta.var <- (cstat.se)**2
       theta.cil <- cstat.95CI[,1]
       theta.ciu <- cstat.95CI[,2]
       theta.var.CI <- ((theta.ciu - theta.cil)/(2*qnorm(0.975)))**2 #Derive from 95% CI
       theta.var <- ifelse(is.na(theta.var), theta.var.CI, theta.var) #Prioritize reported SE
-    } else if (scale.c == "logit") {
+    } else if (pars.default$model.cstat == "normal/logit") {
       theta <- log(cstat/(1-cstat))
       theta.var <- (cstat.se/(cstat*(1-cstat)))**2
       theta.cil <- logit(cstat.95CI[,1])
@@ -93,7 +94,7 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
       theta.var.CI <- ((theta.ciu - theta.cil)/(2*qnorm(0.975)))**2
       theta.var <- ifelse(is.na(theta.var.CI), theta.var, theta.var.CI) #Prioritize variance from 95% CI
     } else {
-      stop(paste("No appropriate transformation defined: '", scale.c, "'", sep=""))
+      stop(paste("No appropriate meta-analysis model defined: '", pars.default$model.cstat, "'", sep=""))
     }
     
     num.estimated.var.c <- 0
@@ -104,7 +105,7 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
       if (!missing(O) & !missing(N)) {
         if (verbose) cat("Attempting to restore missing information on the standard error of the c-statistic\n")
         theta.var.hat <- restore.c.var(cstat=cstat, N.subjects=N, N.events=O, 
-                                       restore.method=pars.default$method.restore.c.se, scale=scale.c)
+                                       restore.method=pars.default$method.restore.c.se, model=pars.default$model.cstat)
         num.estimated.var.c <- length(which(is.na(theta.var) & !is.na(theta.var.hat)))
         theta.var <- ifelse(is.na(theta.var), theta.var.hat, theta.var)
       }
@@ -129,10 +130,12 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
       preds <- predict(fit)
       
       results <- as.data.frame(array(NA, dim=c(1,5)))
-      if (scale.c == "logit") {
+      if (pars.default$model.cstat == "normal/logit") {
         results <- c(inv.logit(coefficients(fit)), inv.logit(c(preds$ci.lb, preds$ci.ub, preds$cr.lb, preds$cr.ub)))
-      } else {
+      } else if (pars.default$model.cstat == "normal/identity") {
         results <- c(coefficients(fit), c(preds$ci.lb, preds$ci.ub, preds$cr.lb, preds$cr.ub))
+      } else {
+        stop ("Meta-analysis model not implemented yet")
       }
       names(results) <- c("estimate", "95CIl", "95CIu", "95PIl", "95PIu")
       
@@ -140,7 +143,7 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
       out$cstat$results <- results
     } else {
       # Perform a Bayesian meta-analysis
-      model <- .generateBugsCstat(link=scale.c, pars=pars.default, ...)
+      model <- .generateBugsCstat(model=pars.default$model.cstat, pars=pars.default, ...)
       
       # Generate initial values from the relevant distributions
       model.pars <- list()
@@ -208,7 +211,7 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
       OE.95CI <- array(NA, dim=c(N.studies.OE,2))
     }
     
-    out$oe$scale <- scale.oe
+    out$oe$model <- pars.default$model.oe
     class(out$oe) <- "vmasum"
     
     if(missing(slab)) {
@@ -224,7 +227,7 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
     #TODO: allow confidence intervals of OE ratio
     #TODO: allow E/O ratio
     # Apply necessary data transformations
-    if (scale.oe == "identity") {
+    if (pars.default$model.oe == "normal/identity") {
       theta <- OE
       theta <- ifelse(is.na(theta), O/E, theta)
       theta <- ifelse(is.na(theta), -(exp(citl)*(O/N)-exp(citl)-(O/N)), theta) #derive from CITL
@@ -241,14 +244,17 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
       #}
       
       #Check if continuitiy corrections are needed
+      Ecc <- E
+      Ncc <- N
+      Occ <- O
       cc <- which(E==0 & is.na(theta.var))
-      E[cc] <- 0.5
-      N[cc] <- N[cc]+0.5
-      O[cc] <- O[cc]+0.5
-      theta <- ifelse(theta==Inf, log(O/E), theta)
-      theta.var <- ifelse(theta.var==Inf, O*(1-(O/N))/(E**2), theta.var) #BMJ eq 20 (binomial var)
-      theta.var <- ifelse(theta.var==Inf, (O/(E**2)), theta.var) #BMJ eq 30 (Poisson var)
-    } else if (scale.oe == "log") {
+      Ecc[cc] <- 0.5
+      Ncc[cc] <- N[cc]+0.5
+      Occ[cc] <- O[cc]+0.5
+      theta <- ifelse(theta==Inf, log(Occ/Ecc), theta)
+      theta.var <- ifelse(theta.var==Inf, Occ*(1-(Occ/Ncc))/(Ecc**2), theta.var) #BMJ eq 20 (binomial var)
+      theta.var <- ifelse(theta.var==Inf, (Occ/(Ecc**2)), theta.var) #BMJ eq 30 (Poisson var)
+    } else if (pars.default$model.oe == "normal/log" | pars.default$model.oe == "poisson/log") {
       theta <- log(OE)
       theta <- ifelse(is.na(theta), log(O/E), theta)
       theta <- ifelse(is.na(theta), log(-(exp(citl)*(O/N)-exp(citl)-(O/N))), theta) #derive from CITL
@@ -261,15 +267,18 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
       theta.var <- ifelse(is.na(theta.var), (1/O), theta.var) #BMJ eq 36 (Poisson var)
       
       #Check if continuitiy corrections are needed
+      Ecc <- E
+      Ncc <- N
+      Occ <- O
       cc <- which((O==0 | E==0) & is.na(theta.var))
-      E[cc] <- 0.5
-      N[cc] <- N[cc]+0.5
-      O[cc] <- O[cc]+0.5
-      theta <- ifelse(theta==Inf, log(O/E), theta)
-      theta.var <- ifelse(theta.var==Inf, (1-(O/N))/O, theta.var) #BMJ eq 27 (binomial var)
-      theta.var <- ifelse(theta.var==Inf, (1/O), theta.var) #BMJ eq 36 (Poisson var)
+      Ecc[cc] <- 0.5
+      Ncc[cc] <- N[cc]+0.5
+      Occ[cc] <- O[cc]+0.5
+      theta <- ifelse(theta==Inf, log(Occ/Ecc), theta)
+      theta.var <- ifelse(theta.var==Inf, (1-(Occ/Ncc))/Occ, theta.var) #BMJ eq 27 (binomial var)
+      theta.var <- ifelse(theta.var==Inf, (1/Occ), theta.var) #BMJ eq 36 (Poisson var)
     } else {
-      stop(paste("No appropriate transformation defined: '", scale.oe, "'", sep=""))
+      stop(paste("No appropriate meta-analysis model defined: '", pars.default$model.oe, "'", sep=""))
     }
     
     #Only calculate 95% CI for which no original values were available
@@ -282,23 +291,42 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
     
     if (method != "BAYES") { # Use of rma
       
-      # Apply the meta-analysis
-      fit <- rma(yi=theta, vi=theta.var, data=ds, method=method, knha=knha, slab=out$oe$slab, ...) 
-      preds <- predict(fit)
-      
-      results <- as.data.frame(array(NA, dim=c(1,5)))
-      if (scale.oe == "log") {
+      if (pars.default$model.oe=="normal/identity") {
+        fit <- rma(yi=theta, vi=theta.var, data=ds, method=method, knha=knha, slab=out$oe$slab, ...) 
+        preds <- predict(fit)
+        results <- c(coefficients(fit), c(preds$ci.lb, preds$ci.ub, preds$cr.lb, preds$cr.ub))
+      } else if (pars.default$model.oe=="normal/log") {
+        fit <- rma(yi=theta, vi=theta.var, data=ds, method=method, knha=knha, slab=out$oe$slab, ...) 
+        preds <- predict(fit)
         results <- c(exp(coefficients(fit)), exp(c(preds$ci.lb, preds$ci.ub, preds$cr.lb, preds$cr.ub)))
       } else {
-        results <- c(coefficients(fit), c(preds$ci.lb, preds$ci.ub, preds$cr.lb, preds$cr.ub))
+        stop("Model not implemented yet!")
       }
       names(results) <- c("estimate", "95CIl", "95CIu", "95PIl", "95PIu")
       
       out$oe$rma <- fit
       out$oe$results <- results
     } else {
+      if (pars.default$model.oe=="normal/identity") {
+        stop("Model not implemented yet!")
+      } else if (pars.default$model.oe=="normal/log") {
+        mvmeta_dat <- list(theta=theta,
+                           theta.var=theta.var,
+                           Nstudies = N.studies.OE)
+      } else if (pars.default$model.oe =="poisson/log") {
+        
+        # Truncate hyper parameter variance
+        pars.default$hp.mu.var = min(pars.default$hp.mu.var, 100)
+        
+        mvmeta_dat <- list(obs=O,
+                           exc=E,
+                           Nstudies = N.studies.OE)
+      } else {
+        stop("Model not implemented yet!")
+      }
+      
       # Perform a Bayesian meta-analysis
-      model <- generateBugsOE(link="log", pars=pars.default, ...)
+      model <- generateBugsOE(model=pars.default$model.oe, pars=pars.default, ...)
       
       # Generate initial values from the relevant distributions
       model.pars <- list()
@@ -306,9 +334,7 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
       model.pars[[2]] <- list(param="bsTau", param.f=runif, param.args=list(n=1, min=pars.default$hp.tau.min, max=pars.default$hp.tau.max))
       inits <- generateMCMCinits(n.chains=n.chains, model.pars=model.pars)
       
-      mvmeta_dat <- list(theta=theta,
-                         theta.var=theta.var,
-                         Nstudies = N.studies.OE)
+      
       jags.model <- runjags::run.jags(model=model, 
                                       monitor = c("mu.tobs", "mu.obs", "pred.obs", "bsTau", "PED"), 
                                       data = mvmeta_dat, 
@@ -318,7 +344,7 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
                                       ...)
       fit <- jags.model$summaries
       
-      
+
       #Extract PED
       fit.dev <- runjags::extract(jags.model,"PED")
       
@@ -336,7 +362,7 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
   return(out)
 }
 
-.generateBugsCstat <- function(link="logit", #Choose between 'log', 'logit' and 'binom'
+.generateBugsCstat <- function(model="normal/logit", #Choose between 'log', 'logit' and 'binom'
                                pars, 
                                 ...) # standard deviation for student T prior
   {
@@ -361,7 +387,7 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
     stop("Specified prior not implemented")
   }
   
-  if (link == "logit") {
+  if (model == "normal/logit") {
     out <- paste(out, "  mu.tobs ~ dnorm(", pars$hp.mu.mean, ",", hp.mu.prec, ")\n", sep="")
     out <- paste(out, "  mu.obs <- 1/(1+exp(-mu.tobs))\n", sep="")
     out <- paste(out, "  pred.obs <- 1/(1+exp(-pred.tobs))\n", sep="")
@@ -413,7 +439,7 @@ print.vmasum <- function(x, ...) {
 
 plot.valmeta <- function(x, ...) {
   if (!is.null(x$cstat)) {
-    plotForest(x$cstat, xlab="c-statistic", ...)
+    plotForest(x$cstat, xlab="c-statistic", refline=NULL, ...)
     if (!is.null(x$oe)) {
       readline(prompt="Press [enter] to continue")
     }

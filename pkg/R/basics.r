@@ -20,7 +20,7 @@ generateMCMCinits <- function(n.chains, model.pars)
 
 
 #Update SE(c.index) using Method 4 of Newcombe
-restore.c.var<- function(cstat, N.subjects, N.events, restore.method="Newcombe.4", scale="logit") {
+restore.c.var<- function(cstat, N.subjects, N.events, restore.method="Newcombe.4", model="normal/logit") {
   n <- N.events #Number of events
   m <- N.subjects-N.events #Number of non-events
   
@@ -37,12 +37,12 @@ restore.c.var<- function(cstat, N.subjects, N.events, restore.method="Newcombe.4
     stop ("Method not implemented yet!")
   }
   
-  if (scale=="logit") {
+  if (model=="normal/logit") {
     out <- (((1+nstar*(1-cstat)/(2-cstat) + mstar*cstat/(1+cstat)))/(m*n*cstat*(1-cstat)))
-  } else if (scale=="identity") {
+  } else if (model=="normal/identity") {
     out <- ((cstat*(1-cstat)*(1+nstar*(1-cstat)/(2-cstat) + mstar*cstat/(1+cstat)))/(m*n))
   } else {
-    stop ("Scale not implemented!")
+    stop ("Meta-analysis model not implemented!")
   }
   
   return(out)
@@ -87,19 +87,19 @@ extrapolateOE <- function(Po, Pe, var.Po, t.val, t.ma, N, scale="log") {
   return(out)
 }
 
-plotForest <- function(vmasum, xlab, ...) {
+plotForest <- function(vmasum, xlab, refline, ...) {
   inv.logit <- function(x) {1/(1+exp(-x)) }
   
   if (!is.null(vmasum$rma)) {
     # Forest plot
-    if (vmasum$scale=="logit") {
-      forest(vmasum$rma, transf=inv.logit, xlab=xlab, addcred=T,  ...)
-    } else if (vmasum$scale == "log") {
-      forest(vmasum$rma, transf=exp, xlab=xlab, addcred=T, ...)
-    } else if (vmasum$scale=="identity") {
-      forest(vmasum$rma, transf=NULL, xlab=xlab, addcred=T, ...)
+    if (vmasum$model=="normal/logit") {
+      forest(vmasum$rma, transf=inv.logit, xlab=xlab, addcred=T, refline=refline, ...)
+    } else if (vmasum$model == "normal/log") {
+      forest(vmasum$rma, transf=exp, xlab=xlab, addcred=T, refline=refline,...)
+    } else if (vmasum$model=="normal/identity") {
+      forest(vmasum$rma, transf=NULL, xlab=xlab, addcred=T, refline=refline, ...)
     } else {
-      stop ("Invalid scale!")
+      stop ("Invalid meta-analysis model!")
     }
   } else {
     col <- c("black", "gray50")
@@ -118,30 +118,27 @@ plotForest <- function(vmasum, xlab, ...) {
     ci.lb <- vmasum$data[,"theta.95CIl"]
     ci.ub <- vmasum$data[,"theta.95CIu"]
     
-    if (vmasum$scale=="logit") {
+    if (vmasum$model=="normal/logit") {
       xlim <- c(-0.5, 1.5)
       yi <- sapply(yi, inv.logit)
       ci.lb <- sapply(ci.lb, inv.logit)
       ci.ub <- sapply(ci.ub, inv.logit)
       refline <- NA
-    } else if (vmasum$scale=="log") {
+    } else if (vmasum$model == "normal/log" | vmasum$model == "poisson/log") {
       yi <- sapply(yi, exp)
       ci.lb <- sapply(ci.lb, exp)
       ci.ub <- sapply(ci.ub, exp)
       refline <- 1
+      
+      plot.multp.l <- 1.2
+      plot.multp.r <- 1.2
+      rng <- max(ci.ub, na.rm = TRUE) - min(ci.lb, na.rm = TRUE)
+      xlim <- c(min(ci.lb, na.rm = TRUE) - rng * plot.multp.l, 
+                max(ci.ub, na.rm = TRUE) + rng * plot.multp.r)
+      xlim <- round(xlim, 2)
     }
     
     ylim <- c(-1.5, k + 3)
-    
-    plot.multp.l <- 1.2
-    plot.multp.r <- 1.2
-    rng <- max(ci.ub, na.rm = TRUE) - min(ci.lb, na.rm = TRUE)
-    xlim <- c(min(ci.lb, na.rm = TRUE) - rng * plot.multp.l, 
-              max(ci.ub, na.rm = TRUE) + rng * plot.multp.r)
-    xlim <- round(xlim, 2)
-      
-      
-
     
     
     
@@ -219,9 +216,9 @@ plotForest <- function(vmasum, xlab, ...) {
     # Add separation line on top of the figure
     abline(h = ylim[2] - 2, lty = lty[3], ...)
     
-    if (vmasum$scale=="logit") {
+    if (vmasum$model=="normal/logit") {
       axis(side = 1, at = c(0,0.2,0.4,0.6,0.8,1), labels = c(0, 0.2, 0.4, 0.6, 0.8, 1), cex.axis = 1, ...)
-    } else if (vmasum$scale=="log") {
+    } else if (vmasum$model == "normal/log" | vmasum$model == "poisson/log") {
       axis(side = 1, at = c(0:ceiling(max(exp(vmasum$data[,"theta.95CIu"]), na.rm=T))), labels = c(0:ceiling(max(exp(vmasum$data[,"theta.95CIu"]), na.rm=T))), cex.axis = 1, ...)
     }
     

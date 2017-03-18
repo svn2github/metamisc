@@ -11,7 +11,7 @@ This function allows to meta-analyze the performance of a prediction model, and 
 \usage{
 valmeta(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.se,
         N, O, E, t.val, t.ma, method="REML", knha=TRUE, verbose=FALSE, 
-        scale.c = "logit", scale.oe = "log", slab, n.chains = 4, pars, \ldots)
+        slab, n.chains = 4, pars, \ldots)
 
 }
 %- maybe also 'usage' for other objects documented here.
@@ -32,11 +32,9 @@ valmeta(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.se,
   \item{method}{character string specifying whether a fixed- or a random-effects model should be fitted. A fixed-effects model is fitted when using \code{method="FE"}. Random-effects models are fitted by setting method equal to one of the following: \code{"REML"} (Default), \code{"DL"}, \code{"HE"}, \code{"SJ"}, \code{"ML"}, \code{"EB"}, \code{"HS"}, \code{"GENQ"} or \code{"BAYES"}. See 'Details'.}
   \item{knha}{logical specifying whether the method by Knapp and Hartung (2003) should be used for adjusting test statistics and confidence intervals (default is TRUE). Type '\code{?rma}' for more details.}
   \item{verbose}{if TRUE then messages generated during the fitting process will be displayed.}
-  \item{scale.c}{character string specifying whether the meta-analysis should use transformed values of the c-statistic and the corresponding standard error. Options are \code{scale="logit"} (logistic transformation) or \code{"identity"} (no transformation).}
-  \item{scale.oe}{character string specifying whether the meta-analysis should use transformed values of the total observed:expected ratio and the corresponding standard error. Options are \code{scale="log"} (log transformation) or \code{"identity"} (no transformation).}
   \item{slab}{optional vector with labels for the \emph{k} studies.}
   \item{n.chains}{the number of chains to use in the Gibbs sampler (\code{method="BAYES"}). More chains will improve the sensitivity of the convergence diagnostic, but will cause the simulation to run more slowly. The default number of chains is 4.}
-  \item{pars}{A list with additional arguments.  The following parameters configure the MCMC sampling procedure:  \code{hp.mu.mean} (mean of the prior distribution of the random effects model, defaults to 0), \code{hp.mu.var} (variance of the prior distribution of the random effects model, defaults to 1E6), \code{hp.tau.min} (minimum value for the between-study standard deviation, defaults to 0), \code{hp.tau.max} (maximum value for the between-study standard deviation, defaults to 2), \code{hp.tau.sigma} (standard deviation of the prior distribution for the between-study standard-deviation), \code{hp.tau.dist} (function for modeling the prior distribution for the between-study standard-deviation. Defaults to \code{"dunif"}), \code{method.restore.c.se} (method for restoring missing estimates for the standard error of the c-statistic. So far, only \code{"Newcombe.2"} and \code{"Newcombe.4"} are supported. These methods have been described by Newcombe in 2006.)}
+  \item{pars}{A list with additional arguments.  The following parameters configure the MCMC sampling procedure:  \code{hp.mu.mean} (mean of the prior distribution of the random effects model, defaults to 0), \code{hp.mu.var} (variance of the prior distribution of the random effects model, defaults to 1E6), \code{hp.tau.min} (minimum value for the between-study standard deviation, defaults to 0), \code{hp.tau.max} (maximum value for the between-study standard deviation, defaults to 2), \code{hp.tau.sigma} (standard deviation of the prior distribution for the between-study standard-deviation), \code{hp.tau.dist} (function for modeling the prior distribution for the between-study standard-deviation. Defaults to \code{"dunif"}), \code{method.restore.c.se} (method for restoring missing estimates for the standard error of the c-statistic. So far, only \code{"Newcombe.2"} and \code{"Newcombe.4"} are supported. These methods have been described by Newcombe in 2006.), \code{model.cstat} (The likelihood/link for modeling the c-statistic; see "Details"), \code{model.oe} (The likelihood/link for modeling the O:E ratio; see "Details") }
   \item{\ldots}{Additional arguments that are passed to \code{rma} or \code{runjags} (if \code{method="BAYES"}).}
 }
 \details{
@@ -45,14 +43,15 @@ Unless specified otherwise, all meta-analysis models assume random effects and a
 
 \bold{Meta-analysis of the concordance statistic (c-statistic)}
 
-The c-statistic is a measure of discrimination, and indicates the ability of a prediction model to distinguish between patients developing and not developing the outcome. The c-statistic typically ranges from 0.5 (no discriminative ability) to 1 (perfect discriminative ability). A meta-analysis for the c-statistic will be performed if the c-statistics (\code{cstat}) and their respective standard errors (\code{cstat.se}) are defined. For studies where the standard error is unknown, it can be derived from the 95\% confidence interval, or from \code{cstat}, \code{O} and \code{N} (Newcombe 2006). By default, c-statistics are rescaled using the logit transformation to improve the validity of Normality assumptions.
+The c-statistic is a measure of discrimination, and indicates the ability of a prediction model to distinguish between patients developing and not developing the outcome. The c-statistic typically ranges from 0.5 (no discriminative ability) to 1 (perfect discriminative ability). A meta-analysis for the c-statistic will be performed if the c-statistics (\code{cstat}) and their respective standard errors (\code{cstat.se}) are defined. For studies where the standard error is unknown, it can be derived from the 95\% confidence interval, or from \code{cstat}, \code{O} and \code{N} (Newcombe 2006). By default, the meta-analysis model assumes Normality for the logit of the c-statistic (\code{model.cstat = "normal/logit"}). Alternatively, it is possible to summarize raw estimates of the c-statistic by setting \code{model.cstat = "normal/identity"}. 
 
 \bold{Meta-analysis of the total observed versus expected ratio (O:E ratio)}
 
-The total O:E ratio provides a rough indication of the overall model calibration (across the entire range of predicted risks). By default, O:E ratios are rescaled using the (natural) log transformation to improve the validity of Normality assumptions. If the standard error of the O:E ratio is not provided, it can be approximated from the 95\% confidence interval. Alternatively, if the number of expected events is treated as a fixed constant, the standard error can be derived from the error variance of the binomial or Poisson (if \code{O} << \code{N}) distribution. In that case, continuitiy corrections are applied for studies where \code{E=0} (if \code{scale.oe = "identity"}) and \code{O=0} (if \code{scale.oe = "log"}) by adding 0.5 to \code{O}, \code{E} and \code{N}. Finally, the O:E ratio and its standard error can also be derived from the calibration-in-the-large statistic. Standard errors are always prioritized as source of within-study variability in case multiple sources are available (e.g. from confidence intervals).   
+The total O:E ratio provides a rough indication of the overall model calibration (across the entire range of predicted risks). Currently, three methods have been implemented to obtain a summary estimate of the total O:E ratio. By default, the meta-analysis model assumes   Normality for the (natural) logarithm of the O:E ratios (\code{model.oe = "normal/log"}). Continuity corrections are applied when necessary by adding 0.5 to \code{O}, \code{E} and \code{N}. Alternatively, it is possible to model the total number of observed and expected events using a Poisson likelihood (Stijnen 2010). The resulting model does not require continuity corrections and can be implemented by setting \code{model.oe = "poisson/log"} (only supported for \code{method="BAYES"}; note that \code{hp.mu.var} is truncated to a maximum value of 100). Finally, it is possible to summarize raw estimates of the O:E ratio by setting \code{model.oe = "normal/identity"}. 
 
+If the standard error of the O:E ratio is not provided, it can be approximated from the 95\% confidence interval. Alternatively, if the number of expected events is treated as a fixed constant, the standard error can be derived from the error variance of the binomial or Poisson (if \code{O} << \code{N}) distribution. Finally, the O:E ratio and its standard error can also be derived from the calibration-in-the-large statistic. Standard errors are always prioritized as source of within-study variability in case multiple sources are available (e.g. from confidence intervals).   
 
-\bold{Bayesian meta-analysis of the O:E ratio}
+\bold{Bayesian meta-analysis}
 
 For Bayesian meta-analysis models that involve the Gibbs sampler (\code{method="BAYES"}), the R packages \code{runjags} and \code{rjags} must be installed. 
 }
@@ -78,6 +77,8 @@ Debray TPA, Damen JAAG, Snell KIE, Ensor J, Hooft L, Reitsma JB, et al. A guide 
 Hanley JA, McNeil BJ. The meaning and use of the area under a receiver operating characteristic (ROC) curve. \emph{Radiology}. 1982; 143(1):29--36. 
 
 Newcombe RG. Confidence intervals for an effect size measure based on the Mann-Whitney statistic. Part 2: asymptotic methods and evaluation. \emph{Stat Med}. 2006; 25(4):559--73. 
+
+Stijnen T, Hamza TH, Ozdemir P. Random effects meta-analysis of event outcome in the framework of the generalized linear mixed model with applications in sparse data. \emph{Stat Med}. 2010; 29(29):3046--67. 
 
 Viechtbauer W. Conducting Meta-Analyses in R with the metafor Package. \emph{Journal of Statistical Software}. 2010; 36(3). Available from: \url{http://www.jstatsoft.org/v36/i03/}
 }
@@ -115,8 +116,9 @@ fit2 <- valmeta(cstat=c.index, cstat.se=se.c.index,
                 N=n, O=n.events, method="BAYES", slab=Study)
 plot(fit2)
 
-# Bayesian meta-analysis of the O:E ratio (random effects)
-fit3 <- valmeta(O=n.events, E=e.events, N=n, method="BAYES", slab=Study)
+# Bayesian meta-analysis of the O:E ratio using a Poisson link 
+fit3 <- valmeta(O=n.events, E=e.events, N=n, method="BAYES", slab=Study, 
+                pars=list(model.oe="poisson/log"))
 plot(fit3)
 } 
 
