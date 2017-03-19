@@ -10,7 +10,7 @@ This function allows to meta-analyze the performance of a prediction model, and 
 }
 \usage{
 valmeta(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.se,
-        N, O, E, t.val, t.ma, method="REML", knha=TRUE, verbose=FALSE, 
+        N, O, E, Po, Pe, t.val, t.ma, method="REML", knha=TRUE, verbose=FALSE, 
         slab, n.chains = 4, pars, \ldots)
 
 }
@@ -27,6 +27,8 @@ valmeta(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.se,
   \item{N}{vector with the total number of participants for each valiation}
   \item{O}{vector with the total number of observed events for each valiation}
   \item{E}{vector with the total number of expected events for each valiation}
+  \item{Po}{vector with the observed event probability for each valiation}
+  \item{Pe}{vector with the expected event probability for each valiation}
   \item{t.val}{optional vector for prognostic models, containing the time period for which performance was assessed}
   \item{t.ma}{optional numeric value for prognostic models, containing the time period of primary interest for meta-analysis}
   \item{method}{character string specifying whether a fixed- or a random-effects model should be fitted. A fixed-effects model is fitted when using \code{method="FE"}. Random-effects models are fitted by setting method equal to one of the following: \code{"REML"} (Default), \code{"DL"}, \code{"HE"}, \code{"SJ"}, \code{"ML"}, \code{"EB"}, \code{"HS"}, \code{"GENQ"} or \code{"BAYES"}. See 'Details'.}
@@ -51,9 +53,7 @@ The total O:E ratio provides a rough indication of the overall model calibration
 
 When unkown, the standard error of the O:E ratio will be approximated in the following order from  (1) the 95\% confidence interval, (2)  the error variance of the binomial distribution, (3) the error variance of the Poisson distribution, or from (4)  the calibration-in-the-large statistic.    
 
-\bold{Bayesian meta-analysis}
 
-For Bayesian meta-analysis models that involve the Gibbs sampler (\code{method="BAYES"}), the R packages \code{runjags} and \code{rjags} must be installed. 
 }
 \value{
 An object of class \code{valmeta} with the following elements:
@@ -101,7 +101,7 @@ plot(fit)
 # Meta-analysis of the total O:E ratio (random effects)
 valmeta(O=n.events, E=e.events, N=n)     # Option 1
 valmeta(O=n.events, E=e.events)          # Option 2 
-valmeta(O=(Po/100)*n, E=(Pe/100)*n, N=n) # Option 3
+valmeta(Po=Po, Pe=Pe, N=n)               # Option 3
 
 
 # Meta-analysis of the c-statistic and the total O:E ratio (random effects)

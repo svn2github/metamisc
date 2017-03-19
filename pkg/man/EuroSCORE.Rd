@@ -18,8 +18,8 @@ This data set contains estimates on the predictive performance of the European s
     \item{\code{se.c.index}}{a numeric vector with the standard error of the concordance statistics}
     \item{\code{c.index.95CIl}}{a numeric vector with the lower bound of the 95\% confidence interval of the estimated concordance statistics}
     \item{\code{c.index.95CIu}}{a numeric vector with the upper bound of the 95\% confidence interval of the estimated concordance statistics}
-    \item{\code{Po}}{a numeric vector with the overall observed event probability of each validation (on a scale from 0 to 100)}
-    \item{\code{Pe}}{a numeric vector with the overall expected event probability of each validation (on a scale from 0 to 100)}
+    \item{\code{Po}}{a numeric vector with the overall observed event probability of each validation}
+    \item{\code{Pe}}{a numeric vector with the overall expected event probability of each validation}
     \item{\code{SD.Pe}}{a numeric vector with the standard error of \code{Pe}}
     \item{\code{e.events}}{a numeric vector with the total number of expected events in each validation}
     \item{\code{multicentre}}{a logical vector describing whether the study was a multicentre study}

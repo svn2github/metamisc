@@ -55,12 +55,12 @@ restore.oe.var <- function(citl, citl.se, Po) {
   return(out)
 }
 
-extrapolateOE <- function(Po, Pe, var.Po, t.val, t.ma, N, scale="log") {
+extrapolateOE <- function(Po, Pe, var.Po, t.val, t.ma, N, model="normal/log") {
   Po.new <- 1-exp(t.ma*log(1-Po)/t.val)
   Pe.new <- 1-exp(t.ma*log(1-Pe)/t.val)
   theta <- theta.var <- NA
   
-  if (scale=="identity") {
+  if (model=="normal/identity") {
     theta <- Po.new/Pe.new
     
     if (missing(var.Po)) {
@@ -70,7 +70,7 @@ extrapolateOE <- function(Po, Pe, var.Po, t.val, t.ma, N, scale="log") {
       # Use error variance of Po, which is equal to the error variance of the KM estimate
       theta.var <- ((t.ma**2)*exp(2*t.ma*log(1-Po)/t.val)*var.Po)/((t.val**2)*((1-Po)**2)*(1-exp(t.ma*log(1-Pe)/t.val))**2)
     }
-  } else if (scale=="log") {
+  } else if (model=="normal/log" | model=="poisson/log") {
     theta <- log(Po.new/Pe.new)
     
     if (missing(var.Po)) {
@@ -85,6 +85,90 @@ extrapolateOE <- function(Po, Pe, var.Po, t.val, t.ma, N, scale="log") {
   }
   out <- c(theta, theta.var)
   return(out)
+}
+
+generateOEdata <- function(O, E, Po, Pe, OE, OE.se, OE.95CI, citl, citl.se, N, model="normal/log") {
+  
+  # Derive O or E from OE where possible
+  O <- ifelse(is.na(O), OE*E, O)
+  O <- ifelse(is.na(O), Po*N, O)
+  E <- ifelse(is.na(E), O/OE, E)
+  E <- ifelse(is.na(E), Pe*N, E)
+  Po <- ifelse(is.na(Po), O/N, Po)
+  Po <- ifelse(is.na(Po), OE*Pe, Po)
+  Pe <- ifelse(is.na(Pe), E/N, Pe)
+  Pe <- ifelse(is.na(Pe), Po/OE, Pe)
+  
+  # Derive
+  
+  #TODO: allow confidence intervals of OE ratio
+  #TODO: allow E/O ratio
+  # Apply necessary data transformations
+  if (model == "normal/identity") {
+    theta <- OE
+    theta <- ifelse(is.na(theta), O/E, theta)
+    theta <- ifelse(is.na(theta), Po/Pe, theta)
+    theta <- ifelse(is.na(theta), -(exp(citl)*(O/N)-exp(citl)-(O/N)), theta) #derive from CITL
+    theta.var <- OE.se**2
+    theta.cil <- OE.95CI[,1]
+    theta.ciu <- OE.95CI[,2]
+    theta.var <- ifelse(is.na(theta.var), ((theta.ciu - theta.cil)/(2*qnorm(0.975)))**2, theta.var) #Derive from 95% CI
+    theta.var <- ifelse(is.na(theta.var), (((O/N)**2)+1)*((exp(citl))**2)*(citl.se**2), theta.var)
+    theta.var <- ifelse(is.na(theta.var), O*(1-Po)/(E**2), theta.var) #BMJ eq 20 (binomial var)
+    theta.var <- ifelse(is.na(theta.var), (O/(E**2)), theta.var) #BMJ eq 30 (Poisson var)
+    #Extrapolate theta 
+    #if (!missing(t.ma) & !missing(t.val)) {
+    #  thetaE <- extrapolateOE(Po=Po, Pe=Pe, var.Po=var.Po, t.val=t.val, t.ma=t.ma, N=N, model=model)
+    #}
+    
+    #Check if continuitiy corrections are needed
+    Ecc <- E
+    Ncc <- N
+    Occ <- O
+    cc <- which(E==0 & is.na(theta.var))
+    Ecc[cc] <- 0.5
+    Ncc[cc] <- N[cc]+0.5
+    Occ[cc] <- O[cc]+0.5
+    theta <- ifelse(theta==Inf, log(Occ/Ecc), theta)
+    theta.var <- ifelse(theta.var==Inf, Occ*(1-(Occ/Ncc))/(Ecc**2), theta.var) #BMJ eq 20 (binomial var)
+    theta.var <- ifelse(theta.var==Inf, (Occ/(Ecc**2)), theta.var) #BMJ eq 30 (Poisson var)
+  } else if (model == "normal/log" | model == "poisson/log") {
+    theta <- log(OE)
+    theta <- ifelse(is.na(theta), log(O/E), theta)
+    theta <- ifelse(is.na(theta), log(Po/Pe), theta)
+    theta <- ifelse(is.na(theta), log(-(exp(citl)*(O/N)-exp(citl)-(O/N))), theta) #derive from CITL
+    theta.var <- (OE.se/theta)**2
+    theta.cil <- log(OE.95CI[,1])
+    theta.ciu <- log(OE.95CI[,2])
+    theta.var <- ifelse(is.na(theta.var), ((theta.ciu - theta.cil)/(2*qnorm(0.975)))**2, theta.var)
+    theta.var <- ifelse(is.na(theta.var),  restore.oe.var(citl=citl, citl.se=citl.se, Po=Po), theta.var)
+    theta.var <- ifelse(is.na(theta.var), (1-Po)/O, theta.var) #BMJ eq 27 (binomial var)
+    theta.var <- ifelse(is.na(theta.var), (1/O), theta.var) #BMJ eq 36 (Poisson var)
+    
+    #Check if continuitiy corrections are needed
+    Ecc <- E
+    Ncc <- N
+    Occ <- O
+    cc <- which((O==0 | E==0) & is.na(theta.var))
+    Ecc[cc] <- 0.5
+    Ncc[cc] <- N[cc]+0.5
+    Occ[cc] <- O[cc]+0.5
+    theta <- ifelse(theta==Inf, log(Occ/Ecc), theta)
+    theta.var <- ifelse(theta.var==Inf, (1-(Occ/Ncc))/Occ, theta.var) #BMJ eq 27 (binomial var)
+    theta.var <- ifelse(theta.var==Inf, (1/Occ), theta.var) #BMJ eq 36 (Poisson var)
+  } else {
+    stop(paste("No appropriate meta-analysis model defined: '", model, "'", sep=""))
+  }
+  
+  #Only calculate 95% CI for which no original values were available
+  theta.cil[is.na(theta.cil)] <- (theta+qnorm(0.025)*sqrt(theta.var))[is.na(theta.cil)]
+  theta.ciu[is.na(theta.ciu)] <- (theta+qnorm(0.975)*sqrt(theta.var))[is.na(theta.ciu)]
+  
+  ds <- cbind(theta, sqrt(theta.var), theta.cil, theta.ciu, F)
+  colnames(ds) <- c("theta", "theta.se", "theta.95CIl", "theta.95CIu", "cont.corr")
+  ds[cc,"cont.corr"] <- T
+  ds <- as.data.frame(ds)
+  return(ds)
 }
 
 plotForest <- function(vmasum, xlab, refline, ...) {
