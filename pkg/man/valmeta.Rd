@@ -10,7 +10,7 @@ This function allows to meta-analyze the performance of a prediction model, and 
 }
 \usage{
 valmeta(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.se,
-        N, O, E, Po, Pe, t.val, t.ma, method="REML", knha=TRUE, verbose=FALSE, 
+        N, O, E, Po, Po.se, Pe, t.val, t.ma, method="REML", knha=TRUE, verbose=FALSE, 
         slab, n.chains = 4, pars, \ldots)
 
 }
@@ -25,9 +25,10 @@ valmeta(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.se,
   \item{citl}{vector with the estimated calibration-in-the-large for each valiation}
   \item{citl.se}{vector with the standard error of the estimated calibration-in-the-large statistics}
   \item{N}{vector with the total number of participants for each valiation}
-  \item{O}{vector with the total number of observed events for each valiation}
+  \item{O}{vector with the total number of observed events for each valiation. Note that in case of substantial drop-out, \code{O} should be based on Kaplan-Meier estimates.}
   \item{E}{vector with the total number of expected events for each valiation}
   \item{Po}{vector with the observed event probability for each valiation}
+  \item{Po.se}{vector with the standard errors of \code{Po}}
   \item{Pe}{vector with the expected event probability for each valiation}
   \item{t.val}{optional vector for prognostic models, containing the time period for which performance was assessed}
   \item{t.ma}{optional numeric value for prognostic models, containing the time period of primary interest for meta-analysis}
@@ -124,6 +125,14 @@ plot(fit3)
 
 #Detach the dataset
 detach(EuroSCORE)
+
+data(WilsonMale)
+attach(WilsonMale)
+
+# Meta-analysis of total O:E ratio after 10 years of follow-up
+valmeta(Po=Po, Pe=Pe, N=n, t.val=t.val, t.ma=10)
+
+detach(WilsonMale)
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

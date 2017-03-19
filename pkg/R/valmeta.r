@@ -1,5 +1,5 @@
 valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.se,
-                    N, O, E, Po, Pe, t.val, t.ma, method="REML", knha=TRUE, verbose=FALSE, 
+                    N, O, E, Po, Po.se, Pe, t.val, t.ma, method="REML", knha=TRUE, verbose=FALSE, 
                     slab, n.chains = 4, pars, ...) {
   pars.default <- list(hp.mu.mean = 0, 
                        hp.mu.var = 1E6,
@@ -34,6 +34,9 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
   }else if (!missing(citl)) {
     N.studies.OE <- length(citl)
   }
+  
+  t.ma <- ifelse(missing(t.ma), NA, t.ma)
+  t.val <- ifelse(missing(t.val), NA, t.val)
   
   
 
@@ -192,6 +195,9 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
     if (missing(Po)) {
       Po <- rep(NA, length=N.studies.OE)
     }
+    if (missing(Po.se)) {
+      Po.se <- rep(NA, length=N.studies.OE)
+    }
     if (missing(Pe)) {
       Pe <- rep(NA, length=N.studies.OE)
     }
@@ -228,8 +234,9 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
       out$oe$slab <- slab
     }
     
-    ds <- generateOEdata(O=O, E=E, Po=Po, Pe=Pe, OE=OE, OE.se=OE.se, OE.95CI=OE.95CI, 
-                         citl=citl, citl.se=citl.se, N=N, model=pars.default$model.oe)
+    ds <- generateOEdata(O=O, E=E, Po=Po, Po.se=Po.se, Pe=Pe, OE=OE, OE.se=OE.se, OE.95CI=OE.95CI, 
+                         citl=citl, citl.se=citl.se, N=N, t.ma=t.ma, t.val=t.val,
+                         model=pars.default$model.oe)
     out$oe$data <- ds
       
     if (method != "BAYES") { # Use of rma

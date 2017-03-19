@@ -83,11 +83,12 @@ extrapolateOE <- function(Po, Pe, var.Po, t.val, t.ma, N, model="normal/log") {
   } else {
     stop ("Scale not implemented")
   }
-  out <- c(theta, theta.var)
+  out <- cbind(theta, theta.var)
   return(out)
 }
 
-generateOEdata <- function(O, E, Po, Pe, OE, OE.se, OE.95CI, citl, citl.se, N, model="normal/log") {
+generateOEdata <- function(O, E, Po, Po.se, Pe, OE, OE.se, OE.95CI, citl, citl.se, N, 
+                           t.ma, t.val, model="normal/log") {
   
   # Derive O or E from OE where possible
   O <- ifelse(is.na(O), OE*E, O)
@@ -116,10 +117,6 @@ generateOEdata <- function(O, E, Po, Pe, OE, OE.se, OE.95CI, citl, citl.se, N, m
     theta.var <- ifelse(is.na(theta.var), (((O/N)**2)+1)*((exp(citl))**2)*(citl.se**2), theta.var)
     theta.var <- ifelse(is.na(theta.var), O*(1-Po)/(E**2), theta.var) #BMJ eq 20 (binomial var)
     theta.var <- ifelse(is.na(theta.var), (O/(E**2)), theta.var) #BMJ eq 30 (Poisson var)
-    #Extrapolate theta 
-    #if (!missing(t.ma) & !missing(t.val)) {
-    #  thetaE <- extrapolateOE(Po=Po, Pe=Pe, var.Po=var.Po, t.val=t.val, t.ma=t.ma, N=N, model=model)
-    #}
     
     #Check if continuitiy corrections are needed
     Ecc <- E
@@ -129,9 +126,19 @@ generateOEdata <- function(O, E, Po, Pe, OE, OE.se, OE.95CI, citl, citl.se, N, m
     Ecc[cc] <- 0.5
     Ncc[cc] <- N[cc]+0.5
     Occ[cc] <- O[cc]+0.5
+    Pocc <- Occ/Ncc
+    Pecc <- Ecc/Ncc
     theta <- ifelse(theta==Inf, log(Occ/Ecc), theta)
-    theta.var <- ifelse(theta.var==Inf, Occ*(1-(Occ/Ncc))/(Ecc**2), theta.var) #BMJ eq 20 (binomial var)
+    theta.var <- ifelse(theta.var==Inf, Occ*(1-Pocc)/(Ecc**2), theta.var) #BMJ eq 20 (binomial var)
     theta.var <- ifelse(theta.var==Inf, (Occ/(Ecc**2)), theta.var) #BMJ eq 30 (Poisson var)
+    
+    #Extrapolate theta 
+    if (!is.na(t.ma) & !is.na(t.val)) {
+      ep <- which(t.val!=t.ma)
+      thetaE <- extrapolateOE(Po=Pocc, Pe=Pecc, var.Po=(Po.se**2), t.val=t.val, t.ma=t.ma, N=N, model=model)
+      theta[ep] <- thetaE[ep,"theta"]
+      theta.var[ep] <- thetaE[ep,"theta.var"]
+    }
   } else if (model == "normal/log" | model == "poisson/log") {
     theta <- log(OE)
     theta <- ifelse(is.na(theta), log(O/E), theta)
@@ -153,9 +160,19 @@ generateOEdata <- function(O, E, Po, Pe, OE, OE.se, OE.95CI, citl, citl.se, N, m
     Ecc[cc] <- 0.5
     Ncc[cc] <- N[cc]+0.5
     Occ[cc] <- O[cc]+0.5
+    Pocc <- Occ/Ncc
+    Pecc <- Ecc/Ncc
     theta <- ifelse(theta==Inf, log(Occ/Ecc), theta)
-    theta.var <- ifelse(theta.var==Inf, (1-(Occ/Ncc))/Occ, theta.var) #BMJ eq 27 (binomial var)
+    theta.var <- ifelse(theta.var==Inf, (1-Pocc)/Occ, theta.var) #BMJ eq 27 (binomial var)
     theta.var <- ifelse(theta.var==Inf, (1/Occ), theta.var) #BMJ eq 36 (Poisson var)
+    
+    #Extrapolate theta 
+    if (!is.na(t.ma) & !is.na(t.val)) {
+      ep <- which(t.val!=t.ma)
+      thetaE <- extrapolateOE(Po=Pocc, Pe=Pecc, var.Po=(Po.se**2), t.val=t.val, t.ma=t.ma, N=N, model=model)
+      theta[ep] <- thetaE[ep,"theta"]
+      theta.var[ep] <- thetaE[ep,"theta.var"]
+    }
   } else {
     stop(paste("No appropriate meta-analysis model defined: '", model, "'", sep=""))
   }
