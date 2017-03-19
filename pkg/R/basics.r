@@ -114,9 +114,10 @@ generateOEdata <- function(O, E, Po, Po.se, Pe, OE, OE.se, OE.95CI, citl, citl.s
     theta.cil <- OE.95CI[,1]
     theta.ciu <- OE.95CI[,2]
     theta.var <- ifelse(is.na(theta.var), ((theta.ciu - theta.cil)/(2*qnorm(0.975)))**2, theta.var) #Derive from 95% CI
-    theta.var <- ifelse(is.na(theta.var), (((O/N)**2)+1)*((exp(citl))**2)*(citl.se**2), theta.var)
+    theta.var <- ifelse(is.na(theta.var), ((Po.se/Pe)**2), theta.var)
     theta.var <- ifelse(is.na(theta.var), O*(1-Po)/(E**2), theta.var) #BMJ eq 20 (binomial var)
     theta.var <- ifelse(is.na(theta.var), (O/(E**2)), theta.var) #BMJ eq 30 (Poisson var)
+    theta.var <- ifelse(is.na(theta.var), (((O/N)**2)+1)*((exp(citl))**2)*(citl.se**2), theta.var)
     
     #Check if continuitiy corrections are needed
     Ecc <- E
@@ -148,9 +149,10 @@ generateOEdata <- function(O, E, Po, Po.se, Pe, OE, OE.se, OE.95CI, citl, citl.s
     theta.cil <- log(OE.95CI[,1])
     theta.ciu <- log(OE.95CI[,2])
     theta.var <- ifelse(is.na(theta.var), ((theta.ciu - theta.cil)/(2*qnorm(0.975)))**2, theta.var)
-    theta.var <- ifelse(is.na(theta.var),  restore.oe.var(citl=citl, citl.se=citl.se, Po=Po), theta.var)
+    theta.var <- ifelse(is.na(theta.var), ((Po.se/Po)**2), theta.var)
     theta.var <- ifelse(is.na(theta.var), (1-Po)/O, theta.var) #BMJ eq 27 (binomial var)
     theta.var <- ifelse(is.na(theta.var), (1/O), theta.var) #BMJ eq 36 (Poisson var)
+    theta.var <- ifelse(is.na(theta.var),  restore.oe.var(citl=citl, citl.se=citl.se, Po=Po), theta.var) #CITL
     
     #Check if continuitiy corrections are needed
     Ecc <- E
