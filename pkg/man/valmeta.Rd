@@ -27,9 +27,9 @@ valmeta(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.se,
   \item{N}{vector with the total number of participants for each valiation}
   \item{O}{vector with the total number of observed events for each valiation. Note that in case of substantial drop-out, \code{O} should be based on Kaplan-Meier estimates.}
   \item{E}{vector with the total number of expected events for each valiation}
-  \item{Po}{vector with the observed event probability for each valiation}
-  \item{Po.se}{vector with the standard errors of \code{Po}}
-  \item{Pe}{vector with the expected event probability for each valiation}
+  \item{Po}{vector with the (cumulative) observed event probability for each valiation}
+  \item{Po.se}{vector with the standard errors of \code{Po}. Note that when \code{Po} is derived from Kaplan-Meier estimates, \code{Po.se} is equal to the standard error of the (cumulative) observed survival probability. }
+  \item{Pe}{vector with the (cumulative) expected event probability for each validation}
   \item{t.val}{optional vector for prognostic models, containing the time period for which performance was assessed}
   \item{t.ma}{optional numeric value for prognostic models, containing the time period of primary interest for meta-analysis}
   \item{method}{character string specifying whether a fixed- or a random-effects model should be fitted. A fixed-effects model is fitted when using \code{method="FE"}. Random-effects models are fitted by setting method equal to one of the following: \code{"REML"} (Default), \code{"DL"}, \code{"HE"}, \code{"SJ"}, \code{"ML"}, \code{"EB"}, \code{"HS"}, \code{"GENQ"} or \code{"BAYES"}. See 'Details'.}
@@ -53,6 +53,8 @@ The c-statistic is a measure of discrimination, and indicates the ability of a p
 The total O:E ratio provides a rough indication of the overall model calibration (across the entire range of predicted risks). Currently, three methods have been implemented to obtain a summary estimate of the total O:E ratio. By default, the meta-analysis model assumes   Normality for the (natural) logarithm of the O:E ratios (\code{model.oe = "normal/log"}). Continuity corrections are applied when necessary by adding 0.5 to \code{O}, \code{E} and \code{N}. Alternatively, it is possible to model the total number of observed and expected events using a Poisson likelihood (Stijnen 2010). The resulting model does not require continuity corrections and can be implemented by setting \code{model.oe = "poisson/log"} (only supported for \code{method="BAYES"}; note that \code{hp.mu.var} is truncated to a maximum value of 100). Finally, it is possible to summarize raw estimates of the O:E ratio by setting \code{model.oe = "normal/identity"}. 
 
 When unkown, the standard error of the O:E ratio will be approximated in the following order from  (1) the 95\% confidence interval, (2)  the error variance of the binomial distribution, (3) the error variance of the Poisson distribution, or from (4)  the calibration-in-the-large statistic.    
+
+For meta-analysis of prognostic models, it is recommended to provide information on the time period (\code{t.val}) during which calibration was assessed in the validation study. When the time period of the validation study does not correspond to the time period of interest (\code{t.ma}), observed and expected survival probabilities will be extrapolated using Poisson distributions. Currently, extrapolation of event rates is only supported for \code{model.oe = "normal/log"} and \code{model.oe = "normal/identity"}.
 
 
 }
