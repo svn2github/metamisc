@@ -123,7 +123,7 @@ fit3 <- valmeta(O=n.events, E=e.events, N=n, method="BAYES", slab=Study,
 plot(fit3)
 } 
 
-#Detach the dataset
+# Detach the dataset
 detach(EuroSCORE)
 
 data(WilsonMale)
@@ -132,6 +132,7 @@ attach(WilsonMale)
 # Meta-analysis of total O:E ratio after 10 years of follow-up
 valmeta(Po=Po, Pe=Pe, N=n, t.val=t.val, t.ma=10)
 
+# Detach the dataset
 detach(WilsonMale)
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the

@@ -242,11 +242,11 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
     if (method != "BAYES") { # Use of rma
       
       if (pars.default$model.oe=="normal/identity") {
-        fit <- rma(yi=theta, sei=theta.se, data=ds, method=method, knha=knha, slab=out$oe$slab, ...) 
+        fit <- rma(yi=ds$theta, sei=ds$theta.se, data=ds, method=method, knha=knha, slab=out$oe$slab, ...) 
         preds <- predict(fit)
         results <- c(coefficients(fit), c(preds$ci.lb, preds$ci.ub, preds$cr.lb, preds$cr.ub))
       } else if (pars.default$model.oe=="normal/log") {
-        fit <- rma(yi=theta, sei=theta.se, data=ds, method=method, knha=knha, slab=out$oe$slab, ...) 
+        fit <- rma(yi=ds$theta, sei=ds$theta.se, data=ds, method=method, knha=knha, slab=out$oe$slab, ...) 
         preds <- predict(fit)
         results <- c(exp(coefficients(fit)), exp(c(preds$ci.lb, preds$ci.ub, preds$cr.lb, preds$cr.ub)))
       } else {
