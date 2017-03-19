@@ -225,6 +225,13 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
       OE.95CI <- array(NA, dim=c(N.studies.OE,2))
     }
     
+    # Check if the length of all relevant arguments is consistent
+    if (length(unique(c(length(N), length(O), length(E), length(Po), length(Po.se), 
+                        length(Pe), length(OE), length(OE.se), length(citl),
+                        length(citl.se), dim(OE.95CI)[1]))) > 1) {
+      stop("Dimension mismatch")
+    }
+    
     out$oe$model <- pars.default$model.oe
     class(out$oe) <- "vmasum"
     
