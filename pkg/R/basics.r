@@ -89,6 +89,7 @@ extrapolateOE <- function(Po, Pe, var.Po, t.val, t.ma, N, model="normal/log") {
 
 generateOEdata <- function(O, E, Po, Po.se, Pe, OE, OE.se, OE.95CI, citl, citl.se, N, 
                            t.ma, t.val, model="normal/log", return.details=F) {
+  cc.add <- 0.5
   
   # Derive O or E from OE where possible
   O <- ifelse(is.na(O), OE*E, O)
@@ -105,9 +106,9 @@ generateOEdata <- function(O, E, Po, Po.se, Pe, OE, OE.se, OE.95CI, citl, citl.s
     
     #Check if continuitiy corrections are needed
     cc <- which(E==0)
-    E[cc] <- E[cc]+0.5
-    N[cc] <- N[cc]+0.5
-    O[cc] <- O[cc]+0.5
+    E[cc] <- E[cc]+cc.add
+    N[cc] <- N[cc]+cc.add
+    O[cc] <- O[cc]+cc.add
     OE[cc] <- O[cc]/E[cc]
     Po <- O/N
     Pe <- E/N
@@ -139,10 +140,11 @@ generateOEdata <- function(O, E, Po, Po.se, Pe, OE, OE.se, OE.95CI, citl, citl.s
       cc <- which((O==0 | E==0))
     } else if (model == "poisson/log") {
       cc <- which(E==0)
+      cc.add <- 1
     }
-    E[cc] <- 0.5
-    N[cc] <- N[cc]+0.5
-    O[cc] <- O[cc]+0.5
+    E[cc] <- cc.add
+    N[cc] <- N[cc]+cc.add
+    O[cc] <- O[cc]+cc.add
     OE[cc] <- O[cc]/E[cc]
     Po <- O/N
     Pe <- E/N
