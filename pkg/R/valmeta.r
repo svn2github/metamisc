@@ -241,9 +241,11 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
       out$oe$slab <- slab
     }
     
+    return.details <- ifelse(pars.default$model.oe=="poisson/log", T, F)
+    
     ds <- generateOEdata(O=O, E=E, Po=Po, Po.se=Po.se, Pe=Pe, OE=OE, OE.se=OE.se, OE.95CI=OE.95CI, 
                          citl=citl, citl.se=citl.se, N=N, t.ma=t.ma, t.val=t.val,
-                         model=pars.default$model.oe)
+                         model=pars.default$model.oe, return.details=return.details)
     out$oe$data <- ds
       
     if (method != "BAYES") { # Use of rma
@@ -252,21 +254,29 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
         fit <- rma(yi=ds$theta, sei=ds$theta.se, data=ds, method=method, knha=knha, slab=out$oe$slab, ...) 
         preds <- predict(fit)
         results <- c(coefficients(fit), c(preds$ci.lb, preds$ci.ub, preds$cr.lb, preds$cr.ub))
+        out$oe$rma <- fit
       } else if (pars.default$model.oe=="normal/log") {
         fit <- rma(yi=ds$theta, sei=ds$theta.se, data=ds, method=method, knha=knha, slab=out$oe$slab, ...) 
         preds <- predict(fit)
         results <- c(exp(coefficients(fit)), exp(c(preds$ci.lb, preds$ci.ub, preds$cr.lb, preds$cr.ub)))
+        out$oe$rma <- fit
+      } else if (pars.default$model.oe=="poisson/log") {
+        if (method!="ML") warning("The poisson/log model was fitted using ML.")
+        if (knha) warning("The Sidik-Jonkman-Hartung-Knapp correction cannot be applied")
+        
+        fit <- glmer(O~1|Study, offset=log(E), family=poisson(link="log"), data=ds)
+        preds.ci <- confint(fit, quiet=!verbose, ...)
+        preds.cr <- lme4::fixef(fit) + qt(c(0.025, 0.975), df=(lme4::ngrps(fit)-2))*sqrt(vcov(fit)[1,1]+(as.data.frame(lme4::VarCorr(fit))["vcov"])[1,1])
+        results <- c(exp(lme4::fixef(fit)), exp(c(preds.ci["(Intercept)",], preds.cr)))
+        out$oe$lme4 <- fit
       } else {
         stop("Model not implemented yet!")
       }
       names(results) <- c("estimate", "95CIl", "95CIu", "95PIl", "95PIu")
       
-      out$oe$rma <- fit
       out$oe$results <- results
     } else {
-      if (pars.default$model.oe=="normal/identity") {
-        stop("Model not implemented yet!")
-      } else if (pars.default$model.oe=="normal/log") {
+      if (pars.default$model.oe=="normal/log") {
         mvmeta_dat <- list(theta=ds$theta,
                            theta.var=(ds$theta.se)**2,
                            Nstudies = N.studies.OE)
@@ -275,8 +285,8 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
         # Truncate hyper parameter variance
         pars.default$hp.mu.var = min(pars.default$hp.mu.var, 100)
         
-        mvmeta_dat <- list(obs=O,
-                           exc=E,
+        mvmeta_dat <- list(obs=ds$O,
+                           exc=ds$E,
                            Nstudies = N.studies.OE)
       } else {
         stop("Model not implemented yet!")

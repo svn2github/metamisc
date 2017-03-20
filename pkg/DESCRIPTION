@@ -6,8 +6,8 @@ Date: 2017-03-19
 Author: Thomas Debray
 Maintainer: Thomas Debray <thomas.debray@gmail.com>
 Description: Meta-analysis of diagnostic and prognostic modeling studies. Summarize estimates of diagnostic test accuracy and prediction model performance. Validate, update and combine published prediction models. 
-Imports: metafor, mvtnorm, ellipse
-Depends: stats, graphics, bbmle, survival
+Imports: bbmle, metafor, mvtnorm, ellipse, lme4
+Depends: stats, graphics, survival
 Suggests: runjags, rjags
 License: GPL-2
 URL: http://r-forge.r-project.org/projects/metamisc/

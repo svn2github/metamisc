@@ -50,7 +50,7 @@ The c-statistic is a measure of discrimination, and indicates the ability of a p
 
 \bold{Meta-analysis of the total observed versus expected ratio (O:E ratio)}
 
-The total O:E ratio provides a rough indication of the overall model calibration (across the entire range of predicted risks). Currently, three methods have been implemented to obtain a summary estimate of the total O:E ratio. By default, the meta-analysis model assumes   Normality for the (natural) logarithm of the O:E ratios (\code{model.oe = "normal/log"}). Continuity corrections are applied when necessary by adding 0.5 to \code{O}, \code{E} and \code{N}. Alternatively, it is possible to model the total number of observed and expected events using a Poisson likelihood (Stijnen 2010). The resulting model does not require continuity corrections and can be implemented by setting \code{model.oe = "poisson/log"} (only supported for \code{method="BAYES"}; note that \code{hp.mu.var} is truncated to a maximum value of 100). Finally, it is possible to summarize raw estimates of the O:E ratio by setting \code{model.oe = "normal/identity"}. 
+The total O:E ratio provides a rough indication of the overall model calibration (across the entire range of predicted risks). Currently, three methods have been implemented to obtain a summary estimate of the total O:E ratio. By default, the meta-analysis model assumes   Normality for the (natural) logarithm of the O:E ratios (\code{model.oe = "normal/log"}). Continuity corrections are applied when necessary by adding 0.5 to \code{O}, \code{E} and \code{N}. Alternatively, it is possible to model the total number of observed and expected events using a Poisson likelihood (Stijnen 2010). The resulting model does not require continuity corrections for \code{O} and can be implemented by setting \code{model.oe = "poisson/log"} (note that \code{hp.mu.var} is truncated to a maximum value of 100 for \code{method="BAYES"}). Finally, it is possible to summarize raw estimates of the O:E ratio by setting \code{model.oe = "normal/identity"}. 
 
 When unkown, the standard error of the O:E ratio will be approximated in the following order from  (1) the 95\% confidence interval, (2) the standard error of \code{Po}, (3)  the error variance of the binomial distribution, (4) the error variance of the Poisson distribution, or from (5)  the calibration-in-the-large statistic.    
 
@@ -106,6 +106,7 @@ plot(fit)
 valmeta(O=n.events, E=e.events, N=n)     # Option 1
 valmeta(O=n.events, E=e.events)          # Option 2 
 valmeta(Po=Po, Pe=Pe, N=n)               # Option 3
+valmeta(O=n.events, E=e.events, pars=list(model.oe="poisson/log"))  # Option 4
 
 
 # Meta-analysis of the c-statistic and the total O:E ratio (random effects)

@@ -88,7 +88,7 @@ extrapolateOE <- function(Po, Pe, var.Po, t.val, t.ma, N, model="normal/log") {
 }
 
 generateOEdata <- function(O, E, Po, Po.se, Pe, OE, OE.se, OE.95CI, citl, citl.se, N, 
-                           t.ma, t.val, model="normal/log") {
+                           t.ma, t.val, model="normal/log", return.details=F) {
   
   # Derive O or E from OE where possible
   O <- ifelse(is.na(O), OE*E, O)
@@ -100,12 +100,18 @@ generateOEdata <- function(O, E, Po, Po.se, Pe, OE, OE.se, OE.95CI, citl, citl.s
   Pe <- ifelse(is.na(Pe), E/N, Pe)
   Pe <- ifelse(is.na(Pe), Po/OE, Pe)
   
-  # Derive
-  
-  #TODO: allow confidence intervals of OE ratio
-  #TODO: allow E/O ratio
   # Apply necessary data transformations
   if (model == "normal/identity") {
+    
+    #Check if continuitiy corrections are needed
+    cc <- which(E==0)
+    E[cc] <- E[cc]+0.5
+    N[cc] <- N[cc]+0.5
+    O[cc] <- O[cc]+0.5
+    OE[cc] <- O[cc]/E[cc]
+    Po <- O/N
+    Pe <- E/N
+    
     theta <- OE
     theta <- ifelse(is.na(theta), O/E, theta)
     theta <- ifelse(is.na(theta), Po/Pe, theta)
@@ -119,28 +125,28 @@ generateOEdata <- function(O, E, Po, Po.se, Pe, OE, OE.se, OE.95CI, citl, citl.s
     theta.var <- ifelse(is.na(theta.var), (O/(E**2)), theta.var) #BMJ eq 30 (Poisson var)
     theta.var <- ifelse(is.na(theta.var), (((O/N)**2)+1)*((exp(citl))**2)*(citl.se**2), theta.var)
     
-    #Check if continuitiy corrections are needed
-    Ecc <- E
-    Ncc <- N
-    Occ <- O
-    cc <- which(E==0 & is.na(theta.var))
-    Ecc[cc] <- 0.5
-    Ncc[cc] <- N[cc]+0.5
-    Occ[cc] <- O[cc]+0.5
-    Pocc <- Occ/Ncc
-    Pecc <- Ecc/Ncc
-    theta <- ifelse(theta==Inf, log(Occ/Ecc), theta)
-    theta.var <- ifelse(theta.var==Inf, Occ*(1-Pocc)/(Ecc**2), theta.var) #BMJ eq 20 (binomial var)
-    theta.var <- ifelse(theta.var==Inf, (Occ/(Ecc**2)), theta.var) #BMJ eq 30 (Poisson var)
-    
     #Extrapolate theta 
     if (!is.na(t.ma) & !is.na(t.val)) {
       ep <- which(t.val!=t.ma)
-      thetaE <- extrapolateOE(Po=Pocc, Pe=Pecc, var.Po=(Po.se**2), t.val=t.val, t.ma=t.ma, N=N, model=model)
+      thetaE <- extrapolateOE(Po=Po, Pe=Pe, var.Po=(Po.se**2), t.val=t.val, t.ma=t.ma, N=N, model=model)
       theta[ep] <- thetaE[ep,"theta"]
       theta.var[ep] <- thetaE[ep,"theta.var"]
     }
   } else if (model == "normal/log" | model == "poisson/log") {
+    
+    #Check if continuitiy corrections are needed
+    if (model == "normal/log") {
+      cc <- which((O==0 | E==0))
+    } else if (model == "poisson/log") {
+      cc <- which(E==0)
+    }
+    E[cc] <- 0.5
+    N[cc] <- N[cc]+0.5
+    O[cc] <- O[cc]+0.5
+    OE[cc] <- O[cc]/E[cc]
+    Po <- O/N
+    Pe <- E/N
+    
     theta <- log(OE)
     theta <- ifelse(is.na(theta), log(O/E), theta)
     theta <- ifelse(is.na(theta), log(Po/Pe), theta)
@@ -154,24 +160,10 @@ generateOEdata <- function(O, E, Po, Po.se, Pe, OE, OE.se, OE.95CI, citl, citl.s
     theta.var <- ifelse(is.na(theta.var), (1/O), theta.var) #BMJ eq 36 (Poisson var)
     theta.var <- ifelse(is.na(theta.var),  restore.oe.var(citl=citl, citl.se=citl.se, Po=Po), theta.var) #CITL
     
-    #Check if continuitiy corrections are needed
-    Ecc <- E
-    Ncc <- N
-    Occ <- O
-    cc <- which((O==0 | E==0) & is.na(theta.var))
-    Ecc[cc] <- 0.5
-    Ncc[cc] <- N[cc]+0.5
-    Occ[cc] <- O[cc]+0.5
-    Pocc <- Occ/Ncc
-    Pecc <- Ecc/Ncc
-    theta <- ifelse(theta==Inf, log(Occ/Ecc), theta)
-    theta.var <- ifelse(theta.var==Inf, (1-Pocc)/Occ, theta.var) #BMJ eq 27 (binomial var)
-    theta.var <- ifelse(theta.var==Inf, (1/Occ), theta.var) #BMJ eq 36 (Poisson var)
-    
     #Extrapolate theta 
     if (!is.na(t.ma) & !is.na(t.val)) {
       ep <- which(t.val!=t.ma)
-      thetaE <- extrapolateOE(Po=Pocc, Pe=Pecc, var.Po=(Po.se**2), t.val=t.val, t.ma=t.ma, N=N, model=model)
+      thetaE <- extrapolateOE(Po=Po, Pe=Pe, var.Po=(Po.se**2), t.val=t.val, t.ma=t.ma, N=N, model=model)
       theta[ep] <- thetaE[ep,"theta"]
       theta.var[ep] <- thetaE[ep,"theta.var"]
     }
@@ -187,6 +179,11 @@ generateOEdata <- function(O, E, Po, Po.se, Pe, OE, OE.se, OE.95CI, citl, citl.s
   colnames(ds) <- c("theta", "theta.se", "theta.95CIl", "theta.95CIu", "cont.corr")
   ds[cc,"cont.corr"] <- T
   ds <- as.data.frame(ds)
+  
+  if (return.details) {
+    Study <- c(1:dim(ds)[1])
+    ds <- cbind(Study, ds, O, E)
+  }
   return(ds)
 }
 
