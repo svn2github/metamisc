@@ -5,9 +5,9 @@ generateBugsOE <- function(model="normal/log",
   hp.mu.prec <- 1/pars$hp.mu.var
   
   out <- "model {\n " 
-  out <- paste(out, "for (i in 1:Nstudies)\n  {\n")
-  
+
   if (model=="normal/log") {
+    out <- paste(out, "for (i in 1:Nstudies)\n  {\n")
     out <- paste(out, "    theta[i] ~ dnorm(alpha[i], wsprec[i])\n")
     out <- paste(out, "    alpha[i] ~ dnorm(mu.tobs, bsprec)\n")
     out <- paste(out, "    wsprec[i] <- 1/(theta.var[i])\n")
@@ -26,8 +26,12 @@ generateBugsOE <- function(model="normal/log",
     out <- paste(out, "  pred.tobs ~ dnorm(mu.tobs, bsprec)\n", sep="")
 
   } else if (model=="poisson/log") {
+    out <- paste(out, "for (i in 1:Nstudies)\n  {\n")
     out <- paste(out, "    obs[i] ~ dpois(mu[i])\n")
     out <- paste(out, "    mu[i] <- exc[i] * theta[i]\n")
+    #out <- paste(out, "    exc[i] ~ dbinom (q[i], N[i])\n")
+    #out <- paste(out, "    logit(q[i]) <- alphaQ[i]\n")
+    #out <- paste(out, "    alphaQ[i] ~ dnorm(0.0,1.0E-6)\n")
     out <- paste(out, "    theta[i] <- exp(alpha[i])\n")
     out <- paste(out, "    alpha[i] ~ dnorm(mu.tobs, bsprec)\n")
     out <- paste(out, " }\n")
@@ -46,7 +50,6 @@ generateBugsOE <- function(model="normal/log",
     out <- paste(out, "  pred.tobs ~ dnorm(mu.tobs, bsprec)\n", sep="")
   }
   
-
   out <- paste(out, "}", sep="")
   return(out)
 }

@@ -6,7 +6,7 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
                        hp.tau.min = 0,
                        hp.tau.max = 2,
                        hp.tau.sigma = 0.5,
-                       hp.tau.dist = "dunif",
+                       hp.tau.dist = "dunif", 
                        method.restore.c.se="Newcombe.4",
                        model.cstat = "normal/logit", #Alternative: "normal/identity"
                        model.oe = "normal/log") #Alternative: "poisson/log" or "normal/identity"
@@ -277,17 +277,21 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
       out$oe$results <- results
     } else {
       if (pars.default$model.oe=="normal/log") {
-        mvmeta_dat <- list(theta=ds$theta,
-                           theta.var=(ds$theta.se)**2,
-                           Nstudies = N.studies.OE)
+        i.select <- which(!is.na(ds$theta.se)) #omit non-informative studies
+        
+        mvmeta_dat <- list(theta=ds$theta[i.select],
+                           theta.var=(ds$theta.se[i.select])**2,
+                           Nstudies = length(i.select))
       } else if (pars.default$model.oe =="poisson/log") {
         
         # Truncate hyper parameter variance
         pars.default$hp.mu.var = min(pars.default$hp.mu.var, 100)
         
-        mvmeta_dat <- list(obs=ds$O,
-                           exc=ds$E,
-                           Nstudies = N.studies.OE)
+        i.select <- which(!is.na(ds$E)) #omit non-informative studies
+        
+        mvmeta_dat <- list(obs=round(ds$O[i.select]),
+                           exc=ds$E[i.select],
+                           Nstudies = length(i.select))
       } else {
         stop("Model not implemented yet!")
       }
@@ -349,7 +353,6 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
     out <- paste(out, "  bsTau ~ dunif(", pars$hp.tau.min, ",", pars$hp.tau.max, ")\n", sep="") 
   } else if (pars$hp.tau.dist=="dhalft") {
     out <- paste(out, "  bsTau ~ dt(0,", hp.tau.prec, ",3)T(", pars$hp.tau.min, ",", pars$hp.tau.max, ")\n", sep="") 
-    
   } else {
     stop("Specified prior not implemented")
   }

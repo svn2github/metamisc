@@ -184,7 +184,7 @@ generateOEdata <- function(O, E, Po, Po.se, Pe, OE, OE.se, OE.95CI, citl, citl.s
   
   if (return.details) {
     Study <- c(1:dim(ds)[1])
-    ds <- cbind(Study, ds, O, E)
+    ds <- cbind(Study, ds, O, E, N)
   }
   return(ds)
 }
