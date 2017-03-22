@@ -38,10 +38,10 @@ valmeta(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.se,
   \item{slab}{optional vector with labels for the \emph{k} studies.}
   \item{n.chains}{the number of chains to use in the Gibbs sampler (\code{method="BAYES"}). More chains will improve the sensitivity of the convergence diagnostic, but will cause the simulation to run more slowly. The default number of chains is 4.}
   \item{pars}{A list with additional arguments.  The following parameters configure the MCMC sampling procedure:  \code{hp.mu.mean} (mean of the prior distribution of the random effects model, defaults to 0), \code{hp.mu.var} (variance of the prior distribution of the random effects model, defaults to 1E6), \code{hp.tau.min} (minimum value for the between-study standard deviation, defaults to 0), \code{hp.tau.max} (maximum value for the between-study standard deviation, defaults to 2), \code{hp.tau.sigma} (standard deviation of the prior distribution for the between-study standard-deviation), \code{hp.tau.dist} (function for modeling the prior distribution for the between-study standard-deviation. Defaults to \code{"dunif"}. Use \code{"dhalft"} for a truncated Student-t distribution), \code{method.restore.c.se} (method for restoring missing estimates for the standard error of the c-statistic. So far, only \code{"Newcombe.2"} and \code{"Newcombe.4"} are supported. These methods have been described by Newcombe in 2006.), \code{model.cstat} (The likelihood/link for modeling the c-statistic; see "Details"), \code{model.oe} (The likelihood/link for modeling the O:E ratio; see "Details") }
-  \item{\ldots}{Additional arguments that are passed to \code{rma} or \code{runjags} (if \code{method="BAYES"}).}
+  \item{\ldots}{Additional arguments that are passed to \pkg{rma} or \pkg{runjags} (if \code{method="BAYES"}).}
 }
 \details{
-Unless specified otherwise, all meta-analysis models assume random effects and are fitted  using restricted maximum likelihood estimation with the \code{metafor} package (Viechtbauer 2010).  Further, confidence intervals for the average performance are based on the Hartung-Knapp-Sidik-Jonkman method, to better account for the uncertainty in the estimated between-study heterogeneity (Debray 2016). A Bayesian meta-analysis can be performed by specifying \code{method="BAYES"}. In that case, the R packages \code{runjags} and \code{rjags} must be installed. 
+Unless specified otherwise, all meta-analysis models assume random effects and are fitted  using restricted maximum likelihood estimation with the \pkg{metafor} package (Viechtbauer 2010).  Further, confidence intervals for the average performance are based on the Hartung-Knapp-Sidik-Jonkman method, to better account for the uncertainty in the estimated between-study heterogeneity (Debray 2016). A Bayesian meta-analysis can be performed by specifying \code{method="BAYES"}. In that case, the R packages \pkg{runjags} and \pkg{rjags} must be installed. 
 
 
 \bold{Meta-analysis of the concordance statistic (c-statistic)}
@@ -58,7 +58,7 @@ For meta-analysis of prognostic models, it is recommended to provide information
 
 \bold{Bayesian meta-analysis}
 
-The prior distribution for the between-study standard deviation can be specified by \code{hp.tau.dist}, and is always truncated by \code{hp.tau.min} and \code{hp.tau.max}. Initial values for the between-study standard deviation are sampled from a uniform distribution with aformentioned boundaries.
+The prior distribution for the between-study standard deviation can be specified by \code{hp.tau.dist}, and is always truncated by \code{hp.tau.min} and \code{hp.tau.max}. Initial values for the between-study standard deviation are sampled from a uniform distribution with aformentioned boundaries. The following distributions are supported for modeling the prior of the between-study standard deviation: Uniform distribution (\code{hp.tau.dist="dunif"}; default), truncated Student-t distribution  (\code{hp.tau.dist="dhalft"}).
 
 }
 \value{
@@ -126,25 +126,24 @@ plot(fit2)
 
 # Bayesian meta-analysis of the O:E ratio
 pars <- list(model.oe="poisson/log", # Use a Poisson-Normal model
-             hp.tau.dist="dhalft", # Prior for the between-study standard deviation
-             hp.tau.max=10, # Maximum value for the between-study standard deviation
-             hp.tau.sigma=1.5) # standard deviation for "hp.tau.dist"
-fit3 <- valmeta(O=n.events, E=e.events, N=n, method="BAYES", slab=Study, pars=pars)
-plot(fit3)
+             hp.tau.dist="dhalft",   # Prior for the between-study standard deviation
+             hp.tau.max=10,          # Maximum value for the between-study standard deviation
+             hp.tau.sigma=1.5)       # Standard deviation for "hp.tau.dist"
+valmeta(O=n.events, E=e.events, N=n, method="BAYES", slab=Study, pars=pars)
 } 
 
 # Detach the dataset
 detach(EuroSCORE)
 
 ######### Validation of prediction models with a time-to-event outcome #########
-data(WilsonMale)
-attach(WilsonMale)
+data(Framingham)
+attach(Framingham)
 
 # Meta-analysis of total O:E ratio after 10 years of follow-up
 valmeta(Po=Po, Pe=Pe, N=n, t.val=t.val, t.ma=10)
 
 # Detach the dataset
-detach(WilsonMale)
+detach(Framingham)
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

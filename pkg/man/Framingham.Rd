@@ -1,13 +1,13 @@
-\name{WilsonMale}
-\alias{WilsonMale}
+\name{Framingham}
+\alias{Framingham}
 \docType{data}
 \title{
-Predictive performance of Framingham Wilson in male populations
+Predictive performance of the Framingham Risk Score in male populations
 }
 \description{
 This data set contains estimates on the performance of the Framingham model for predicting coronary heart disease in male populations (Wilson 1998). Results are based on the original development study and 20 validations identified by Damen \emph{et al}.
 }
-\usage{data("WilsonMale")}
+\usage{data("Framingham")}
 \format{
   A data frame with 24 observations on the following 19 variables.
   \describe{
@@ -33,7 +33,7 @@ This data set contains estimates on the performance of the Framingham model for 
   }
 }
 \details{
-The Framingham model allows physicians to predict 10-year coronary heart disease (CHD) risk in patients without overt CHD. It was developed in 1998 from a middle-aged white population sample, and has subsequently been validated across different populations. The current dataset contains the original (internal validation) results, as well as 23 external validations which were identified through a systematic review. In this review, studies were eligible for inclusion if they described the validation of the original Framingham model and assessed its performance for fatal or nonfatal CHD in males from a general population setting.
+The Framingham Risk Score allows physicians to predict 10-year coronary heart disease (CHD) risk in patients without overt CHD. It was developed in 1998 from a middle-aged white population sample, and has subsequently been validated across different populations. The current dataset contains the original (internal validation) results, as well as 23 external validations which were identified through a systematic review. In this review, studies were eligible for inclusion if they described the validation of the original Framingham model and assessed its performance for fatal or nonfatal CHD in males from a general population setting.
 }
 \source{
 Damen JAAG, Hooft L, Schuit E, Debray TPA, Collins GS, Tzoulaki I, et al. Prediction models for cardiovascular disease risk in the general population: systematic review. \emph{BMJ}. 2016;i2416. 
@@ -42,6 +42,6 @@ Wilson PW, D'Agostino RB, Levy D, Belanger AM, Silbershatz H, Kannel WB. Predict
 
 }
 \examples{
-data(WilsonMale)
+data(Framingham)
 }
 \keyword{datasets}
