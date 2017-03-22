@@ -14,7 +14,7 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
   if (!missing(pars)) {
     for (i in 1:length(pars)) {
       element <- ls(pars)[i]
-      pars.default[[element]] <- pars[[i]]
+      pars.default[[element]] <- pars[[element]]
     }
   }
   
@@ -148,7 +148,7 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
       out$cstat$results <- results
     } else {
       # Perform a Bayesian meta-analysis
-      model <- .generateBugsCstat(model=pars.default$model.cstat, pars=pars.default, ...)
+      model <- .generateBugsCstat(pars=pars.default, ...)
       
       # Generate initial values from the relevant distributions
       model.pars <- list()
@@ -241,11 +241,10 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
       out$oe$slab <- slab
     }
     
-    return.details <- ifelse(pars.default$model.oe=="poisson/log", T, F)
-    
+
     ds <- generateOEdata(O=O, E=E, Po=Po, Po.se=Po.se, Pe=Pe, OE=OE, OE.se=OE.se, OE.95CI=OE.95CI, 
                          citl=citl, citl.se=citl.se, N=N, t.ma=t.ma, t.val=t.val,
-                         model=pars.default$model.oe, return.details=return.details)
+                         pars=pars.default)
     out$oe$data <- ds
       
     if (method != "BAYES") { # Use of rma
@@ -297,7 +296,7 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
       }
       
       # Perform a Bayesian meta-analysis
-      model <- generateBugsOE(model=pars.default$model.oe, pars=pars.default, ...)
+      model <- generateBugsOE(pars=pars.default, ...)
       
       # Generate initial values from the relevant distributions
       model.pars <- list()
@@ -333,8 +332,7 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
   return(out)
 }
 
-.generateBugsCstat <- function(model="normal/logit", #Choose between 'log', 'logit' and 'binom'
-                               pars, 
+.generateBugsCstat <- function(pars, 
                                 ...) # standard deviation for student T prior
   {
 
@@ -357,7 +355,7 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
     stop("Specified prior not implemented")
   }
   
-  if (model == "normal/logit") {
+  if (pars$model.cstat  == "normal/logit") {
     out <- paste(out, "  mu.tobs ~ dnorm(", pars$hp.mu.mean, ",", hp.mu.prec, ")\n", sep="")
     out <- paste(out, "  mu.obs <- 1/(1+exp(-mu.tobs))\n", sep="")
     out <- paste(out, "  pred.obs <- 1/(1+exp(-pred.tobs))\n", sep="")

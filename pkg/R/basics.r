@@ -88,7 +88,7 @@ extrapolateOE <- function(Po, Pe, var.Po, t.val, t.ma, N, model="normal/log") {
 }
 
 generateOEdata <- function(O, E, Po, Po.se, Pe, OE, OE.se, OE.95CI, citl, citl.se, N, 
-                           t.ma, t.val, model="normal/log", return.details=F) {
+                           t.ma, t.val, pars) {
   cc.add <- 0.5
   
   # Derive O or E from OE where possible
@@ -102,7 +102,7 @@ generateOEdata <- function(O, E, Po, Po.se, Pe, OE, OE.se, OE.95CI, citl, citl.s
   Pe <- ifelse(is.na(Pe), Po/OE, Pe)
   
   # Apply necessary data transformations
-  if (model == "normal/identity") {
+  if (pars$model.oe == "normal/identity") {
     
     #Check if continuitiy corrections are needed
     cc <- which(E==0)
@@ -129,16 +129,16 @@ generateOEdata <- function(O, E, Po, Po.se, Pe, OE, OE.se, OE.95CI, citl, citl.s
     #Extrapolate theta 
     if (!is.na(t.ma) & !is.na(t.val)) {
       ep <- which(t.val!=t.ma)
-      thetaE <- extrapolateOE(Po=Po, Pe=Pe, var.Po=(Po.se**2), t.val=t.val, t.ma=t.ma, N=N, model=model)
+      thetaE <- extrapolateOE(Po=Po, Pe=Pe, var.Po=(Po.se**2), t.val=t.val, t.ma=t.ma, N=N, model=pars$model.oe)
       theta[ep] <- thetaE[ep,"theta"]
       theta.var[ep] <- thetaE[ep,"theta.var"]
     }
-  } else if (model == "normal/log" | model == "poisson/log") {
+  } else if (pars$model.oe == "normal/log" | pars$model.oe == "poisson/log") {
     
     #Check if continuitiy corrections are needed
-    if (model == "normal/log") {
+    if (pars$model.oe == "normal/log") {
       cc <- which((O==0 | E==0))
-    } else if (model == "poisson/log") {
+    } else if (pars$model.oe == "poisson/log") {
       cc <- which(E==0)
       cc.add <- 1
     }
@@ -165,12 +165,12 @@ generateOEdata <- function(O, E, Po, Po.se, Pe, OE, OE.se, OE.95CI, citl, citl.s
     #Extrapolate theta 
     if (!is.na(t.ma) & !is.na(t.val)) {
       ep <- which(t.val!=t.ma)
-      thetaE <- extrapolateOE(Po=Po, Pe=Pe, var.Po=(Po.se**2), t.val=t.val, t.ma=t.ma, N=N, model=model)
+      thetaE <- extrapolateOE(Po=Po, Pe=Pe, var.Po=(Po.se**2), t.val=t.val, t.ma=t.ma, N=N, model=pars$model.oe)
       theta[ep] <- thetaE[ep,"theta"]
       theta.var[ep] <- thetaE[ep,"theta.var"]
     }
   } else {
-    stop(paste("No appropriate meta-analysis model defined: '", model, "'", sep=""))
+    stop(paste("No appropriate meta-analysis model defined: '", pars$model.oe, "'", sep=""))
   }
   
   #Only calculate 95% CI for which no original values were available
@@ -182,7 +182,7 @@ generateOEdata <- function(O, E, Po, Po.se, Pe, OE, OE.se, OE.95CI, citl, citl.s
   ds[cc,"cont.corr"] <- T
   ds <- as.data.frame(ds)
   
-  if (return.details) {
+  if (pars$model.oe == "poisson/log") {
     Study <- c(1:dim(ds)[1])
     ds <- cbind(Study, ds, O, E, N)
   }

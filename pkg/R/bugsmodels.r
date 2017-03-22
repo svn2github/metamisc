@@ -1,12 +1,11 @@
-generateBugsOE <- function(model="normal/log", 
-                           extrapolate=F,
+generateBugsOE <- function(extrapolate=F,
                            pars) {
   hp.tau.prec <- 1/(pars$hp.tau.sigma**2)
   hp.mu.prec <- 1/pars$hp.mu.var
   
   out <- "model {\n " 
 
-  if (model=="normal/log") {
+  if (pars$model.oe =="normal/log") {
     out <- paste(out, "for (i in 1:Nstudies)\n  {\n")
     out <- paste(out, "    theta[i] ~ dnorm(alpha[i], wsprec[i])\n")
     out <- paste(out, "    alpha[i] ~ dnorm(mu.tobs, bsprec)\n")
@@ -25,7 +24,7 @@ generateBugsOE <- function(model="normal/log",
     out <- paste(out, "  pred.obs <- exp(pred.tobs)\n", sep="")
     out <- paste(out, "  pred.tobs ~ dnorm(mu.tobs, bsprec)\n", sep="")
 
-  } else if (model=="poisson/log") {
+  } else if (pars$model.oe=="poisson/log") {
     out <- paste(out, "for (i in 1:Nstudies)\n  {\n")
     out <- paste(out, "    obs[i] ~ dpois(mu[i])\n")
     out <- paste(out, "    mu[i] <- exc[i] * theta[i]\n")

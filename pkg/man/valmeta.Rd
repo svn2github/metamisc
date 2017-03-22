@@ -124,9 +124,12 @@ fit2 <- valmeta(cstat=c.index, cstat.se=se.c.index,
                 N=n, O=n.events, method="BAYES", slab=Study)
 plot(fit2)
 
-# Bayesian meta-analysis of the O:E ratio using a Poisson link 
-fit3 <- valmeta(O=n.events, E=e.events, N=n, method="BAYES", slab=Study, 
-                pars=list(model.oe="poisson/log"))
+# Bayesian meta-analysis of the O:E ratio
+pars <- list(model.oe="poisson/log", # Use a Poisson-Normal model
+             hp.tau.dist="dhalft", # Prior for the between-study standard deviation
+             hp.tau.max=10, # Maximum value for the between-study standard deviation
+             hp.tau.sigma=1.5) # standard deviation for "hp.tau.dist"
+fit3 <- valmeta(O=n.events, E=e.events, N=n, method="BAYES", slab=Study, pars=pars)
 plot(fit3)
 } 
 
