@@ -127,9 +127,9 @@ plot(fit2)
 # Bayesian meta-analysis of the O:E ratio
 pars <- list(model.oe="poisson/log", # Use a Poisson-Normal model
              hp.tau.dist="dhalft",   # Prior for the between-study standard deviation
+             hp.tau.sigma=1.5,       # Standard deviation for 'hp.tau.dist'
              hp.tau.df=3,            # Degrees of freedom for 'hp.tau.dist'
-             hp.tau.max=10,          # Maximum value for the between-study standard deviation
-             hp.tau.sigma=1.5)       # Standard deviation for "hp.tau.dist"
+             hp.tau.max=10)          # Maximum value for the between-study standard deviation
 valmeta(O=n.events, E=e.events, N=n, method="BAYES", slab=Study, pars=pars)
 } 
 
