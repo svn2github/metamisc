@@ -46,7 +46,7 @@ uvmeta.default <- function(r, vars, model="random", method="MOM", labels, na.act
   if (!missing(pars)) {
     for (i in 1:length(pars)) {
       element <- ls(pars)[i]
-      pars.default[[element]] <- pars[[i]]
+      pars.default[[element]] <- pars[[element]]
     }
   }
   
