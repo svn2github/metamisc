@@ -15,7 +15,7 @@ generateBugsOE <- function(extrapolate=F,
     if (pars$hp.tau.dist=="dunif") {
       out <- paste(out, "  bsTau ~ dunif(", pars$hp.tau.min, ",", pars$hp.tau.max, ")\n", sep="") 
     } else if (pars$hp.tau.dist=="dhalft") {
-      out <- paste(out, "  bsTau ~ dt(0,", hp.tau.prec, ",3)T(", pars$hp.tau.min, ",", pars$hp.tau.max, ")\n", sep="") 
+      out <- paste(out, "  bsTau ~ dt(0,", hp.tau.prec, ",", pars$hp.tau.df, ")T(", pars$hp.tau.min, ",", pars$hp.tau.max, ")\n", sep="") 
     } else {
       stop("Specified prior not implemented")
     }
@@ -38,7 +38,7 @@ generateBugsOE <- function(extrapolate=F,
     if (pars$hp.tau.dist=="dunif") {
       out <- paste(out, "  bsTau ~ dunif(", pars$hp.tau.min, ",", pars$hp.tau.max, ")\n", sep="") 
     } else if (pars$hp.tau.dist=="dhalft") {
-      out <- paste(out, "  bsTau ~ dt(0,", hp.tau.prec, ",3)T(", pars$hp.tau.min, ",", pars$hp.tau.max, ")\n", sep="") 
+      out <- paste(out, "  bsTau ~ dt(0,", hp.tau.prec, ",", pars$hp.tau.df, ")T(", pars$hp.tau.min, ",", pars$hp.tau.max, ")\n", sep="") 
     } else {
       stop("Specified prior not implemented")
     }

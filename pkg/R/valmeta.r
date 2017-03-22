@@ -7,6 +7,7 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
                        hp.tau.max = 2,
                        hp.tau.sigma = 0.5,
                        hp.tau.dist = "dunif", 
+                       hp.tau.df = 3, 
                        method.restore.c.se="Newcombe.4",
                        model.cstat = "normal/logit", #Alternative: "normal/identity"
                        model.oe = "normal/log") #Alternative: "poisson/log" or "normal/identity"
@@ -350,7 +351,7 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
   if (pars$hp.tau.dist=="dunif") {
     out <- paste(out, "  bsTau ~ dunif(", pars$hp.tau.min, ",", pars$hp.tau.max, ")\n", sep="") 
   } else if (pars$hp.tau.dist=="dhalft") {
-    out <- paste(out, "  bsTau ~ dt(0,", hp.tau.prec, ",3)T(", pars$hp.tau.min, ",", pars$hp.tau.max, ")\n", sep="") 
+    out <- paste(out, "  bsTau ~ dt(0,", hp.tau.prec, ",", pars$hp.tau.df, ")T(", pars$hp.tau.min, ",", pars$hp.tau.max, ")\n", sep="") 
   } else {
     stop("Specified prior not implemented")
   }
