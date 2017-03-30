@@ -137,9 +137,13 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
       
       results <- as.data.frame(array(NA, dim=c(1,5)))
       if (pars.default$model.cstat == "normal/logit") {
-        results <- c(inv.logit(coefficients(fit)), inv.logit(c(preds$ci.lb, preds$ci.ub, preds$cr.lb, preds$cr.ub)))
+        cr.lb <- ifelse(method=="FE", NA, preds$cr.lb)
+        cr.ub <- ifelse(method=="FE", NA, preds$cr.ub)
+        results <- c(inv.logit(coefficients(fit)), inv.logit(c(preds$ci.lb, preds$ci.ub, cr.lb, cr.ub)))
       } else if (pars.default$model.cstat == "normal/identity") {
-        results <- c(coefficients(fit), c(preds$ci.lb, preds$ci.ub, preds$cr.lb, preds$cr.ub))
+        cr.lb <- ifelse(method=="FE", NA, preds$cr.lb)
+        cr.ub <- ifelse(method=="FE", NA, preds$cr.ub)
+        results <- c(coefficients(fit), c(preds$ci.lb, preds$ci.ub, cr.lb, cr.ub))
       } else {
         stop ("Meta-analysis model not implemented yet")
       }
@@ -253,14 +257,18 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
       if (pars.default$model.oe=="normal/identity") {
         fit <- rma(yi=ds$theta, sei=ds$theta.se, data=ds, method=method, knha=knha, slab=out$oe$slab, ...) 
         preds <- predict(fit)
-        results <- c(coefficients(fit), c(preds$ci.lb, preds$ci.ub, preds$cr.lb, preds$cr.ub))
+        cr.lb <- ifelse(method=="FE", NA, preds$cr.lb)
+        cr.ub <- ifelse(method=="FE", NA, preds$cr.ub)
+        results <- c(coefficients(fit), c(preds$ci.lb, preds$ci.ub, cr.lb, cr.ub))
         out$oe$rma <- fit
       } else if (pars.default$model.oe=="normal/log") {
         fit <- rma(yi=ds$theta, sei=ds$theta.se, data=ds, method=method, knha=knha, slab=out$oe$slab, ...) 
         preds <- predict(fit)
-        results <- c(exp(coefficients(fit)), exp(c(preds$ci.lb, preds$ci.ub, preds$cr.lb, preds$cr.ub)))
+        cr.lb <- ifelse(method=="FE", NA, preds$cr.lb)
+        cr.ub <- ifelse(method=="FE", NA, preds$cr.ub)
+        results <- c(exp(coefficients(fit)), exp(c(preds$ci.lb, preds$ci.ub, cr.lb, cr.ub)))
         out$oe$rma <- fit
-      } else if (pars.default$model.oe=="poisson/log") {
+      } else if (pars.default$model.oe=="poisson/log" && method!="FE") {
         if (method!="ML") warning("The poisson/log model was fitted using ML.")
         if (knha) warning("The Sidik-Jonkman-Hartung-Knapp correction cannot be applied")
         
