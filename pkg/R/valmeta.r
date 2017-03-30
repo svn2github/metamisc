@@ -39,6 +39,8 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
   t.ma <- ifelse(missing(t.ma), NA, t.ma)
   t.val <- ifelse(missing(t.val), NA, t.val)
   
+  #make sure knha is only used for random effec models
+  knha <- ifelse(method=="FE", F, knha)
   
 
   inv.logit <- function(x) {  if(is.numeric(x)) 1/(1+exp(-x)) else stop("x is not numeric!") }
@@ -255,7 +257,7 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
     if (method != "BAYES") { # Use of rma
       
       if (pars.default$model.oe=="normal/identity") {
-        fit <- rma(yi=ds$theta, sei=ds$theta.se, data=ds, method=method, knha=knha, slab=out$oe$slab, ...) 
+        fit <- rma(yi=ds$theta, sei=ds$theta.se, data=ds, method=method, knha=, slab=out$oe$slab, ...) 
         preds <- predict(fit)
         cr.lb <- ifelse(method=="FE", NA, preds$cr.lb)
         cr.ub <- ifelse(method=="FE", NA, preds$cr.ub)
