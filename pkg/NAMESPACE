@@ -13,7 +13,7 @@ import("survival")
 importFrom("lme4", "glmer")
 importFrom("bbmle", "mle2")
 importFrom("graphics", "abline", "axis", "box", "lines", "par", "plot", "points", "polygon", "text", "segments", "strheight")
-importFrom("stats", "coef", "coefficients", "dnorm", "optim", "pchisq", "qnorm", "qt", "rnorm", "runif", "confint", "poisson", "predict", "vcov")
+importFrom("stats", "coef", "coefficients", "dnorm", "glm", "optim", "pchisq", "qnorm", "qt", "rnorm", "runif", "confint", "poisson", "predict", "vcov")
 
 #Riley methods
 S3method(print, riley)

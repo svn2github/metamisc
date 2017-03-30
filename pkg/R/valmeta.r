@@ -279,6 +279,12 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
         preds.cr <- lme4::fixef(fit) + qt(c(0.025, 0.975), df=(lme4::ngrps(fit)-2))*sqrt(vcov(fit)[1,1]+(as.data.frame(lme4::VarCorr(fit))["vcov"])[1,1])
         results <- c(exp(lme4::fixef(fit)), exp(c(preds.ci["(Intercept)",], preds.cr)))
         out$oe$lme4 <- fit
+      } else if (pars.default$model.oe=="poisson/log" && method=="FE") {
+        fit <- glm(O~1, offset=log(E), family=poisson(link="log"), data=ds)
+        preds.ci <- confint(fit, quiet=!verbose, ...)
+        preds.cr <- c(NA, NA)
+        results <- c(exp(coefficients(fit)), exp(c(preds.ci, preds.cr)))
+        out$oe$lme4 <- fit
       } else {
         stop("Model not implemented yet!")
       }
@@ -383,7 +389,7 @@ print.valmeta <- function(x, ...) {
     cat("Model results for the c-statistic:\n\n")
     print(x$cstat)
     if (x$cstat$num.estimated.var.c > 0)
-      cat(paste("\nNote: For ", x$cstat$num.estimated.var.c, " validation(s), the standard error was estimated using method '", x$cstat$method.restore.se, "'.\n", sep=""))
+      cat(paste("\nNote: For ", x$cstat$num.estimated.var.c, " validation(s), the standard error of the concordance statistic swas estimated using method '", x$cstat$method.restore.se, "'.\n", sep=""))
     
     if (!is.null(x$oe$results)) {
       cat("\n\n")
