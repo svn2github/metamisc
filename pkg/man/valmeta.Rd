@@ -24,8 +24,8 @@ valmeta(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.se,
   \item{OE.95CI}{2-dimensional array with the lower (first column) and upper (second column) boundary of the 95\% confidence interval of the total O:E ratio}
   \item{citl}{vector with the estimated calibration-in-the-large for each valiation}
   \item{citl.se}{vector with the standard error of the estimated calibration-in-the-large statistics}
-  \item{N}{vector with the total number of participants for each valiation}
-  \item{O}{vector with the total number of observed events for each valiation. Note that in case of substantial drop-out, \code{O} should be based on Kaplan-Meier estimates.}
+  \item{N}{vector with the total number of participants for each valiation.}
+  \item{O}{vector with the total number of observed events for each valiation. }
   \item{E}{vector with the total number of expected events for each valiation}
   \item{Po}{vector with the (cumulative) observed event probability for each valiation}
   \item{Po.se}{vector with the standard errors of \code{Po}. Note that when \code{Po} is derived from Kaplan-Meier estimates, \code{Po.se} is equal to the standard error of the (cumulative) observed survival probability. }
@@ -54,7 +54,7 @@ The total O:E ratio provides a rough indication of the overall model calibration
 
 When unkown, the standard error of the O:E ratio will be approximated in the following order from  (1) the 95\% confidence interval, (2) the standard error of \code{Po}, (3)  the error variance of the binomial distribution, (4) the error variance of the Poisson distribution, or from (5)  the calibration-in-the-large statistic.    
 
-For meta-analysis of prognostic models, it is recommended to provide information on the time period (\code{t.val}) during which calibration was assessed in the validation study. When the time period of the validation study does not correspond to the time period of interest (\code{t.ma}), observed and expected survival probabilities will be extrapolated using Poisson distributions. Currently, extrapolation of event rates is only supported for \code{model.oe = "normal/log"} and \code{model.oe = "normal/identity"}.
+For meta-analysis of prognostic models, it is recommended to provide information on the time period (\code{t.val}) during which calibration was assessed in the validation study. When the time period of the validation study does not correspond to the time period of interest (\code{t.ma}), observed and expected survival probabilities will be extrapolated using Poisson distributions. Currently, extrapolation of event rates is only supported for \code{model.oe = "normal/log"} and \code{model.oe = "normal/identity"}. Note that  values for \code{O} and \code{N} should take the presence of drop-out into account. This implies that \code{O} is ideally based on Kaplan-Meier estimates, or that \code{N} should represent the total number of participants with complete follow-up.
 
 \bold{Bayesian meta-analysis}
 
