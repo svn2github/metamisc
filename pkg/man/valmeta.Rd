@@ -10,8 +10,8 @@ This function allows to meta-analyze the performance of a prediction model, and 
 }
 \usage{
 valmeta(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.se,
-        N, O, E, Po, Po.se, Pe, t.val, t.ma, method="REML", knha=TRUE, verbose=FALSE, 
-        slab, n.chains = 4, pars, \ldots)
+        N, O, E, Po, Po.se, Pe, t.val, t.ma, data, method="REML", knha=TRUE, 
+        verbose=FALSE, slab, n.chains = 4, pars, \ldots)
 
 }
 %- maybe also 'usage' for other objects documented here.
@@ -32,6 +32,7 @@ valmeta(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.se,
   \item{Pe}{vector with the (cumulative) expected event probability for each validation}
   \item{t.val}{optional vector for prognostic models, containing the time period for which performance was assessed}
   \item{t.ma}{optional numeric value for prognostic models, containing the time period of primary interest for meta-analysis}
+  \item{data}{optional data frame containing the data supplied to the function (\emph{not implemented yet})}
   \item{method}{character string specifying whether a fixed- or a random-effects model should be fitted. A fixed-effects model is fitted when using \code{method="FE"}. Random-effects models are fitted by setting method equal to one of the following: \code{"REML"} (Default), \code{"DL"}, \code{"HE"}, \code{"SJ"}, \code{"ML"}, \code{"EB"}, \code{"HS"}, \code{"GENQ"} or \code{"BAYES"}. See 'Details'.}
   \item{knha}{logical specifying whether the method by Knapp and Hartung (2003) should be used for adjusting test statistics and confidence intervals (default is TRUE). Type '\code{?rma}' for more details.}
   \item{verbose}{if TRUE then messages generated during the fitting process will be displayed.}
@@ -102,7 +103,7 @@ attach(EuroSCORE)
 # Meta-analysis of the c-statistic (random effects)
 fit <- valmeta(cstat=c.index, cstat.se=se.c.index, 
                cstat.95CI=cbind(c.index.95CIl,c.index.95CIu), 
-               N=n, O=n.events, slab=Study)
+               N=n, O=n.events, slab=Study, data=EuroSCORE)
 plot(fit)
 
 # Meta-analysis of the total O:E ratio (random effects)

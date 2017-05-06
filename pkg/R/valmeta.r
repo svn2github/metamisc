@@ -1,5 +1,5 @@
 valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.se,
-                    N, O, E, Po, Po.se, Pe, t.val, t.ma, method="REML", knha=TRUE, verbose=FALSE, 
+                    N, O, E, Po, Po.se, Pe, t.val, t.ma, data, method="REML", knha=TRUE, verbose=FALSE, 
                     slab, n.chains = 4, pars, ...) {
   pars.default <- list(hp.mu.mean = 0, 
                        hp.mu.var = 1E6,
@@ -18,13 +18,18 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
       pars.default[[element]] <- pars[[element]]
     }
   }
-  
+  if (missing(data))                                                                                                                                                                                                             
+    data <- NULL
+  if (!is.null(data) & !is.data.frame(data)) {                                                                                                                                                                                                
+      data <- data.frame(data)                                                                                                                                                                                               
+  }
   
   out <- list()
   out$call <- match.call()
   out$method <- method
   class(out) <- "valmeta"
   
+
   N.studies.OE <- 0
   if (!missing(OE)) {
     N.studies.OE <- length(OE)
@@ -42,6 +47,10 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
   #make sure knha is only used for random effec models
   knha <- ifelse(method=="FE", F, knha)
   
+  test <- "z"
+  if (knha)
+    test <- "knha"
+  
 
   inv.logit <- function(x) {  if(is.numeric(x)) 1/(1+exp(-x)) else stop("x is not numeric!") }
   logit <- function(x) { log(x/(1-x)) }
@@ -56,7 +65,7 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
     } 
   }
   
-  if(!missing(cstat)) {
+  if(!missing(cstat) & !is.null(cstat)) {
     if (missing(cstat.se) & missing(cstat.95CI)) {
       stop("No sampling error was provided for the c-statistic!")
     }
@@ -134,7 +143,7 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
     if (method != "BAYES") { # Use of rma
       
       # Apply the meta-analysis
-      fit <- rma(yi=theta, vi=theta.var, data=ds, method=method, knha=knha, slab=out$cstat$slab, ...) 
+      fit <- rma(yi=theta, vi=theta.var, data=ds, method=method, test=test, slab=out$cstat$slab, ...) 
       preds <- predict(fit)
       
       results <- as.data.frame(array(NA, dim=c(1,5)))
@@ -257,14 +266,14 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
     if (method != "BAYES") { # Use of rma
       
       if (pars.default$model.oe=="normal/identity") {
-        fit <- rma(yi=ds$theta, sei=ds$theta.se, data=ds, method=method, knha=, slab=out$oe$slab, ...) 
+        fit <- rma(yi=ds$theta, sei=ds$theta.se, data=ds, method=method, test=test, slab=out$oe$slab, ...) 
         preds <- predict(fit)
         cr.lb <- ifelse(method=="FE", NA, preds$cr.lb)
         cr.ub <- ifelse(method=="FE", NA, preds$cr.ub)
         results <- c(coefficients(fit), c(preds$ci.lb, preds$ci.ub, cr.lb, cr.ub))
         out$oe$rma <- fit
       } else if (pars.default$model.oe=="normal/log") {
-        fit <- rma(yi=ds$theta, sei=ds$theta.se, data=ds, method=method, knha=knha, slab=out$oe$slab, ...) 
+        fit <- rma(yi=ds$theta, sei=ds$theta.se, data=ds, method=method, test=test, slab=out$oe$slab, ...) 
         preds <- predict(fit)
         cr.lb <- ifelse(method=="FE", NA, preds$cr.lb)
         cr.ub <- ifelse(method=="FE", NA, preds$cr.ub)
