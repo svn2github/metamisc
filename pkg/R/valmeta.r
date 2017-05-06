@@ -83,7 +83,7 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
     if(missing(slab)) {
       out$cstat$slab <- paste("Study",seq(1, length(cstat)))
     } else {
-      out$cstat$slab <- slab
+      out$cstat$slab <- as.character(slab)
     }
     
     # Apply necessary data transformations
@@ -389,7 +389,7 @@ print.valmeta <- function(x, ...) {
     cat("Model results for the c-statistic:\n\n")
     print(x$cstat)
     if (x$cstat$num.estimated.var.c > 0)
-      cat(paste("\nNote: For ", x$cstat$num.estimated.var.c, " validation(s), the standard error of the concordance statistic swas estimated using method '", x$cstat$method.restore.se, "'.\n", sep=""))
+      cat(paste("\nNote: For ", x$cstat$num.estimated.var.c, " validation(s), the standard error of the concordance statistic was estimated using method '", x$cstat$method.restore.se, "'.\n", sep=""))
     
     if (!is.null(x$oe$results)) {
       cat("\n\n")
