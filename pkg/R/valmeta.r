@@ -65,7 +65,9 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
     } 
   }
   
-  if(!missing(cstat) & !is.null(cstat)) {
+  
+  if(!missing(cstat)) {
+    
     if (missing(cstat.se) & missing(cstat.95CI)) {
       stop("No sampling error was provided for the c-statistic!")
     }
@@ -138,6 +140,7 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
     ds <- cbind(theta, sqrt(theta.var), theta.cil, theta.ciu)
     colnames(ds) <- c("theta", "theta.se", "theta.95CIl", "theta.95CIu")
     out$cstat$data <- ds
+    out$cstat$numstudies <- length(which(rowMeans(!is.na(ds))==1))
     out$cstat$num.estimated.var.c <- num.estimated.var.c
     
     if (method != "BAYES") { # Use of rma
@@ -161,8 +164,12 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
       names(results) <- c("estimate", "95CIl", "95CIu", "95PIl", "95PIu")
       
       out$cstat$rma <- fit
+      out$cstat$numstudies <- fit$k
       out$cstat$results <- results
     } else {
+      # All data are used!
+      out$cstat$numstudies <- dim(ds)[1]
+      
       # Perform a Bayesian meta-analysis
       model <- .generateBugsCstat(pars=pars.default, ...)
       
@@ -262,6 +269,7 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
                          citl=citl, citl.se=citl.se, N=N, t.ma=t.ma, t.val=t.val,
                          pars=pars.default)
     out$oe$data <- ds
+    out$oe$numstudies <- length(which(rowMeans(!is.na(ds))==1))
       
     if (method != "BAYES") { # Use of rma
       
@@ -272,6 +280,7 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
         cr.ub <- ifelse(method=="FE", NA, preds$cr.ub)
         results <- c(coefficients(fit), c(preds$ci.lb, preds$ci.ub, cr.lb, cr.ub))
         out$oe$rma <- fit
+        out$oe$numstudies <- fit$k
       } else if (pars.default$model.oe=="normal/log") {
         fit <- rma(yi=ds$theta, sei=ds$theta.se, data=ds, method=method, test=test, slab=out$oe$slab, ...) 
         preds <- predict(fit)
@@ -279,6 +288,7 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
         cr.ub <- ifelse(method=="FE", NA, preds$cr.ub)
         results <- c(exp(coefficients(fit)), exp(c(preds$ci.lb, preds$ci.ub, cr.lb, cr.ub)))
         out$oe$rma <- fit
+        out$oe$numstudies <- fit$k
       } else if (pars.default$model.oe=="poisson/log" && method!="FE") {
         if (method!="ML") warning("The poisson/log model was fitted using ML.")
         if (knha) warning("The Sidik-Jonkman-Hartung-Knapp correction cannot be applied")
@@ -288,12 +298,14 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
         preds.cr <- lme4::fixef(fit) + qt(c(0.025, 0.975), df=(lme4::ngrps(fit)-2))*sqrt(vcov(fit)[1,1]+(as.data.frame(lme4::VarCorr(fit))["vcov"])[1,1])
         results <- c(exp(lme4::fixef(fit)), exp(c(preds.ci["(Intercept)",], preds.cr)))
         out$oe$lme4 <- fit
+        out$oe$numstudies <- stats::nobs(fit)
       } else if (pars.default$model.oe=="poisson/log" && method=="FE") {
         fit <- glm(O~1, offset=log(E), family=poisson(link="log"), data=ds)
         preds.ci <- confint(fit, quiet=!verbose, ...)
         preds.cr <- c(NA, NA)
         results <- c(exp(coefficients(fit)), exp(c(preds.ci, preds.cr)))
-        out$oe$lme4 <- fit
+        out$oe$glm <- fit
+        out$oe$numstudies <- stats::nobs(fit)
       } else {
         stop("Model not implemented yet!")
       }
@@ -320,6 +332,7 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
       } else {
         stop("Model not implemented yet!")
       }
+      out$oe$numstudies <- mvmeta_dat$Nstudies
       
       # Perform a Bayesian meta-analysis
       model <- generateBugsOE(pars=pars.default, ...)
@@ -428,6 +441,9 @@ print.vmasum <- function(x, ...) {
               ". Consider re-running the analysis by increasing the optional arguments 'adapt', 'burnin' and/or 'sample'."  ))
     }
   }
+  
+  cat("\n")
+  cat(paste("Number of studies included: ", x$numstudies))
     
 }
 
