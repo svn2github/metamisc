@@ -373,9 +373,9 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
 
 .generateBugsCstat <- function(pars, 
                                 ...) # standard deviation for student T prior
-  {
+{
 
-  hp.tau.prec <- 1/(pars$hp.tau.sima**2)
+  hp.tau.prec <- 1/(pars$hp.tau.sigma**2)
   hp.mu.prec <- 1/pars$hp.mu.var
   
   out <- "model {\n " 
@@ -403,6 +403,7 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
     stop("Specified link function not implemented")
   }
   out <- paste(out, "}", sep="")
+  
   return(out)
 }
 
@@ -433,7 +434,7 @@ print.vmasum <- function(x, ...) {
     psrf.ul <-  x$runjags$psrf$psrf[,2]
     psrf.target <- x$runjags$psrf$psrf.target
     
-    if(sum(psrf.ul > psrf.target)>1) {
+    if(sum(psrf.ul > psrf.target)>0) {
       warning(paste("Model did not properly converge! The upper bound of the convergence diagnostic (psrf) exceeds", 
                     psrf.target, "for the parameters", 
               paste(rownames(x$runjags$psrf$psrf)[which(psrf.ul > psrf.target)], " (psrf=", 

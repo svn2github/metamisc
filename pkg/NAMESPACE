@@ -8,7 +8,7 @@ import("metafor")
 #import("coda")
 import("mvtnorm")
 #import("bbmle")
-import("survival")
+#import("survival")
 
 importFrom("lme4", "glmer")
 importFrom("bbmle", "mle2")
