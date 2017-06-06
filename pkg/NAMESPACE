@@ -3,13 +3,11 @@ export("uvmeta")
 export("valmeta")
 
 import("ellipse")
-#import("runjags")
+import("lattice")
 import("metafor")
-#import("coda")
 import("mvtnorm")
-#import("bbmle")
-#import("survival")
 
+# Imports of specific functions
 importFrom("lme4", "glmer")
 importFrom("bbmle", "mle2")
 importFrom("graphics", "abline", "axis", "box", "lines", "par", "plot", "points", "polygon", "text", "segments", "strheight")
