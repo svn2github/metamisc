@@ -10,7 +10,7 @@ This function allows to meta-analyze the performance of a prediction model, and 
 }
 \usage{
 valmeta(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.se,
-        N, O, E, Po, Po.se, Pe, t.val, t.ma, data, method="REML", knha=TRUE, 
+        N, O, E, Po, Po.se, Pe, t.val, t.ma, data, method="REML", test="knha", 
         verbose=FALSE, slab, n.chains = 4, pars, \ldots)
 
 }
@@ -34,7 +34,7 @@ valmeta(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.se,
   \item{t.ma}{optional numeric value for prognostic models, containing the time period of primary interest for meta-analysis}
   \item{data}{optional data frame containing the data supplied to the function (\emph{not implemented yet})}
   \item{method}{character string specifying whether a fixed- or a random-effects model should be fitted. A fixed-effects model is fitted when using \code{method="FE"}. Random-effects models are fitted by setting method equal to one of the following: \code{"REML"} (Default), \code{"DL"}, \code{"HE"}, \code{"SJ"}, \code{"ML"}, \code{"EB"}, \code{"HS"}, \code{"GENQ"} or \code{"BAYES"}. See 'Details'.}
-  \item{knha}{logical specifying whether the method by Knapp and Hartung (2003) should be used for adjusting test statistics and confidence intervals (default is TRUE). Type '\code{?rma}' for more details.}
+  \item{test}{character string specifying how test statistics and confidence intervals for the fixed effects should be computed. By default (\code{test="knha"}), the method by Knapp and Hartung (2003) is used for adjusting test statistics and confidence intervals. Type '\code{?rma}' for more details.}
   \item{verbose}{if TRUE then messages generated during the fitting process will be displayed.}
   \item{slab}{optional vector with labels for the \emph{k} studies.}
   \item{n.chains}{the number of chains to use in the Gibbs sampler (\code{method="BAYES"}). More chains will improve the sensitivity of the convergence diagnostic, but will cause the simulation to run more slowly. The default number of chains is 4.}
@@ -98,31 +98,30 @@ Viechtbauer W. Conducting Meta-Analyses in R with the metafor Package. \emph{Jou
 \examples{
 ######### Validation of prediction models with a binary outcome #########
 data(EuroSCORE)
-attach(EuroSCORE)
 
 # Meta-analysis of the c-statistic (random effects)
-fit <- valmeta(cstat=c.index, cstat.se=se.c.index, 
+fit <- with(EuroSCORE, valmeta(cstat=c.index, cstat.se=se.c.index, 
                cstat.95CI=cbind(c.index.95CIl,c.index.95CIu), 
-               N=n, O=n.events, slab=Study, data=EuroSCORE)
+               N=n, O=n.events, slab=Study))
 plot(fit)
 
 # Meta-analysis of the total O:E ratio (random effects)
-valmeta(O=n.events, E=e.events, N=n)     # Option 1
-valmeta(O=n.events, E=e.events)          # Option 2 
-valmeta(Po=Po, Pe=Pe, N=n)               # Option 3
-valmeta(O=n.events, E=e.events, pars=list(model.oe="poisson/log"))  # Option 4
+with(EuroSCORE, valmeta(O=n.events, E=e.events, N=n))    
+with(EuroSCORE, valmeta(O=n.events, E=e.events))        
+with(EuroSCORE, valmeta(Po=Po, Pe=Pe, N=n))
+with(EuroSCORE, valmeta(O=n.events, E=e.events, pars=list(model.oe="poisson/log")))
 
 
 # Meta-analysis of the c-statistic and the total O:E ratio (random effects)
-valmeta(cstat=c.index, cstat.se=se.c.index, 
+with(EuroSCORE, valmeta(cstat=c.index, cstat.se=se.c.index, 
         cstat.95CI=cbind(c.index.95CIl,c.index.95CIu), 
-        N=n, O=n.events, E=e.events, slab=Study)
+        N=n, O=n.events, E=e.events, slab=Study))
         
 \dontrun{
 # Bayesian meta-analysis of the c-statistic (random effects)
-fit2 <- valmeta(cstat=c.index, cstat.se=se.c.index, 
+fit2 <- with(EuroSCORE, valmeta(cstat=c.index, cstat.se=se.c.index, 
                 cstat.95CI=cbind(c.index.95CIl,c.index.95CIu),
-                N=n, O=n.events, method="BAYES", slab=Study)
+                N=n, O=n.events, method="BAYES", slab=Study))
 plot(fit2)
 
 # Bayesian meta-analysis of the O:E ratio
@@ -131,21 +130,17 @@ pars <- list(model.oe="poisson/log", # Use a Poisson-Normal model
              hp.tau.sigma=1.5,       # Standard deviation for 'hp.tau.dist'
              hp.tau.df=3,            # Degrees of freedom for 'hp.tau.dist'
              hp.tau.max=10)          # Maximum value for the between-study standard deviation
-valmeta(O=n.events, E=e.events, N=n, method="BAYES", slab=Study, pars=pars)
+with(EuroSCORE, valmeta(O=n.events, E=e.events, N=n, method="BAYES", slab=Study, pars=pars))
 } 
 
-# Detach the dataset
-detach(EuroSCORE)
 
 ######### Validation of prediction models with a time-to-event outcome #########
 data(Framingham)
-attach(Framingham)
 
 # Meta-analysis of total O:E ratio after 10 years of follow-up
-valmeta(Po=Po, Pe=Pe, N=n, t.val=t.val, t.ma=10)
+with(Framingham, valmeta(Po=Po, Pe=Pe, N=n, t.val=t.val, t.ma=10))
 
-# Detach the dataset
-detach(Framingham)
+
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

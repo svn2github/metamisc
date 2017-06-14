@@ -1,5 +1,5 @@
 valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.se,
-                    N, O, E, Po, Po.se, Pe, t.val, t.ma, data, method="REML", knha=TRUE, verbose=FALSE, 
+                    N, O, E, Po, Po.se, Pe, t.val, t.ma, data, method="REML", test="knha", verbose=FALSE, 
                     slab, n.chains = 4, pars, ...) {
   pars.default <- list(hp.mu.mean = 0, 
                        hp.mu.var = 1E6,
@@ -44,14 +44,6 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
   t.ma <- ifelse(missing(t.ma), NA, t.ma)
   t.val <- ifelse(missing(t.val), NA, t.val)
   
-  #make sure knha is only used for random effec models
-  knha <- ifelse(method=="FE", F, knha)
-  
-  test <- "z"
-  if (knha)
-    test <- "knha"
-  
-
   inv.logit <- function(x) {  if(is.numeric(x)) 1/(1+exp(-x)) else stop("x is not numeric!") }
   logit <- function(x) { log(x/(1-x)) }
   
@@ -291,7 +283,7 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
         out$oe$numstudies <- fit$k
       } else if (pars.default$model.oe=="poisson/log" && method!="FE") {
         if (method!="ML") warning("The poisson/log model was fitted using ML.")
-        if (knha) warning("The Sidik-Jonkman-Hartung-Knapp correction cannot be applied")
+        if (test=="knha") warning("The Sidik-Jonkman-Hartung-Knapp correction cannot be applied")
         
         fit <- glmer(O~1|Study, offset=log(E), family=poisson(link="log"), data=ds)
         preds.ci <- confint(fit, quiet=!verbose, ...)
