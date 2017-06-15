@@ -129,17 +129,17 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
     theta.ciu[is.na(theta.ciu)] <- (theta+qnorm(0.975)*sqrt(theta.var))[is.na(theta.ciu)]
     
 
-    ds <- cbind(theta, sqrt(theta.var), theta.cil, theta.ciu)
-    colnames(ds) <- c("theta", "theta.se", "theta.95CIl", "theta.95CIu")
-    out$cstat$data <- ds
-    out$cstat$numstudies <- length(which(rowMeans(!is.na(ds))==1))
-    out$cstat$num.estimated.var.c <- num.estimated.var.c
+    ds <- cbind(theta, sqrt(theta.var), theta.cil, theta.ciu, NA)
+    colnames(ds) <- c("theta", "theta.se", "theta.95CIl", "theta.95CIu", "theta.blup")
+
     
     if (method != "BAYES") { # Use of rma
       
       # Apply the meta-analysis
       fit <- rma(yi=theta, vi=theta.var, data=ds, method=method, test=test, slab=out$cstat$slab, ...) 
       preds <- predict(fit)
+      
+      ds[, "theta.blup"] <- blup(fit)$pred
       
       results <- as.data.frame(array(NA, dim=c(1,5)))
       if (pars.default$model.cstat == "normal/logit") {
@@ -194,6 +194,10 @@ valmeta <- function(cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.
       out$cstat$PED <- sum(fit.dev$deviance)+sum(fit.dev$penalty)
       out$cstat$results <- results
     }
+    
+    out$cstat$data <- ds
+    out$cstat$numstudies <- length(which(rowMeans(!is.na(ds))==1))
+    out$cstat$num.estimated.var.c <- num.estimated.var.c
   }
   
   ##### Prepare data for OE ratio
