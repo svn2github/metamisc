@@ -6,7 +6,7 @@
 Meta-analysis of prediction model performance
 }
 \description{
-This function allows to meta-analyze the performance of a prediction model, and to obtain summary estimates of the c-statistic, the total observed-expected ratio and the calibration slope. Where appropriate, data transformations are applied and missing information is derived from available quantities.
+This function allows to meta-analyze the performance of a prediction model, and to obtain summary estimates of the concordance statistic, the total observed-expected ratio and the calibration slope. Where appropriate, data transformations are applied and missing information is derived from available quantities.
 }
 \usage{
 valmeta(measure="cstat", cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.se,
