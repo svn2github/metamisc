@@ -8,7 +8,6 @@ import("mvtnorm")
 
 # Imports of specific functions
 importFrom("lme4", "glmer")
-#importFrom("bbmle", "mle2")
 importFrom("graphics", "abline", "axis", "box", "lines", "par", "plot", "points", "polygon", "text", "segments", "strheight")
 importFrom("stats", "coef", "coefficients", "dnorm", "glm", "nobs", "optim", "pchisq", "qnorm", "qt", "rnorm", "runif", "confint", "poisson", "predict", "vcov")
 
@@ -30,5 +29,4 @@ S3method(uvmeta, default)
 #valmeta methods
 S3method(print, valmeta)
 S3method(plot, valmeta)
-S3method(print, vmasum )
 #S3method(valmeta, default)
