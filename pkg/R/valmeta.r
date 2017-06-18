@@ -111,8 +111,7 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, OE, OE.se, OE.
     if (missing(cstat.se)) {
       cstat.se <- array(NA, dim=k)
     }
-    
-    out$method.restore.se <- pars.default$method.restore.c.se 
+
     out$model <- pars.default$model.cstat
     
     if (verbose) message("Extracting/computing estimates of the concordance statistic ...")
@@ -459,9 +458,12 @@ print.valmeta <- function(x, ...) {
   cat("\n")
   cat(paste("Number of studies included: ", x$numstudies))
   if (x$measure=="cstat") {
-    num.estimated.var.c <- sum(x$se.source %in% c("Hanley","Newcombe.2","Newcombe.4"))
-    if (num.estimated.var.c > 0)
-      cat(paste("\nNote: For ", num.estimated.var.c, " validation(s), the standard error of the concordance statistic was estimated using method '", x$method.restore.se, "'.\n", sep=""))
+    se.sources <- c("Hanley","Newcombe.2","Newcombe.4") 
+    num.estimated.var.c <- sum(x$se.source %in% se.sources)
+    if (num.estimated.var.c > 0) {
+      restore.method <- (se.sources[se.sources %in% x$se.source])[1]
+      cat(paste("\nNote: For ", num.estimated.var.c, " validation(s), the standard error of the concordance statistic was estimated using method '", restore.method, "'.\n", sep=""))
+    }
   }
 }
 
