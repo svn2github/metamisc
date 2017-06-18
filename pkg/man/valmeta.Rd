@@ -77,11 +77,13 @@ The prior distribution for the between-study standard deviation can be specified
 \value{
 An object of class \code{valmeta} with the following elements:
 \item{data}{array with (transformed) data used for meta-analysis}
+\item{lme4}{a fitted object of class \code{glmerMod} (if \code{lme4} was used for meta-analysis)}
 \item{measure}{character string specifying the performance measure that has been meta-analysed.}
 \item{method}{character string specifying the meta-analysis method.}
 \item{model}{character string specifying the meta-analysis model (link function).}
 \item{results}{numeric vector containing the meta-analysis results}
-\item{rma}{a fitted object of class \code{rma} (if \code{metafor} was used)}
+\item{rma}{a fitted object of class \code{rma} (if \code{metafor} was used for meta-analysis)}
+\item{runjags}{a fitted object of class \code{runjags} (if \code{runjags} was used for meta-analysis)}
 \item{se.source}{character vector specifying the source of the studies' standard errors}
 \item{slab}{vector specifying the label of each study}
 
