@@ -22,7 +22,9 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, OE, OE.se, OE.
   if (!is.element(measure, c("cstat","OE")))
     stop("Unknown 'measure' specified.")
   
+  #######################################################################################
   # Check if we need to load runjags
+  #######################################################################################
   if (method=="BAYES") {
     if (!requireNamespace("runjags", quietly = TRUE)) {
       stop("The package 'runjags' is currently not installed!")
@@ -31,80 +33,129 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, OE, OE.se, OE.
       stop("The package 'rjags' is currently not installed!")
     } 
   }
-  
-  if (verbose & measure=="cstat") {
-    message("Extracting/computing estimates of the concordance statistic ...")
-  } else if (verbose & measure=="OE") {
-    message("Extracting/computing estimates of the total O:E ratio ...")
-  }
     
+  #######################################################################################
+  # Count number of studies
+  #######################################################################################
+  k <- 0
+  if (measure=="cstat") {
+    if (!missing(cstat)) {
+      k <- length(cstat)
+    } else if (!missing(cstat.se)) {
+      k <- length(cstat.se)
+    } else if (!missing(cstat.95CI)) {
+      k <- dim(cstat.95CI)[2]
+    }
+  } else if (measure=="OE") {
+    if (!missing(OE)) {
+      k <- length(OE)
+    } else if (!missing(E)) {
+      k <- length(E)
+    } else if (!missing(Pe)) {
+      k <- length(Pe)
+    } else if (!missing(citl)) {
+      k <- length(citl)
+    }
+  }
+  
+  #######################################################################################
+  # Prepare data
+  #######################################################################################
+  if (missing(O)) {
+    O <- rep(NA, length=k)
+  }
+  if (missing(Po)) {
+    Po <- rep(NA, length=k)
+  }
+  if (missing(N)) {
+    N <- rep(NA, length=k)
+  }
+  
+  theta.var.source <- rep("-", k)
+  
+  #######################################################################################
+  # Prepare object
+  #######################################################################################
   out <- list()
   out$call <- match.call()
   out$measure <- measure
   out$method <- method
   class(out) <- "valmeta"
   
+  
+  #######################################################################################
+  # Assign study labels
+  #######################################################################################
+  if(missing(slab)) {
+    out$slab <- paste("Study",seq(1, k))
+  } else {
+    out$slab <- as.character(slab)
+  }
+  
+
   #######################################################################################
   # Meta-analysis of the c-statistic
   #######################################################################################
   if (measure=="cstat") {
-    if (missing(cstat.se) & missing(cstat.95CI)) {
-      stop("No sampling error was provided for the c-statistic!")
-    }
     if (missing(cstat.95CI)) {
-      cstat.95CI <- array(NA, dim=c(length(cstat),2))
+      cstat.95CI <- array(NA, dim=c(k,2))
     }
     if (is.null(dim(cstat.95CI))) {
       warning("Invalid dimension for 'cstat.95CI', argument ignored.")
-      cstat.95CI <- array(NA, dim=c(length(cstat),2))
+      cstat.95CI <- array(NA, dim=c(k,2))
     }
-    if (dim(cstat.95CI)[2] != 2 | dim(cstat.95CI)[1] != length(cstat)) {
+    if (dim(cstat.95CI)[2] != 2 | dim(cstat.95CI)[1] != k) {
       warning("Invalid dimension for 'cstat.95CI', argument ignored.")
-      cstat.95CI <- array(NA, dim=c(length(cstat),2))
+      cstat.95CI <- array(NA, dim=c(k,2))
     }
     if (missing(cstat.se)) {
-      cstat.se <- array(NA, dim=length(cstat))
+      cstat.se <- array(NA, dim=k)
     }
     
     out$method.restore.se <- pars.default$method.restore.c.se 
     out$model <- pars.default$model.cstat
     
-    if(missing(slab)) {
-      out$slab <- paste("Study",seq(1, length(cstat)))
-    } else {
-      out$slab <- as.character(slab)
-    }
+    if (verbose) message("Extracting/computing estimates of the concordance statistic ...")
+    
+    
     
     # Apply necessary data transformations
     if (pars.default$model.cstat == "normal/identity") {
       theta <- cstat
       theta.var <- (cstat.se)**2
+      theta.var.source[!is.na(theta.var)] <- "Standard Error"
       theta.cil <- cstat.95CI[,1]
       theta.ciu <- cstat.95CI[,2]
       theta.var.CI <- ((theta.ciu - theta.cil)/(2*qnorm(0.975)))**2 #Derive from 95% CI
+      theta.var.source[is.na(theta.var) & !is.na(theta.var.CI)] <- "Confidence Interval"
       theta.var <- ifelse(is.na(theta.var), theta.var.CI, theta.var) #Prioritize reported SE
     } else if (pars.default$model.cstat == "normal/logit") {
       theta <- log(cstat/(1-cstat))
       theta.var <- (cstat.se/(cstat*(1-cstat)))**2
+      theta.var.source[!is.na(theta.var)] <- "Standard Error"
       theta.cil <- logit(cstat.95CI[,1])
       theta.ciu <- logit(cstat.95CI[,2])
       theta.var.CI <- ((theta.ciu - theta.cil)/(2*qnorm(0.975)))**2
+      theta.var.source[is.na(theta.var) & !is.na(theta.var.CI)] <- "Confidence Interval"
       theta.var <- ifelse(is.na(theta.var.CI), theta.var, theta.var.CI) #Prioritize variance from 95% CI
     } else {
       stop(paste("No appropriate meta-analysis model defined: '", pars.default$model.cstat, "'", sep=""))
     }
     
-    num.estimated.var.c <- 0
-    
     # Restore missing standard errors
     if (NA %in% theta.var) {
+      
+      # Calculate O and N from other information if possible
+      O <- ifelse(is.na(O), Po*N, O)
+      N <- ifelse(is.na(N), O/Po, N)
+
       # Restore missing estimates of the standard error of the c-statistic using information on c, N and O
-      if (!missing(O) & !missing(N)) {
-        theta.var.hat <- restore.c.var(cstat=cstat, N.subjects=N, N.events=O, 
-                                       restore.method=pars.default$method.restore.c.se, model=pars.default$model.cstat)
-        num.estimated.var.c <- length(which(is.na(theta.var) & !is.na(theta.var.hat)))
-        theta.var <- ifelse(is.na(theta.var), theta.var.hat, theta.var)
-      }
+      theta.var.hat <- restore.c.var(cstat=cstat, N.subjects=N, N.events=O, 
+                                     restore.method=pars.default$method.restore.c.se, 
+                                     model=pars.default$model.cstat)
+      theta.var.source[is.na(theta.var) & !is.na(theta.var.hat)] <- pars.default$method.restore.c.se
+      theta.var <- ifelse(is.na(theta.var), theta.var.hat, theta.var)
+
       # Replace remaining missing values in theta.var by very large values
       theta.var <- ifelse(is.na(theta.var), 10e6, theta.var)
     }
@@ -181,72 +232,49 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, OE, OE.se, OE.
     }
     
     out$data <- ds
-    out$num.estimated.var.c <- num.estimated.var.c
+    out$se.source <- theta.var.source
     return(out)
   }
   #######################################################################################
   # Meta-analysis of the total OE ratio
   #######################################################################################
   if (measure=="OE") {
-    N.studies.OE <- 0
-    if (!missing(OE)) {
-      N.studies.OE <- length(OE)
-    } else if (!missing(E)) {
-      N.studies.OE <- length(E)
-    } else if (!missing(Pe)) {
-      N.studies.OE <- length(Pe)
-    }else if (!missing(citl)) {
-      N.studies.OE <- length(citl)
-    }
-
     t.ma <- ifelse(missing(t.ma), NA, t.ma)
     
     if(missing(t.val)) {
-      t.val <- NA
-    }
-
-
-    
-    if (missing(N)) {
-      N <- rep(NA, length=N.studies.OE)
-    }
-    if (missing(O)) {
-      O <- rep(NA, length=N.studies.OE)
+      t.val <- rep(NA, k)
     }
     if (missing(E)) {
-      E <- rep(NA, length=N.studies.OE)
-    }
-    if (missing(Po)) {
-      Po <- rep(NA, length=N.studies.OE)
+      E <- rep(NA, length=k)
     }
     if (missing(Po.se)) {
-      Po.se <- rep(NA, length=N.studies.OE)
+      Po.se <- rep(NA, length=k)
     }
     if (missing(Pe)) {
-      Pe <- rep(NA, length=N.studies.OE)
+      Pe <- rep(NA, length=k)
     }
     if (missing(OE)) {
-      OE <- rep(NA, length=N.studies.OE)
+      OE <- rep(NA, length=k)
     }
     if (missing(OE.se)) {
-      OE.se <- rep(NA, length=N.studies.OE)
+      OE.se <- rep(NA, length=k)
     }
     if (missing(citl)) {
-      citl <- rep(NA, length=N.studies.OE)
+      citl <- rep(NA, length=k)
     }
     if (missing(citl.se)) {
-      citl.se <- rep(NA, length=N.studies.OE)
+      citl.se <- rep(NA, length=k)
     }
     if (missing(OE.95CI)) {
-      OE.95CI <- array(NA, dim=c(N.studies.OE,2))
+      OE.95CI <- array(NA, dim=c(k,2))
     }
     if (is.null(dim(OE.95CI))) {
       warning("Invalid dimension for 'OE.95CI', argument ignored.")
-      OE.95CI <- array(NA, dim=c(N.studies.OE,2))
+      OE.95CI <- array(NA, dim=c(k,2))
     }
-    if (dim(OE.95CI)[2] != 2 | dim(OE.95CI)[1] != N.studies.OE) {
+    if (dim(OE.95CI)[2] != 2 | dim(OE.95CI)[1] != k) {
       warning("Invalid dimension for 'OE.95CI', argument ignored.")
-      OE.95CI <- array(NA, dim=c(N.studies.OE,2))
+      OE.95CI <- array(NA, dim=c(k,2))
     }
     
     # Check if the length of all relevant arguments is consistent
@@ -258,11 +286,7 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, OE, OE.se, OE.
     
     out$model <- pars.default$model.oe
 
-    if(missing(slab)) {
-      out$slab <- paste("Study",seq(1, N.studies.OE))
-    } else {
-      out$slab <- slab
-    }
+    if (verbose) message("Extracting/computing estimates of the total O:E ratio ...")
     
     ds <- generateOEdata(O=O, E=E, Po=Po, Po.se=Po.se, Pe=Pe, OE=OE, OE.se=OE.se, OE.95CI=OE.95CI, 
                          citl=citl, citl.se=citl.se, N=N, t.ma=t.ma, t.val=t.val, t.extrapolate=t.extrapolate,
@@ -435,8 +459,9 @@ print.valmeta <- function(x, ...) {
   cat("\n")
   cat(paste("Number of studies included: ", x$numstudies))
   if (x$measure=="cstat") {
-    if (x$num.estimated.var.c > 0)
-      cat(paste("\nNote: For ", x$num.estimated.var.c, " validation(s), the standard error of the concordance statistic was estimated using method '", x$method.restore.se, "'.\n", sep=""))
+    num.estimated.var.c <- sum(x$se.source %in% c("Hanley","Newcombe.2","Newcombe.4"))
+    if (num.estimated.var.c > 0)
+      cat(paste("\nNote: For ", num.estimated.var.c, " validation(s), the standard error of the concordance statistic was estimated using method '", x$method.restore.se, "'.\n", sep=""))
   }
 }
 

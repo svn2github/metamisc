@@ -76,9 +76,15 @@ The prior distribution for the between-study standard deviation can be specified
 }
 \value{
 An object of class \code{valmeta} with the following elements:
-\item{cstat}{object of class \code{vmasum} containing the meta-analysis results of the c-statistic.}
-\item{oe}{object of class \code{vmasum} containing the meta-analysis results of the total O:E ratio.}
-\item{method}{character string specifying whether a fixed- or a random-effects model was fitted.}
+\item{data}{array with (transformed) data used for meta-analysis}
+\item{measure}{character string specifying the performance measure that has been meta-analysed.}
+\item{method}{character string specifying the meta-analysis method.}
+\item{model}{character string specifying the meta-analysis model (link function).}
+\item{results}{numeric vector containing the meta-analysis results}
+\item{rma}{a fitted object of class \code{rma} (if \code{metafor} was used)}
+\item{se.source}{character vector specifying the source of the studies' standard errors}
+\item{slab}{vector specifying the label of each study}
+
 %\item{results}{vector with the summary c-statistic, the corresponding standard error, 95\% confidence interval and 95\% prediction interval.}
 %\item{scale}{the scale used for meta-analysis.}
 %\item{data}{2-dimensional array with the effect estimates (\code{theta}) and (restored) error variances (\code{theta.var}) of each validation. For \code{method="BAYES"}, the estimates represent draws from the posterior distribution.}
@@ -116,6 +122,9 @@ fit <- with(EuroSCORE, valmeta(cstat=c.index, cstat.se=se.c.index,
                cstat.95CI=cbind(c.index.95CIl,c.index.95CIu), 
                N=n, O=n.events, slab=Study))
 plot(fit)
+
+# Nearly identical results when we need to estimate the SE
+with(EuroSCORE, valmeta(cstat=c.index,  N=n, O=n.events, slab=Study))
 
 # Meta-analysis of the total O:E ratio (random effects)
 with(EuroSCORE, valmeta(measure="OE", O=n.events, E=e.events, N=n))    
