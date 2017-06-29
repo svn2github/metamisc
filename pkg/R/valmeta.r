@@ -241,7 +241,7 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, OE, OE.se, OE.
     t.ma <- ifelse(missing(t.ma), NA, t.ma)
     
     if(missing(t.val)) {
-      t.val <- rep(NA, k)
+      t.val <- rep(NA, length=k)
     }
     if (missing(E)) {
       E <- rep(NA, length=k)
@@ -388,6 +388,7 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, OE, OE.se, OE.
     }
     
     out$data <- ds
+    out$se.source <- theta.var.source
     
     return(out)
   }

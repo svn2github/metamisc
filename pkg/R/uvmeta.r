@@ -119,6 +119,7 @@ uvmeta.default <- function(r, r.se, method="REML", test="knha", labels, na.actio
   }
   #attr(out$results,"level") <- pars.default$level
   out$data <- ds
+  out$numstudies <- dim(ds)[1]
   out$na.action <- na.action
   return(out)
 }
