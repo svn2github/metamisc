@@ -32,6 +32,9 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, OE, OE.se, OE.
     if (!requireNamespace("rjags", quietly = TRUE)) {
       stop("The package 'rjags' is currently not installed!")
     } 
+    if (n.chains<1 | n.chains%%1!=0) {
+      stop("Invalid number of chains specified for the Gibbs sampler!")
+    }
   }
     
   #######################################################################################
