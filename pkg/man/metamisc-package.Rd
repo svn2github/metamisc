@@ -9,7 +9,7 @@
 %Package: \tab metamisc\cr
 %Type: \tab Package\cr
 %Version: \tab 0.1.6\cr
-%Date: \tab 2017-06-29\cr
+%Date: \tab 2017-07-30\cr
 %License: \tab GPL-2 \cr
 %}
 The following functionality is currently implemented: univariate meta-analysis of summary data (\code{\link{uvmeta}}), bivariate meta-analysis of correlated outcomes (\code{\link{riley}}), bivariate meta-analysis of diagnostic test accuracy data, meta-analysis of prediction model performance (\code{\link{valmeta}}).}

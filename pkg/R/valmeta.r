@@ -159,7 +159,9 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, OE, OE.se, OE.
       theta.var <- ifelse(is.na(theta.var), theta.var.hat, theta.var)
 
       # Replace remaining missing values in theta.var by very large values
-      theta.var <- ifelse(is.na(theta.var), 10e6, theta.var)
+      # Omitted because it now gives error in metafor
+      # Ratio of largest to smallest sampling variance extremely large. Cannot obtain stable results.
+      #theta.var <- ifelse(is.na(theta.var), 10e6, theta.var)
     }
     
     #Only calculate 95% CI for which no original values were available
@@ -173,11 +175,14 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, OE, OE.se, OE.
     
     if (method != "BAYES") { # Use of rma
       
+      # Identify which studies can be used for meta-analysis
+      selstudies <- which(!is.na(ds[,"theta"]) & !is.na(theta.var))
+      
       # Apply the meta-analysis
       fit <- rma(yi=theta, vi=theta.var, data=ds, method=method, test=test, slab=out$cstat$slab, ...) 
       preds <- predict(fit)
       
-      ds[, "theta.blup"] <- blup(fit)$pred
+      ds[selstudies, "theta.blup"] <- blup(fit)$pred
       
       results <- as.data.frame(array(NA, dim=c(1,5)))
       if (pars.default$model.cstat == "normal/logit") {
