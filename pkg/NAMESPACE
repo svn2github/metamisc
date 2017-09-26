@@ -31,3 +31,10 @@ S3method(uvmeta, default)
 S3method(print, valmeta)
 S3method(plot, valmeta)
 #S3method(valmeta, default)
+
+#metapred methods
+S3method(print, metapred)
+S3method(coef, metapred)
+S3method(formula, metapred)
+S3method(family, metapred)
+S3method(predict, metapred)

@@ -38,12 +38,13 @@
 #' @param predFUN Function for predicting new values. Defaults to the appropriate link functions for two-stage MA where
 #' \code{glm()} or \code{lm()} is used in the first stage. For one-stage models \code{predict()} is used.
 #' @param perfFUN Function for computing the performance of the prediction models. Default: mean squared error.
-#' @param genFUN Function computing generalizability measure using the performance measures.
+#' @param genFUN Function computing generalizability measure using the performance measures. Default: (absolute) mean. 
+#' \code{squareddiff} for a penalty equal to the mean squared differences between coefficients.
 #' @param selFUN Function for selecting the best method. Default: lowest value for \code{genFUN}. Should be set to
 #' "which.max" if high values for \code{genFUN} indicate a good model.
 #' @param ... To pass arguments to estFUN (e.g. family = "binomial"), metaFUN (e.g. method = "DL") or other methods.
 #'
-#' @return \code{metapred} A list of class \code{metapred}, containing the final model in \code{final}, and the stepwise
+#' @return \code{metapred} A list of class \code{metapred}, containing the final coefficients in \code{coefficients}, and the stepwise
 #' tree of estimates of the coefficients \code{(coef)}, performance measures \code{(perf)}, generalizability measures
 #' \code{(gen)} in \code{stepwise}, and more.
 #'
@@ -58,23 +59,19 @@ metapred <- function(data, strata, formula = NULL, estFUN = "glm", stepwise = TR
                      metaFUN = NULL, meta.method = "REML", predFUN = NULL, perfFUN = NULL, genFUN = NULL, selFUN = "which.min",
                      ...) {
   call   <- match.call()
-  data <- as.data.frame(data)
+  data   <- as.data.frame(data)
   estFUN <- match.fun(estFUN)
   
   if (is.null(formula)) formula <- stats::formula(data[ , -which(colnames(data) == strata)])
-  strata.i <- data[, which(colnames(data) == strata)]
-  data <- stats::model.frame(formula, data = data)
-  data <- centerData(data, center.in = strata.i, center.1st = center.out, center.rest = center.cov) # change for 1 stage?
+  strata.i  <- data[, which(colnames(data) == strata)]
+  data      <- stats::model.frame(formula, data = data)
+  data      <- centerData(data, center.in = strata.i, center.1st = center.out, center.rest = center.cov) # change for 1 stage?
   data.list <- asDataList(data, strata.i)
   
-  mse <- function(p, y, data = NULL, ...) mean((p - y)^2)
-  absMean <- function(perf.measures, ...) {
-    pm <- unlist(perf.measures); abs(mean(pm))} # + mean((mean(pm) - pm)^2)}
-  
   if (is.null(cvFUN))   cvFUN   <- "l1o"
-  if (is.null(metaFUN)) metaFUN <- "urma" # "iv"
+  if (is.null(metaFUN)) metaFUN <- "urma" 
   if (is.null(perfFUN)) perfFUN <- "mse"
-  if (is.null(genFUN))  genFUN  <- "absMean"
+  if (is.null(genFUN))  genFUN  <- "absmean"
   # Change to "-" when perfFUN <- mcfadden or some other measure for which greater = better.
   
   # Do not add metaFUN to this list!
@@ -209,6 +206,18 @@ perfStep <- function(newdata, b, fit, two.stage, ccs = rep(list(1:ncol(newdata),
   out
 }
 
+mse <- function(p, y, data = NULL, ...) mean((p - y)^2)
+
+absmean <- function(perf.measures, ...) {
+  pm <- unlist(perf.measures)
+  abs(mean(pm))
+  } 
+
+squareddiff <- function(perf.measures, ...) {
+  pm <- unlist(perf.measures) 
+  abs(mean(pm)) + mean((mean(pm) - pm)^2)
+  }
+
 # Gets the predict method.
 # fit Model fit object.
 # two.stage logical. Is the model a two-stage model?
@@ -315,8 +324,6 @@ modelStep <- function(data.list, ccs, estFUN, perfFUN, metaFUN, meta.method, gen
 #' @importFrom metafor rma
 urma <- function(b, v, method = "REML", ...)
 {
-  b <<- b
-  v <<- v
   if (!(is.data.frame(b) || is.matrix(b)) || !(is.data.frame(v) || is.matrix(v)) )
     stop("b and v must both be a data.frame or matrix.")
   if (!identical(dim(b), dim(v)))

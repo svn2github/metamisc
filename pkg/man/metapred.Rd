@@ -50,7 +50,8 @@ passed trough the \code{meta.method} argument.}
 
 \item{perfFUN}{Function for computing the performance of the prediction models. Default: mean squared error.}
 
-\item{genFUN}{Function computing generalizability measure using the performance measures.}
+\item{genFUN}{Function computing generalizability measure using the performance measures. Default: (absolute) mean. 
+\code{squareddiff} for a penalty equal to the mean squared differences between coefficients.}
 
 \item{selFUN}{Function for selecting the best method. Default: lowest value for \code{genFUN}. Should be set to
 "which.max" if high values for \code{genFUN} indicate a good model.}
@@ -58,7 +59,7 @@ passed trough the \code{meta.method} argument.}
 \item{...}{To pass arguments to estFUN (e.g. family = "binomial"), metaFUN (e.g. method = "DL") or other methods.}
 }
 \value{
-\code{metapred} A list of class \code{metapred}, containing the final model in \code{final}, and the stepwise
+\code{metapred} A list of class \code{metapred}, containing the final coefficients in \code{coefficients}, and the stepwise
 tree of estimates of the coefficients \code{(coef)}, performance measures \code{(perf)}, generalizability measures
 \code{(gen)} in \code{stepwise}, and more.
 }
