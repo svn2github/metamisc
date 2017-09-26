@@ -9,7 +9,8 @@ import("mvtnorm")
 # Imports of specific functions
 importFrom("lme4", "glmer")
 importFrom("graphics", "abline", "axis", "box", "lines", "par", "plot", "points", "polygon", "text", "segments", "strheight")
-importFrom("stats", "coef", "coefficients", "dnorm", "glm", "nobs", "optim", "pchisq", "qnorm", "qt", "rnorm", "runif", "confint", "poisson", "predict", "vcov")
+importFrom("stats", "coef", "coefficients", "dnorm", "glm", "nobs", "optim", "pchisq", "qnorm", "qt", "rnorm", "runif", "confint", 
+           "poisson", "predict", "vcov", "as.formula", "formula", "model.frame", "model.frame.default", "update.formula")
 
 #Riley methods
 S3method(print, riley)
