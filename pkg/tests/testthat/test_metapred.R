@@ -13,38 +13,38 @@ test_that("The predict functions predict accurately.", {
   m.bi <- glm(td, family = binomial)
   expect_true(is.function(pm <- metamisc:::getPredictMethod(m.bi, two.stage = TRUE)))
   expect_true(all(unlist(pm(m.bi, td, coef(m.bi))) == unlist(m.bi$fitted.values))) # == intentionally ignores names.
-  
+
   m.lm <- lm(td)
   expect_true(is.function(pm <- metamisc:::getPredictMethod(m.lm, two.stage = TRUE)))
   expect_true(all.equal(unlist(pm(m.lm, td, coef(m.lm))) ,as.matrix(unlist(m.lm$fitted.values)),
                         use.names = F, check.attributes = F)) # also intentionally ignores names.
-  
+
   m.no <- glm(td)
   expect_true(is.function(pm <- metamisc:::getPredictMethod(m.no, two.stage = TRUE)))
   expect_true(all(unlist(pm(m.no, td, coef(m.no))) == unlist(m.no$fitted.values))) # == intentionally ignores names.
-  
+
   m.gm <- glm(td.ig, family = Gamma)
   expect_true(is.function(pm <- metamisc:::getPredictMethod(m.gm, two.stage = TRUE)))
   expect_true(all.equal(unlist(pm(m.gm, td.ig, coef(m.gm))) ,as.matrix(unlist(m.gm$fitted.values)),
                         use.names = F, check.attributes = F)) # also intentionally ignores names.
-  
+
   m.ig <- glm(td.ig, family = inverse.gaussian)
   expect_true(is.function(pm <- metamisc:::getPredictMethod(m.ig, two.stage = TRUE)))
   expect_true(all(unlist(pm(m.ig, td.ig, coef(m.ig))) == unlist(m.ig$fitted.values))) # == intentionally ignores names.
-  
+
   m.po <- glm(td, family = poisson)
   expect_true(is.function(pm <- metamisc:::getPredictMethod(m.po, two.stage = TRUE)))
   expect_true(all(unlist(pm(m.po, td, coef(m.po))) == unlist(m.po$fitted.values))) # == intentionally ignores names.
-  
+
   m.q <- glm(td, family = quasi)
   expect_true(is.function(pm <- metamisc:::getPredictMethod(m.q, two.stage = TRUE)))
   expect_true(all.equal(unlist(pm(m.q, td, coef(m.q))) ,as.matrix(unlist(m.q$fitted.values)),
                         use.names = F, check.attributes = F)) # also intentionally ignores names.
-  
+
   m.qb <- glm(td, family = quasibinomial)
   expect_true(is.function(pm <- metamisc:::getPredictMethod(m.qb, two.stage = TRUE)))
   expect_true(all(unlist(pm(m.qb, td, coef(m.qb))) == unlist(m.qb$fitted.values))) # == intentionally ignores names.
-  
+
   m.qp <- glm(td, family = quasipoisson)
   expect_true(is.function(pm <- metamisc:::getPredictMethod(m.qp, two.stage = TRUE)))
   expect_true(all.equal(unlist(pm(m.qp, td, coef(m.qp))) ,as.matrix(unlist(m.qp$fitted.values)),
@@ -57,49 +57,49 @@ test_that("metapred produces a model.", {
   expect_true(is.list(mp$stepwise))
   expect_true(is.list(mp$FUN))
   expect_true(is.call(mp$call))
-  
+
   expect_true(is.list(mp <- metapred(data = td, strata = "X4", family = binomial(link = "log")))) # binomial, loglink
   expect_true(inherits(mp, "metapred"))
   expect_true(is.list(mp$stepwise))
   expect_true(is.list(mp$FUN))
   expect_true(is.call(mp$call))
-  
+
   expect_true(is.list(mp <- metapred(data = td, strata = "X4"))) # gaussian
   expect_true(inherits(mp, "metapred"))
   expect_true(is.list(mp$stepwise))
   expect_true(is.list(mp$FUN))
   expect_true(is.call(mp$call))
-  
+
   expect_true(is.list(mp <- metapred(data = td.ig, strata = "X4", family = Gamma))) # Gamma
   expect_true(inherits(mp, "metapred"))
   expect_true(is.list(mp$stepwise))
   expect_true(is.list(mp$FUN))
   expect_true(is.call(mp$call))
-  
+
   expect_true(is.list(mp <- metapred(data = td.ig, strata = "X4", family = inverse.gaussian))) # inverse.gaussian
   expect_true(inherits(mp, "metapred"))
   expect_true(is.list(mp$stepwise))
   expect_true(is.list(mp$FUN))
   expect_true(is.call(mp$call))
-  
+
   expect_true(is.list(mp <- metapred(data = td, strata = "X4", family = poisson))) # poisson
   expect_true(inherits(mp, "metapred"))
   expect_true(is.list(mp$stepwise))
   expect_true(is.list(mp$FUN))
   expect_true(is.call(mp$call))
-  
+
   expect_true(is.list(mp <- metapred(data = td, strata = "X4", family = quasi))) # quasi
   expect_true(inherits(mp, "metapred"))
   expect_true(is.list(mp$stepwise))
   expect_true(is.list(mp$FUN))
   expect_true(is.call(mp$call))
-  
+
   expect_true(is.list(mp <- metapred(data = td, strata = "X4", family = quasibinomial))) # quasibinomial
   expect_true(inherits(mp, "metapred"))
   expect_true(is.list(mp$stepwise))
   expect_true(is.list(mp$FUN))
   expect_true(is.call(mp$call))
-  
+
   expect_true(is.list(mp <- metapred(data = td, strata = "X4", family = quasipoisson))) # quasipoisson
   expect_true(inherits(mp, "metapred"))
   expect_true(is.list(mp$stepwise))
@@ -110,7 +110,7 @@ test_that("metapred produces a model.", {
 test_that("coef.metapred gets the coefficients", {
   mp <- metapred(data = td, strata = "X4", family = binomial)
   expect_true(is.numeric(coef(mp)))
-  
+
   gl.b <- glm(formula = X1 ~ X2 + X3, data = td, family  = binomial)
   expect_equal(length(coef(mp)), n.cov - 1)
 })
