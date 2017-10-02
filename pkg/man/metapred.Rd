@@ -50,7 +50,7 @@ passed trough the \code{meta.method} argument.}
 
 \item{perfFUN}{Function for computing the performance of the prediction models. Default: mean squared error.}
 
-\item{genFUN}{Function computing generalizability measure using the performance measures. Default: (absolute) mean. 
+\item{genFUN}{Function computing generalizability measure using the performance measures. Default: (absolute) mean.
 \code{squareddiff} for a penalty equal to the mean squared differences between coefficients.}
 
 \item{selFUN}{Function for selecting the best method. Default: lowest value for \code{genFUN}. Should be set to

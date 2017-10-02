@@ -4,14 +4,15 @@
 \alias{recalibrate}
 \title{Recalibrate a Prediction Model}
 \usage{
-recalibrate(object, newdata, intercept = TRUE, estFUN = NULL, ...)
+recalibrate(object, newdata, f = ~1, estFUN = NULL, ...)
 }
 \arguments{
 \item{object}{A model fit object to be recalibrated, of class \code{metapred, glm} or \code{lm}, and more.}
 
 \item{newdata}{data.frame containing new data set for updating.}
 
-\item{intercept}{logical. Should the intercept be updated?}
+\item{f}{formula. What part of the model should be updated? Default: intercept only. Left-hand side may
+be left out.}
 
 \item{estFUN}{Function for model estimation. If left \code{NULL}, the function is automatically retrieved
 for \code{metapred} objects. For other objects, the function with name corresponding to the first class
@@ -24,12 +25,9 @@ Updated model fit object, of the same class as \code{object}. Generally, updated
 be retrieved with \code{coef()}.
 }
 \description{
-\code{recalibrate} is used to recalibrate a prediction model of classes \code{metapred, glm} or  \code{lm},
-and more.
+\code{recalibrate} is used to recalibrate a prediction model of classes \code{metapred, glm} or  \code{lm}.
 }
 \details{
-Currently only the intercept is updated and leaves other coefficients as well as the variances
+Currently only the coefficients are updated and leaves  the variances
 and other aspects untouched. For updating the entire model and all its statistics, see \link[stats]{update}.
-\code{recalibrate} assumes coefficients are stored in \code{object$coefficients}
-and that \code{estFUN} accepts an \code{offset} argument.
 }
