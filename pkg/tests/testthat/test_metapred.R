@@ -107,6 +107,40 @@ test_that("metapred produces a model.", {
   expect_true(is.call(mp$call))
 })
 
+test_that("metapred's stepwise is WAD.", {
+  expect_true(is.list(mp <- metamisc:::metapred(data = td, strata = "X4" ))) 
+  expect_true(inherits(mp, "metapred"))
+  expect_true(is.list(mp$stepwise))
+  expect_true(is.list(mp$FUN))
+  expect_true(is.call(mp$call))
+  expect_length(mp$coefficients, 2) # One is selected due to random fluctuation.
+  
+  set.seed(324234)
+  td.none <- data.frame(matrix(rbinom(n * (n.cov + 1), 1, .5), ncol = n.cov + 1, nrow = n))
+  expect_true(is.list(mp <- metamisc:::metapred(data = td.none, strata = "X4" ))) 
+  expect_true(inherits(mp, "metapred"))
+  expect_true(is.list(mp$stepwise))
+  expect_true(is.list(mp$FUN))
+  expect_true(is.call(mp$call))
+  expect_length(mp$coefficients, 1) # None is selected, because the data is pure noise.
+  
+  td.all <- data.frame(matrix(rbinom(n * (n.cov + 1), 1, .5), ncol = n.cov + 1, nrow = n))
+  td.all[ , 1] <- rowSums(td.all)
+  expect_true(is.list(mp <- metamisc:::metapred(data = td.all, strata = "X4" ))) 
+  expect_true(inherits(mp, "metapred"))
+  expect_true(is.list(mp$stepwise))
+  expect_true(is.list(mp$FUN))
+  expect_true(is.call(mp$call))
+  expect_length(mp$coefficients, 3) # All are selected, as predictors are good predictors.
+  
+  expect_true(is.list(mp <- metamisc:::metapred(data = td.none, strata = "X4", stepwise = FALSE ))) 
+  expect_true(inherits(mp, "metapred"))
+  expect_true(is.list(mp$stepwise))
+  expect_true(is.list(mp$FUN))
+  expect_true(is.call(mp$call))
+  expect_length(mp$coefficients, 3)  # All noise predictors are selected, because stepwise = F.
+})
+
 test_that("coef.metapred gets the coefficients", {
   mp <- metapred(data = td, strata = "X4", family = binomial)
   expect_true(is.numeric(coef(mp)))
@@ -137,7 +171,7 @@ test_that("metapred.family and $family get the family.", {
   expect_equal(family(gl), family(mp))
 })
 
-test_that("metapred.formula and $formula get the formla (test-dependent).", {# formula of glm is specific for this data set!
+test_that("metapred.formula and $formula get the formula (test-dependent).", {# formula of glm is specific for this data set!
   expect_true(is.list(mp <- metapred(data = td, strata = "X4", family = binomial(link = "log"))))
   gl <- glm(formula = X1 ~ X3, data = td, family = binomial(link = "log"))
   expect_equal(formula(gl), formula(mp))

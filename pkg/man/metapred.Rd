@@ -67,3 +67,6 @@ tree of estimates of the coefficients \code{(coef)}, performance measures \code{
 Generalized stepwise regression for obtaining a prediction model with adequate performance across data sets. Requires
 data from individuals in multiple studies.
 }
+\author{
+Valentijn de Jong
+}

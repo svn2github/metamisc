@@ -10,10 +10,15 @@
 # Remove Reduce() from perfStep, and make perfStep() compatible with multiple data sets.
 # This means that cvFUN = fixed does not work correctly either.
 
+# Changed:
+# Added more robust tests for stepwise.
+
 #' Generalized Stepwise Regression for prediction models
 #'
 #' Generalized stepwise regression for obtaining a prediction model with adequate performance across data sets. Requires
 #' data from individuals in multiple studies.
+#' 
+#' @author Valentijn de Jong
 #'
 #' @param data data.frame containing the datasets.
 #' @param strata Name of the strata (e.g. studies or clusters) variable, as character. Used for two-stage MA only.
@@ -188,7 +193,7 @@ perfStep <- function(newdata, b, fit, two.stage, ccs = rep(list(1:ncol(newdata),
   if (length(b) > 0) {
     if (isTRUE(recal.int))
       for (i in 1:length(b))
-        b[[i]][1] <- computeRecal(object = fit, newdata = newdata, b = b[[i]], estFUN = estFUN)[1]
+        b[[i]][1] <- b[[i]][1] + computeRecal(object = fit, newdata = newdata, b = b[[i]], estFUN = estFUN)[1]
   } else
     stop("length(b) must be > 0; to estimate performance.")
 

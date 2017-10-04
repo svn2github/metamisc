@@ -11,8 +11,8 @@ recalibrate(object, newdata, f = ~1, estFUN = NULL, ...)
 
 \item{newdata}{data.frame containing new data set for updating.}
 
-\item{f}{formula. What part of the model should be updated? Default: intercept only. Left-hand side may
-be left out.}
+\item{f}{formula. Which coefficients of the model should be updated? Default: intercept only. Left-hand side may
+be left out. See \link[stats]{formula} for details.}
 
 \item{estFUN}{Function for model estimation. If left \code{NULL}, the function is automatically retrieved
 for \code{metapred} objects. For other objects, the function with name corresponding to the first class
@@ -21,13 +21,13 @@ of the object is taken. E.g. \code{glm()} for \code{glm} objects.}
 \item{...}{Optional arguments to pass to \code{estFUN}.}
 }
 \value{
-Updated model fit object, of the same class as \code{object}. Generally, updated coefficients can
+Recalibrated model fit object, of the same class as \code{object}. Generally, updated coefficients can
 be retrieved with \code{coef()}.
 }
 \description{
 \code{recalibrate} is used to recalibrate a prediction model of classes \code{metapred, glm} or  \code{lm}.
 }
 \details{
-Currently only the coefficients are updated and leaves  the variances
-and other aspects untouched. For updating the entire model and all its statistics, see \link[stats]{update}.
+Currently only the coefficients are updated and the variances and other aspects are left untouched. 
+For updating the entire model and all its statistics, see \link[stats]{update}.
 }
