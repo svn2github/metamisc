@@ -26,17 +26,17 @@ it is assumed the first column in the data set is the outcome, and all remaining
 \item{two.stage}{Logical. Should two-stage meta-analysis be used (default)? Or one stage
 (not implemented yet)}
 
-\item{center.out}{Should the outcome be centered within trials?}
+\item{center.out}{Logical. Should the outcome be centered within studies?}
 
-\item{center.cov}{Should covariates be centered within trials? Necessary for valid results for one-stage MA.}
+\item{center.cov}{Logical. Should covariates be centered within studies? Necessary for valid results for one-stage MA.}
 
-\item{recal.int}{logical. Should the intercept be recalibrated?}
+\item{recal.int}{Logical. Should the intercept be recalibrated?}
 
 \item{cvFUN}{Cross-validation method, on the study (i.e. cluster or stratum) level. "
 l1o" for leave-one-out cross-validation (default). "bootstrap" for bootstrap. Or "fixed", for one or more data sets
 which are only used for validation. A user written function may be supplied as well.}
 
-\item{cv.k}{Parameter for cvFUN. For bootstrap, this is the number of bootstraps. For fixed, this is a vector
+\item{cv.k}{Parameter for cvFUN. For \code{cvFUN="bootstrap"}, this is the number of bootstraps. For \code{cvFUN="fixed"}, this is a vector
 of the indices of the (sorted) data sets.}
 
 \item{metaFUN}{Function for computing the meta-analytic coefficient estimates in two-stage MA. Default: \link[metafor]{rma}
@@ -66,6 +66,9 @@ tree of estimates of the coefficients \code{(coef)}, performance measures \code{
 \description{
 Generalized stepwise regression for obtaining a prediction model with adequate performance across data sets. Requires
 data from individuals in multiple studies.
+}
+\references{
+Debray TPA, Moons KGM, Ahmed I, Koffijberg H, Riley RD. A framework for developing, implementing, and evaluating clinical prediction models in an individual participant data meta-analysis. \emph{Stat Med}. 2013 Aug 15;32(18):3158-80.
 }
 \author{
 Valentijn de Jong

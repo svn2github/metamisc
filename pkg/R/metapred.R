@@ -19,6 +19,9 @@
 #' data from individuals in multiple studies.
 #' 
 #' @author Valentijn de Jong
+#' 
+#' @references Debray TPA, Moons KGM, Ahmed I, Koffijberg H, Riley RD. A framework for developing, implementing, and evaluating clinical prediction models in an individual participant data meta-analysis. \emph{Stat Med}. 2013 Aug 15;32(18):3158-80. 
+
 #'
 #' @param data data.frame containing the datasets.
 #' @param strata Name of the strata (e.g. studies or clusters) variable, as character. Used for two-stage MA only.
@@ -29,13 +32,13 @@
 #' @param stepwise Logical. Should stepwise selection be performed?
 #' @param two.stage Logical. Should two-stage meta-analysis be used (default)? Or one stage
 #' (not implemented yet)
-#' @param center.out Should the outcome be centered within trials?
-#' @param center.cov Should covariates be centered within trials? Necessary for valid results for one-stage MA.
-#' @param recal.int logical. Should the intercept be recalibrated?
+#' @param center.out Logical. Should the outcome be centered within studies?
+#' @param center.cov Logical. Should covariates be centered within studies? Necessary for valid results for one-stage MA.
+#' @param recal.int Logical. Should the intercept be recalibrated?
 #' @param cvFUN Cross-validation method, on the study (i.e. cluster or stratum) level. "
 #' l1o" for leave-one-out cross-validation (default). "bootstrap" for bootstrap. Or "fixed", for one or more data sets
 #' which are only used for validation. A user written function may be supplied as well.
-#' @param cv.k Parameter for cvFUN. For bootstrap, this is the number of bootstraps. For fixed, this is a vector
+#' @param cv.k Parameter for cvFUN. For \code{cvFUN="bootstrap"}, this is the number of bootstraps. For \code{cvFUN="fixed"}, this is a vector
 #' of the indices of the (sorted) data sets.
 #' @param metaFUN Function for computing the meta-analytic coefficient estimates in two-stage MA. Default: \link[metafor]{rma}
 #' from the metafor package is used. Default settings are univariate random effects, estimated with "REML". Method can be
@@ -54,6 +57,7 @@
 #' tree of estimates of the coefficients \code{(coef)}, performance measures \code{(perf)}, generalizability measures
 #' \code{(gen)} in \code{stepwise}, and more.
 #'
+
 #' @import stats
 #'
 #' @importFrom stats formula
