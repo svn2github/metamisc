@@ -5,10 +5,10 @@
 \title{Generalized Stepwise Regression for prediction models}
 \usage{
 metapred(data, strata, formula = NULL, estFUN = "glm", stepwise = TRUE,
-  two.stage = TRUE, center.out = FALSE, center.cov = FALSE,
-  recal.int = FALSE, cvFUN = NULL, cv.k = NULL, metaFUN = NULL,
-  meta.method = "REML", predFUN = NULL, perfFUN = NULL, genFUN = NULL,
-  selFUN = "which.min", ...)
+  center.out = FALSE, center.cov = FALSE, recal.int = FALSE,
+  cvFUN = NULL, cv.k = NULL, metaFUN = NULL, meta.method = "REML",
+  predFUN = NULL, perfFUN = NULL, genFUN = NULL, selFUN = "which.min",
+  ...)
 }
 \arguments{
 \item{data}{data.frame containing the datasets.}
@@ -23,12 +23,9 @@ it is assumed the first column in the data set is the outcome, and all remaining
 
 \item{stepwise}{Logical. Should stepwise selection be performed?}
 
-\item{two.stage}{Logical. Should two-stage meta-analysis be used (default)? Or one stage
-(not implemented yet)}
-
 \item{center.out}{Logical. Should the outcome be centered within studies?}
 
-\item{center.cov}{Logical. Should covariates be centered within studies? Necessary for valid results for one-stage MA.}
+\item{center.cov}{Logical. Should covariates be centered within studies?}
 
 \item{recal.int}{Logical. Should the intercept be recalibrated?}
 
@@ -36,8 +33,8 @@ it is assumed the first column in the data set is the outcome, and all remaining
 l1o" for leave-one-out cross-validation (default). "bootstrap" for bootstrap. Or "fixed", for one or more data sets
 which are only used for validation. A user written function may be supplied as well.}
 
-\item{cv.k}{Parameter for cvFUN. For \code{cvFUN="bootstrap"}, this is the number of bootstraps. For \code{cvFUN="fixed"}, this is a vector
-of the indices of the (sorted) data sets.}
+\item{cv.k}{Parameter for cvFUN. For \code{cvFUN="bootstrap"}, this is the number of bootstraps. For \code{cvFUN="fixed"}, 
+this is a vector of the indices of the (sorted) data sets.}
 
 \item{metaFUN}{Function for computing the meta-analytic coefficient estimates in two-stage MA. Default: \link[metafor]{rma}
 from the metafor package is used. Default settings are univariate random effects, estimated with "REML". Method can be
@@ -56,7 +53,7 @@ passed trough the \code{meta.method} argument.}
 \item{selFUN}{Function for selecting the best method. Default: lowest value for \code{genFUN}. Should be set to
 "which.max" if high values for \code{genFUN} indicate a good model.}
 
-\item{...}{To pass arguments to estFUN (e.g. family = "binomial"), metaFUN (e.g. method = "DL") or other methods.}
+\item{...}{To pass arguments to estFUN (e.g. family = "binomial"), or other methods.}
 }
 \value{
 \code{metapred} A list of class \code{metapred}, containing the final coefficients in \code{coefficients}, and the stepwise
@@ -67,8 +64,24 @@ tree of estimates of the coefficients \code{(coef)}, performance measures \code{
 Generalized stepwise regression for obtaining a prediction model with adequate performance across data sets. Requires
 data from individuals in multiple studies.
 }
+\examples{
+data(DVTipd)
+DVTipd$cluster <- 1:4 # Add a fictional clustering to the data set.
+metamisc:::metapred(DVTipd, strata = "cluster", f = dvt ~ sex + vein + malign, family = binomial)
+metamisc:::metapred(DVTipd, strata = "cluster", f = dvt ~ sex + vein + malign, family = binomial, stepwise = FALSE)
+metamisc:::metapred(DVTipd, strata = "cluster", f = dvt ~ sex + altdiagn + histdvt, family = binomial, recal.int = TRUE)
+metamisc:::metapred(DVTipd, strata = "cluster", f = dvt ~ sex + altdiagn + histdvt, family = binomial, meta.method = "DL")
+
+# By default, metapred assumes the first column is the outcome.
+DVTipd.reordered <- DVTipd[c("dvt", "ddimdich", "histdvt", "cluster")]
+mp <- metamisc:::metapred(DVTipd.reordered, strata = "cluster", family = binomial)
+fitted <- predict(mp, newdata = DVTipd.reordered)
+
+
+}
 \references{
-Debray TPA, Moons KGM, Ahmed I, Koffijberg H, Riley RD. A framework for developing, implementing, and evaluating clinical prediction models in an individual participant data meta-analysis. \emph{Stat Med}. 2013 Aug 15;32(18):3158-80.
+Debray TPA, Moons KGM, Ahmed I, Koffijberg H, Riley RD. A framework for developing, implementing, and evaluating 
+clinical prediction models in an individual participant data meta-analysis. \emph{Stat Med}. 2013 Aug 15;32(18):3158-80.
 }
 \author{
 Valentijn de Jong

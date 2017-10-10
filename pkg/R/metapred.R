@@ -20,8 +20,8 @@
 #' 
 #' @author Valentijn de Jong
 #' 
-#' @references Debray TPA, Moons KGM, Ahmed I, Koffijberg H, Riley RD. A framework for developing, implementing, and evaluating clinical prediction models in an individual participant data meta-analysis. \emph{Stat Med}. 2013 Aug 15;32(18):3158-80. 
-
+#' @references Debray TPA, Moons KGM, Ahmed I, Koffijberg H, Riley RD. A framework for developing, implementing, and evaluating 
+#' clinical prediction models in an individual participant data meta-analysis. \emph{Stat Med}. 2013 Aug 15;32(18):3158-80. 
 #'
 #' @param data data.frame containing the datasets.
 #' @param strata Name of the strata (e.g. studies or clusters) variable, as character. Used for two-stage MA only.
@@ -30,16 +30,14 @@
 #' (except \code{strata}) are predictors. See \link[stats]{formula} for details.
 #' @param estFUN Function for estimating the model in the first stage. Currently "lm" and "glm" are supported.
 #' @param stepwise Logical. Should stepwise selection be performed?
-#' @param two.stage Logical. Should two-stage meta-analysis be used (default)? Or one stage
-#' (not implemented yet)
 #' @param center.out Logical. Should the outcome be centered within studies?
-#' @param center.cov Logical. Should covariates be centered within studies? Necessary for valid results for one-stage MA.
+#' @param center.cov Logical. Should covariates be centered within studies?
 #' @param recal.int Logical. Should the intercept be recalibrated?
 #' @param cvFUN Cross-validation method, on the study (i.e. cluster or stratum) level. "
 #' l1o" for leave-one-out cross-validation (default). "bootstrap" for bootstrap. Or "fixed", for one or more data sets
 #' which are only used for validation. A user written function may be supplied as well.
-#' @param cv.k Parameter for cvFUN. For \code{cvFUN="bootstrap"}, this is the number of bootstraps. For \code{cvFUN="fixed"}, this is a vector
-#' of the indices of the (sorted) data sets.
+#' @param cv.k Parameter for cvFUN. For \code{cvFUN="bootstrap"}, this is the number of bootstraps. For \code{cvFUN="fixed"}, 
+#' this is a vector of the indices of the (sorted) data sets.
 #' @param metaFUN Function for computing the meta-analytic coefficient estimates in two-stage MA. Default: \link[metafor]{rma}
 #' from the metafor package is used. Default settings are univariate random effects, estimated with "REML". Method can be
 #' passed trough the \code{meta.method} argument.
@@ -51,26 +49,40 @@
 #' \code{squareddiff} for a penalty equal to the mean squared differences between coefficients.
 #' @param selFUN Function for selecting the best method. Default: lowest value for \code{genFUN}. Should be set to
 #' "which.max" if high values for \code{genFUN} indicate a good model.
-#' @param ... To pass arguments to estFUN (e.g. family = "binomial"), metaFUN (e.g. method = "DL") or other methods.
+#' @param ... To pass arguments to estFUN (e.g. family = "binomial"), or other methods.
 #'
 #' @return \code{metapred} A list of class \code{metapred}, containing the final coefficients in \code{coefficients}, and the stepwise
 #' tree of estimates of the coefficients \code{(coef)}, performance measures \code{(perf)}, generalizability measures
 #' \code{(gen)} in \code{stepwise}, and more.
 #'
-
+#' @examples 
+#' data(DVTipd)
+#' DVTipd$cluster <- 1:4 # Add a fictional clustering to the data set.
+#' metamisc:::metapred(DVTipd, strata = "cluster", f = dvt ~ sex + vein + malign, family = binomial)
+#' metamisc:::metapred(DVTipd, strata = "cluster", f = dvt ~ sex + vein + malign, family = binomial, stepwise = FALSE)
+#' metamisc:::metapred(DVTipd, strata = "cluster", f = dvt ~ sex + altdiagn + histdvt, family = binomial, recal.int = TRUE)
+#' metamisc:::metapred(DVTipd, strata = "cluster", f = dvt ~ sex + altdiagn + histdvt, family = binomial, meta.method = "DL")
+#' 
+#' # By default, metapred assumes the first column is the outcome.
+#' DVTipd.reordered <- DVTipd[c("dvt", "ddimdich", "histdvt", "cluster")]
+#' mp <- metamisc:::metapred(DVTipd.reordered, strata = "cluster", family = binomial)
+#' fitted <- predict(mp, newdata = DVTipd.reordered)
+#' 
+#' 
 #' @import stats
 #'
 #' @importFrom stats formula
 #'
 #' @export
 
-metapred <- function(data, strata, formula = NULL, estFUN = "glm", stepwise = TRUE, two.stage = TRUE, center.out = FALSE,
+metapred <- function(data, strata, formula = NULL, estFUN = "glm", stepwise = TRUE, center.out = FALSE,
                      center.cov = FALSE, recal.int = FALSE, cvFUN = NULL, cv.k = NULL,
                      metaFUN = NULL, meta.method = "REML", predFUN = NULL, perfFUN = NULL, genFUN = NULL, selFUN = "which.min",
                      ...) {
   call   <- match.call()
   data   <- as.data.frame(data)
   estFUN <- match.fun(estFUN)
+  two.stage <- TRUE
 
   if (is.null(formula)) formula <- stats::formula(data[ , -which(colnames(data) == strata)])
   strata.i  <- data[, which(colnames(data) == strata)]
@@ -173,7 +185,8 @@ metapred <- function(data, strata, formula = NULL, estFUN = "glm", stepwise = TR
               family = family,
               FUN = list(cvFUN = cvFUN, perfFUN = perfFUN, metaFUN = metaFUN, genFUN = genFUN,
                          selFUN = selFUN, predFUN = step.perf$predictMethod, estFUN = estFUN.name),
-              options = list(cv.k = cv.k, meta.method = meta.method, recal.int = recal.int)
+              options = list(cv.k = cv.k, meta.method = meta.method, recal.int = recal.int,
+                             center.cov = center.cov, center.out = center.out)
   )
 
   class(out) <- c("metapred")
