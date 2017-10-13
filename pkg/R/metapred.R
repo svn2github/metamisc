@@ -20,8 +20,9 @@
 #' 
 #' @author Valentijn de Jong
 #' 
-#' @references Debray TPA, Moons KGM, Ahmed I, Koffijberg H, Riley RD. A framework for developing, implementing, and evaluating 
-#' clinical prediction models in an individual participant data meta-analysis. \emph{Stat Med}. 2013 Aug 15;32(18):3158-80. 
+#' @references Debray TPA, Moons KGM, Ahmed I, Koffijberg H, Riley RD. A framework for developing, implementing, 
+#' and evaluating clinical prediction models in an individual participant data meta-analysis. 
+#' \emph{Stat Med}. 2013;32(18):3158-80. 
 #'
 #' @param data data.frame containing the datasets.
 #' @param strata Name of the strata (e.g. studies or clusters) variable, as character. Used for two-stage MA only.

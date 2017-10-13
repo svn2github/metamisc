@@ -14,10 +14,11 @@
 #' The \code{\link{fat}} function implements several previously proposed tests for detecting funnel plot asymmetry, 
 #' which can be used when the presence of between-study heterogeneity is low or neglegible.
 #' 
-#' @param b Vector with the effect size of each study. Examples are log odds ratio, log hazards ratio, log relative risk. 
+#' @param b Vector with the effect size of each study. Examples are log odds ratio, log hazards ratio, 
+#' log relative risk. 
 #' @param b.se vector with the standard error of the effect size of each study
-#' @param method Method for testing funnel plot asymmetry, defaults to \code{"E-UW"} (Egger's test). Other options are \code{E-FIV}. 
-#' More info in "Details"
+#' @param method Method for testing funnel plot asymmetry, defaults to \code{"E-UW"} (Egger's test). 
+#' Other options are \code{E-FIV}. More info in "Details"
 #'
 #' @details A common method to test the presence of small-study effects is given as the 
 #' following unweighted regression model (\code{method="E-UW"}, Egger 1997): 
