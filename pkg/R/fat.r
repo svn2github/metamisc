@@ -11,16 +11,18 @@
 #' The premise is that the scatter of plots should reflect a funnel shape, if small-study 
 #' effects do not exist. However, when small studies are predominately in one direction (usually the 
 #' direction of larger effect sizes), asymmetry will ensue.\cr \cr
-#' The \code{\link{fat}} function implements several previously proposed tests for detecting funnel plot asymmetry, 
-#' which can be used when the presence of between-study heterogeneity is low or neglegible.
+#' The \code{\link{fat}} function implements several tests for detecting funnel plot asymmetry, 
+#' which can be used when the presence of between-study heterogeneity in treatment effect is relatively low.
 #' 
 #' @param b Vector with the effect size of each study. Examples are log odds ratio, log hazards ratio, 
 #' log relative risk. 
-#' @param b.se Vector with the standard error of the effect size of each study
+#' @param b.se Optional vector with the standard error of the effect size of each study
 #' @param n.total Optional vector with the total sample size of each study
-#' @param n.events Optional vector with the total number of observed events for each study
+#' @param d.total Optional vector with the total number of observed events for each study
+#' @param d1 Optional vector with the total number of observed events in the exposed groups
+#' @param d2 Optional vector with the total number of observed events in the unexposed groups
 #' @param method Method for testing funnel plot asymmetry, defaults to \code{"E-UW"} (Egger's test). 
-#' Other options are \code{E-FIV}, \code{M-FIV}, \code{M-FPV}. More info in "Details"
+#' Other options are \code{E-FIV}, \code{M-FIV}, \code{M-FPV}, \code{D-FIV} and \code{D-FAV}. More info in "Details"
 #'
 #' @details A common method to test the presence of small-study effects is given as the 
 #' following unweighted regression model (\code{method="E-UW"}, Egger 1997): 
@@ -39,8 +41,21 @@
 #' \deqn{\hat{\upbeta}_k = a + b \,n_k + \epsilon_k \;,\; \epsilon_k \sim \mathcal{N}(0, \phi \; \widehat \mathrm{var}(\hat{\upbeta}_k))}{b = B0 + B1*n.total + e;  e~N(0, P*b.se^2)}
 #' Macaskill et al. also proposed an alternative test where a 'pooled' estimate of the outcome proportion is used
 #' for the variance \eqn{\widehat \mathrm{var}(\hat{b}_k)}{b.se^2} (\code{method="M-FPV"}, Macaskill 2001):
-#' \deqn{\hat{\upbeta}_k = a + b \,n_k + \epsilon_k \;,\; \epsilon_k \sim \mathcal{N}\left(0, \phi \; \frac{1}{d_k (1-d_k/n_k)}\right)}{b = B0 + B1*n.total + e;  e~N(0, P/(n.events * (1-n.events/n.total)))}
-#' For studies with zero events, a continuity correction is applied by adding 0.5 to all cells.
+#' \deqn{\hat{\upbeta}_k = a + b \,n_k + \epsilon_k \;,\; \epsilon_k \sim \mathcal{N}\left(0, \phi \; \frac{1}{d_k (1-d_k/n_k)}\right)}{b = B0 + B1*n.total + e;  e~N(0, P/(d.total * (1-d.total/n.total)))}
+#' For studies with zero events, a continuity correction is applied by adding 0.5 to cell counts.
+#' A modification of Macaskill's test was proposed by Peters et al. to obtain more balanced type-I error rates 
+#' in the tail probability areas  (\code{method="P-FPV"}, Peters 2006):
+#' \deqn{\hat{\upbeta}_k = a + b \,\frac{1}{n_k} + \epsilon_k \;,\; \epsilon_k \sim \mathcal{N}\left(0, \phi \; \frac{1}{d_k (1-d_k/n_k)}\right)}{b = B0 + B1/n.total + e;  e~N(0, P/(d.total * (1-d.total/n.total)))}
+#' Again, 0.5 is added to all cells for studies with zero events.\cr
+#' \cr
+#' Because the use of aforementioned tests may be less appropriate in the presence of survival data, Debray et al. 
+#' proposed using the total number of events as independent variable (\code{D-FIV}, Debray 2017):
+#' \deqn{\hat{\upbeta}_k = a + b\, \frac{1}{d_k} + \epsilon_k  \;,\; \epsilon_k \sim \mathcal{N}(0, \phi \; \widehat \mathrm{var}(\hat{\upbeta}_k))}{b = B0 + B1/d.total + e;  e~N(0, P*b.se^2)}
+#' For studies with zero events, the total number of observed events is set to 1.
+#' Alternatively, when \eqn{\widehat \mathrm{var}(\hat{\upbeta}_k)}{b.se} is unknown or derived from small samples, 
+#' Debray at al.proposed to use the following regression model (\code{D-FAV}, Debray 2017):
+#' \deqn{\hat{\upbeta}_k = a + b\, \frac{1}{d_k} + \epsilon_k  \;,\; \epsilon_k \sim \mathcal{N}\left(0, \phi \; \left(\frac{1}{d_{k1}}+\frac{1}{d_{k2}}\right)\right)}{b = B0 + B1/d.total + e;  e~N(0, P/(1/d1 + 1/d2))}
+
 
 
 #' 
@@ -63,6 +78,9 @@
 #' Macaskill P, Walter SD, Irwig L. A comparison of methods to detect publication bias in meta-analysis. 
 #' \emph{Stat Med}. 2001;20(4):641--54.\cr 
 #' \cr
+#' Peters JL, Sutton AJ, Jones DR, Abrams KR, Rushton L. Comparison of two methods to detect publication bias 
+#' in meta-analysis. \emph{JAMA}. 2006 Feb 8;295(6):676--80.\cr
+#' \cr 
 #' Sterne JA, Gavaghan D, Egger M. Publication and related bias in meta-analysis: power of statistical tests 
 #' and prevalence in the literature. \emph{J Clin Epidemiol}. 2000;53(11):1119--29. 
 
@@ -73,8 +91,11 @@
 #' b <- log(Fibrinogen$HR)
 #' b.se <- ((log(Fibrinogen$HR.975) - log(Fibrinogen$HR.025))/(2*qnorm(0.975)))
 #' n.total <- Fibrinogen$N.total
+#' d.total <- Fibrinogen$N.events
+#' 
 #' fat(b=b, b.se=b.se)
-#' fat(b=b, b.se=b.se, n.total=n.total, method="M-FIV")
+#' fat(b=b, n.total=n.total, d.total=d.total, method="P-FPV")
+#' fat(b=b, b.se=b.se, d.total=d.total, method="D-FIV")
 
 #'
 #' @import stats
@@ -84,11 +105,17 @@
 #' @export
 #' 
 #'
-fat <- function(b, b.se, n.total, n.events, method="E-UW") 
+fat <- function(b, b.se, n.total, d.total, d1, d2, method="E-UW") 
 {
+  if (missing(b)) {
+    stop ("No values given for 'b'")
+  }
   
   # Identify studies with complete information
   if (method == "E-UW") {
+    if (missing(b.se)) {
+      stop ("No values given for 'b.se'")
+    }
     if (length(b) != length(b.se)) {
       stop("Incompatible vector sizes for 'b' and 'b.se'!")
     }
@@ -96,6 +123,9 @@ fat <- function(b, b.se, n.total, n.events, method="E-UW")
     ds <- as.data.frame(cbind(b, b.se))
     colnames(ds) <- c("y","x")
   } else if (method== "E-FIV") {
+    if (missing(b.se)) {
+      stop ("No values given for 'b.se'")
+    }
     if (length(b) != length(b.se)) {
       stop("Incompatible vector sizes for 'b' and 'b.se'!")
     }
@@ -103,6 +133,9 @@ fat <- function(b, b.se, n.total, n.events, method="E-UW")
     ds <- as.data.frame(cbind(b, b.se, (1/(b.se**2))))
     colnames(ds) <- c("y","x","w")
   } else if (method == "M-FIV") {
+    if (missing(b.se)) {
+      stop ("No values given for 'b.se'")
+    }
     if (missing(n.total)) {
       stop ("No values given for 'n.total'")
     }
@@ -119,25 +152,95 @@ fat <- function(b, b.se, n.total, n.events, method="E-UW")
     if (missing(n.total)) {
       stop ("No values given for 'n.total'")
     }
-    if (missing(n.events)) {
-      stop ("No values given for 'n.events'")
+    if (missing(d.total)) {
+      stop ("No values given for 'd.total'")
     }
     if (length(b) != length(n.total)) {
       stop("Incompatible vector sizes for 'b' and 'n.total'!")
     }
-    if (length(b) != length(n.events)) {
-      stop("Incompatible vector sizes for 'b' and 'n.events'!")
+    if (length(b) != length(d.total)) {
+      stop("Incompatible vector sizes for 'b' and 'd.total'!")
     }
-    studies.complete <- c(!is.na(b) & !is.na(n.events) & !is.na(n.total))
+    studies.complete <- c(!is.na(b) & !is.na(d.total) & !is.na(n.total))
     
     # Consider continuity corrections
-    n.events.cc <- n.events
-    n.events.cc[n.events==0] <- 1 #0.5 event in exposed group and 0.5 event in non-exposed group
-    n.total[n.events==0] <- n.total[n.events==0]+2 #2*0.5 in the events, and 2*0.5 in the non-events
+    d.total.cc <- d.total
+    d.total.cc[d.total==0] <- 1 #0.5 event in exposed group and 0.5 event in non-exposed group
+    n.total[d.total==0] <- n.total[d.total==0]+2 #2*0.5 in the events, and 2*0.5 in the non-events
     
-    ds <- as.data.frame(cbind(b, n.total, (n.events.cc*(1-n.events.cc/n.total))))
+    ds <- as.data.frame(cbind(b, n.total, (d.total.cc*(1-d.total.cc/n.total))))
     colnames(ds) <- c("y","x","w")
-  }
+  } else if (method=="P-FPV") {
+    if (missing(n.total)) {
+      stop ("No values given for 'n.total'")
+    }
+    if (missing(d.total)) {
+      stop ("No values given for 'd.total'")
+    }
+    if (length(b) != length(n.total)) {
+      stop("Incompatible vector sizes for 'b' and 'n.total'!")
+    }
+    if (length(b) != length(d.total)) {
+      stop("Incompatible vector sizes for 'b' and 'd.total'!")
+    }
+    studies.complete <- c(!is.na(b) & !is.na(d.total) & !is.na(n.total))
+    
+    # Consider continuity corrections
+    d.total.cc <- d.total
+    d.total.cc[d.total==0] <- 1 #0.5 event in exposed group and 0.5 event in non-exposed group
+    n.total[d.total==0] <- n.total[d.total==0]+2 #2*0.5 in the events, and 2*0.5 in the non-events
+    
+    ds <- as.data.frame(cbind(b, 1/n.total, (d.total.cc*(1-d.total.cc/n.total))))
+    colnames(ds) <- c("y","x","w")
+  } else if (method=="D-FIV") {
+    if (missing(b.se)) {
+      stop ("No values given for 'b.se'")
+    }
+    if (missing(d.total)) {
+      stop ("No values given for 'd.total'")
+    }
+    if (length(b) != length(b.se)) {
+      stop("Incompatible vector sizes for 'b' and 'b.se'!")
+    }
+    if (length(b) != length(d.total)) {
+      stop("Incompatible vector sizes for 'b' and 'd.total'!")
+    }
+    studies.complete <- c(!is.na(b) & !is.na(b.se) & !is.na(d.total))
+    
+    # Consider continuity corrections
+    d.total.cc <- d.total
+    d.total.cc[d.total==0] <- 1 #0.5 event in exposed group and 0.5 event in non-exposed group
+
+    ds <- as.data.frame(cbind(b, 1/d.total.cc, (1/(b.se**2))))
+    colnames(ds) <- c("y","x","w")
+  } else if (method=="D-FAV") {
+    if (missing(d1)) {
+      stop ("No values given for 'd1'")
+    }
+    if (missing(d2)) {
+      stop ("No values given for 'd2'")
+    }
+    if (length(b) != length(d1)) {
+      stop("Incompatible vector sizes for 'b' and 'd1'!")
+    }
+    if (length(b) != length(d2)) {
+      stop("Incompatible vector sizes for 'b' and 'd2'!")
+    }
+    if (!missing(d.total)) {
+      if (sum(d1+d2!=d.total) > 0)
+        stop("Incompatible information between 'd.total', 'd1' and 'd2'")
+    }
+    studies.complete <- c(!is.na(b) & !is.na(d1) & !is.na(d2))
+    
+    # Consider continuity corrections
+    d1.cc <- d1
+    d2.cc <- d2
+    d1.cc[(d1==0 | d2==0)] <- d1.cc[(d1==0 | d2==0)]+0.5 #0.5 event in exposed group and 0.5 event in non-exposed group
+    d2.cc[(d1==0 | d2==0)] <- d2.cc[(d1==0 | d2==0)]+0.5
+    
+    ds <- as.data.frame(cbind(b, 1/(d1.cc+d2.cc),  1/((1/d1.cc)+(1/d2.cc))))
+    colnames(ds) <- c("y","x","w")
+  } 
   else {
     stop("Method for testing funnel plot asymmetry not supported")
   }
@@ -153,7 +256,7 @@ fat <- function(b, b.se, n.total, n.events, method="E-UW")
   }
 
   
-  if (method %in% c("E-FIV", "M-FIV", "M-FPV")) {
+  if (method %in% c("E-FIV", "M-FIV", "M-FPV", "P-FPV", "D-FIV", "D-FAV")) {
     suppressWarnings(m.fat <- try(glm(y~x, weights=ds$w, data=ds), silent=T))
   } else if (method=="E-UW")  {
     suppressWarnings(m.fat <- try(glm(y~x, data=ds), silent=T))
@@ -170,7 +273,10 @@ fat <- function(b, b.se, n.total, n.events, method="E-UW")
     p.fat <- 2*pt(-abs(z.fat),df=(nstudies-2))
   }
 
-  out <- list(pval = p.fat, model = m.fat)
+  out <- list()
+  out$call <- match.call()
+  out$pval <- p.fat
+  out$model <- m.fat
   class(out) <- "fat"
   return(out)
 }

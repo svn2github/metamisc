@@ -4,20 +4,24 @@
 \alias{fat}
 \title{Regression tests for detecting funnel plot asymmetry}
 \usage{
-fat(b, b.se, n.total, n.events, method = "E-UW")
+fat(b, b.se, n.total, d.total, d1, d2, method = "E-UW")
 }
 \arguments{
 \item{b}{Vector with the effect size of each study. Examples are log odds ratio, log hazards ratio, 
 log relative risk.}
 
-\item{b.se}{Vector with the standard error of the effect size of each study}
+\item{b.se}{Optional vector with the standard error of the effect size of each study}
 
 \item{n.total}{Optional vector with the total sample size of each study}
 
-\item{n.events}{Optional vector with the total number of observed events for each study}
+\item{d.total}{Optional vector with the total number of observed events for each study}
+
+\item{d1}{Optional vector with the total number of observed events in the exposed groups}
+
+\item{d2}{Optional vector with the total number of observed events in the unexposed groups}
 
 \item{method}{Method for testing funnel plot asymmetry, defaults to \code{"E-UW"} (Egger's test). 
-Other options are \code{E-FIV}, \code{M-FIV}, \code{M-FPV}. More info in "Details"}
+Other options are \code{E-FIV}, \code{M-FIV}, \code{M-FPV}, \code{D-FIV} and \code{D-FAV}. More info in "Details"}
 }
 \value{
 a list containing the following entries:
@@ -38,8 +42,8 @@ depicted against a measure of precision or sample size.
 The premise is that the scatter of plots should reflect a funnel shape, if small-study 
 effects do not exist. However, when small studies are predominately in one direction (usually the 
 direction of larger effect sizes), asymmetry will ensue.\cr \cr
-The \code{\link{fat}} function implements several previously proposed tests for detecting funnel plot asymmetry, 
-which can be used when the presence of between-study heterogeneity is low or neglegible.
+The \code{\link{fat}} function implements several tests for detecting funnel plot asymmetry, 
+which can be used when the presence of between-study heterogeneity in treatment effect is relatively low.
 }
 \details{
 A common method to test the presence of small-study effects is given as the 
@@ -59,16 +63,31 @@ proposed to use the following regression model (\code{method="M-FIV"}, Macaskill
 \deqn{\hat{\upbeta}_k = a + b \,n_k + \epsilon_k \;,\; \epsilon_k \sim \mathcal{N}(0, \phi \; \widehat \mathrm{var}(\hat{\upbeta}_k))}{b = B0 + B1*n.total + e;  e~N(0, P*b.se^2)}
 Macaskill et al. also proposed an alternative test where a 'pooled' estimate of the outcome proportion is used
 for the variance \eqn{\widehat \mathrm{var}(\hat{b}_k)}{b.se^2} (\code{method="M-FPV"}, Macaskill 2001):
-\deqn{\hat{\upbeta}_k = a + b \,n_k + \epsilon_k \;,\; \epsilon_k \sim \mathcal{N}\left(0, \phi \; \frac{1}{d_k (1-d_k/n_k)}\right)}{b = B0 + B1*n.total + e;  e~N(0, P/(n.events * (1-n.events/n.total)))}
-For studies with zero events, a continuity correction is applied by adding 0.5 to all cells.
+\deqn{\hat{\upbeta}_k = a + b \,n_k + \epsilon_k \;,\; \epsilon_k \sim \mathcal{N}\left(0, \phi \; \frac{1}{d_k (1-d_k/n_k)}\right)}{b = B0 + B1*n.total + e;  e~N(0, P/(d.total * (1-d.total/n.total)))}
+For studies with zero events, a continuity correction is applied by adding 0.5 to cell counts.
+A modification of Macaskill's test was proposed by Peters et al. to obtain more balanced type-I error rates 
+in the tail probability areas  (\code{method="P-FPV"}, Peters 2006):
+\deqn{\hat{\upbeta}_k = a + b \,\frac{1}{n_k} + \epsilon_k \;,\; \epsilon_k \sim \mathcal{N}\left(0, \phi \; \frac{1}{d_k (1-d_k/n_k)}\right)}{b = B0 + B1/n.total + e;  e~N(0, P/(d.total * (1-d.total/n.total)))}
+Again, 0.5 is added to all cells for studies with zero events.\cr
+\cr
+Because the use of aforementioned tests may be less appropriate in the presence of survival data, Debray et al. 
+proposed using the total number of events as independent variable (\code{D-FIV}, Debray 2017):
+\deqn{\hat{\upbeta}_k = a + b\, \frac{1}{d_k} + \epsilon_k  \;,\; \epsilon_k \sim \mathcal{N}(0, \phi \; \widehat \mathrm{var}(\hat{\upbeta}_k))}{b = B0 + B1/d.total + e;  e~N(0, P*b.se^2)}
+For studies with zero events, the total number of observed events is set to 1.
+Alternatively, when \eqn{\widehat \mathrm{var}(\hat{\upbeta}_k)}{b.se} is unknown or derived from small samples, 
+Debray at al.proposed to use the following regression model (\code{D-FAV}, Debray 2017):
+\deqn{\hat{\upbeta}_k = a + b\, \frac{1}{d_k} + \epsilon_k  \;,\; \epsilon_k \sim \mathcal{N}\left(0, \phi \; \left(\frac{1}{d_{k1}}+\frac{1}{d_{k2}}\right)\right)}{b = B0 + B1/d.total + e;  e~N(0, P/(1/d1 + 1/d2))}
 }
 \examples{
 data(Fibrinogen)
 b <- log(Fibrinogen$HR)
 b.se <- ((log(Fibrinogen$HR.975) - log(Fibrinogen$HR.025))/(2*qnorm(0.975)))
 n.total <- Fibrinogen$N.total
+d.total <- Fibrinogen$N.events
+
 fat(b=b, b.se=b.se)
-fat(b=b, b.se=b.se, n.total=n.total, method="M-FIV")
+fat(b=b, n.total=n.total, d.total=d.total, method="P-FPV")
+fat(b=b, b.se=b.se, d.total=d.total, method="D-FIV")
 
 }
 \references{
@@ -81,6 +100,9 @@ Egger M, Davey Smith G, Schneider M, Minder C. Bias in meta-analysis detected by
 Macaskill P, Walter SD, Irwig L. A comparison of methods to detect publication bias in meta-analysis. 
 \emph{Stat Med}. 2001;20(4):641--54.\cr 
 \cr
+Peters JL, Sutton AJ, Jones DR, Abrams KR, Rushton L. Comparison of two methods to detect publication bias 
+in meta-analysis. \emph{JAMA}. 2006 Feb 8;295(6):676--80.\cr
+\cr 
 Sterne JA, Gavaghan D, Egger M. Publication and related bias in meta-analysis: power of statistical tests 
 and prevalence in the literature. \emph{J Clin Epidemiol}. 2000;53(11):1119--29.
 }
