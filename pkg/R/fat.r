@@ -16,9 +16,10 @@
 #' 
 #' @param b Vector with the effect size of each study. Examples are log odds ratio, log hazards ratio, 
 #' log relative risk. 
-#' @param b.se vector with the standard error of the effect size of each study
+#' @param b.se Vector with the standard error of the effect size of each study
+#' @param n.total Optional vector with the total sample size of each study
 #' @param method Method for testing funnel plot asymmetry, defaults to \code{"E-UW"} (Egger's test). 
-#' Other options are \code{E-FIV}. More info in "Details"
+#' Other options are \code{E-FIV}, \code{M-FIV}. More info in "Details"
 #'
 #' @details A common method to test the presence of small-study effects is given as the 
 #' following unweighted regression model (\code{method="E-UW"}, Egger 1997): 
@@ -31,19 +32,31 @@
 #' It is possible to allow for between-study heterogeneity by adopting a multiplicative overdispersion parameter 
 #' by which the variance in each study is multiplied (\code{method="E-FIV"}, Sterne 2000):
 #' \deqn{\hat{\upbeta}_k = a + b\, \widehat \mathrm{SE}(\hat{\upbeta}_k) + \epsilon_k \;,\; \epsilon_k \sim \mathcal{N}(0, \phi \; \widehat \mathrm{var}(\hat{\upbeta}_k))}{b = B0 + B1*b.se + e;  e~N(0, P*b.se^2)}
+#' Because the use of \eqn{\widehat \mathrm{SE}(\hat{b}_k)}{b.se} as independet variable is rather problemetic 
+#' when the effect sizes \eqn{\hat{b}_k}{b} represent log odds ratios or log hazard ratios, Macaskill et al. 
+#' proposed to use the following regression model (\code{method="M-FIV"}, Macaskill 2001):
+#' \deqn{\hat{\upbeta}_k = a + b \,n_k + \epsilon_k \;,\; \epsilon_k \sim \mathcal{N}(0, \phi \; \widehat \mathrm{var}(\hat{\upbeta}_k))}{b = B0 + B1*n.total + e;  e~N(0, P*b.se^2)}
+
 #' 
 #' @return a list containing the following entries:
 #' \describe{
-##'  \item{"pval"}{A two-sided P-value, based on a Student-t distribution, indicating statistical significance of the funnel plot asymettry test}
+##'  \item{"pval"}{A two-sided P-value indicating statistical significance of the funnel plot asymettry test. 
+##'  Values below the significance level (usually defined as 10\%) support the presence of funnel plot asymmetry.  }
 ##'  \item{"model"}{A fitted \code{glm} object, representing the estimated regression model}
 ##' }
 #' @author Thomas Debray
 #' 
-#' @references Debray TPA, Moons KGM, Riley RD. Detecting small-study effects and funnel plot asymmetry in meta-analysis of survival data: a comparison of new and existing tests. \emph{Res Syn Meth}. 2017 Oct 3.\cr
+#' @references Debray TPA, Moons KGM, Riley RD. Detecting small-study effects and funnel plot asymmetry in 
+#' meta-analysis of survival data: a comparison of new and existing tests. \emph{Res Syn Meth}. 2017.\cr
 #' \cr
-#' Egger M, Davey Smith G, Schneider M, Minder C. Bias in meta-analysis detected by a simple, graphical test. \emph{BMJ}. 1997;315(7109):629-34. \cr
+#' Egger M, Davey Smith G, Schneider M, Minder C. Bias in meta-analysis detected by a simple, graphical test. 
+#' \emph{BMJ}. 1997;315(7109):629--34. \cr
 #' \cr
-#' Sterne JA, Gavaghan D, Egger M. Publication and related bias in meta-analysis: power of statistical tests and prevalence in the literature. \emph{J Clin Epidemiol}. 2000;53(11):1119-29. 
+#' Macaskill P, Walter SD, Irwig L. A comparison of methods to detect publication bias in meta-analysis. 
+#' \emph{Stat Med}. 2001;20(4):641--54.\cr 
+#' \cr
+#' Sterne JA, Gavaghan D, Egger M. Publication and related bias in meta-analysis: power of statistical tests 
+#' and prevalence in the literature. \emph{J Clin Epidemiol}. 2000;53(11):1119--29. 
 
 
 #'
@@ -51,7 +64,9 @@
 #' data(Fibrinogen)
 #' b <- log(Fibrinogen$HR)
 #' b.se <- ((log(Fibrinogen$HR.975) - log(Fibrinogen$HR.025))/(2*qnorm(0.975)))
+#' n.total <- Fibrinogen$N.total
 #' fat(b=b, b.se=b.se)
+#' fat(b=b, b.se=b.se, n.total=n.total, method="M-FIV")
 
 #'
 #' @import stats
@@ -61,51 +76,58 @@
 #' @export
 #' 
 #'
-fat <- function(b, b.se, method="E-UW") 
+fat <- function(b, b.se, n.total, method="E-UW") 
 {
   
-  if (method %in% c("E-UW", "E-FIV")) {
-    if (length(b) != length(b.se))
-      stop("Incompatible vector sizes for 'b' and 'b.se'!")
-    #if (length(b) != length(b.se))
-    #  stop("Incompatible vector sizes for 'b' and 'b.se'!")
-    
-    # Identify studies with complete information
-    if (method == "E-UW") {
-      studies.complete <- c(!is.na(b) & !is.na(b.se))
-      w <- rep(NA, length(b))
-    } else if (method== "E-FIV") {
-      studies.complete <- c(!is.na(b) & !is.na(b.se))
-      w <- 1/(b.se**2)
+  if (length(b) != length(b.se))
+    stop("Incompatible vector sizes for 'b' and 'b.se'!")
+  
+  # Identify studies with complete information
+  if (method == "E-UW") {
+    studies.complete <- c(!is.na(b) & !is.na(b.se))
+    ds <- as.data.frame(cbind(b, b.se))
+    colnames(ds) <- c("y","x")
+  } else if (method== "E-FIV") {
+    studies.complete <- c(!is.na(b) & !is.na(b.se))
+    ds <- as.data.frame(cbind(b, b.se, (1/(b.se**2))))
+    colnames(ds) <- c("y","x","w")
+  } else if (method == "M-FIV") {
+    if (missing(n.total)) {
+      stop ("No values given for 'n.total'")
     }
-    
-    # Identify which studies can be used
-    nstudies <- sum(studies.complete)
-    
-    # Omit sudies with missing information
-    b <- b[studies.complete]
-    b.se <- b.se[studies.complete]
-    w <- w[studies.complete]
-    
-    if (nstudies < length(studies.complete)) {
-      warning("Some studies were removed due to missing data!")
+    if (length(b) != length(n.total)) {
+      stop("Incompatible vector sizes for 'b' and 'n.total'!")
     }
-    
+    studies.complete <- c(!is.na(b) & !is.na(b.se) & !is.na(n.total))
+    ds <- as.data.frame(cbind(b, n.total, (1/(b.se**2))))
+    colnames(ds) <- c("y","x","w")
+  } else {
+    stop("Method for testing funnel plot asymmetry not supported")
   }
   
-  if (method=="E-FIV") {
-    suppressWarnings(m.fat <- try(glm(b~b.se, weights=w), silent=T))
+  # Identify which studies can be used
+  nstudies <- sum(studies.complete)
+  
+  # Omit sudies with missing information
+  ds <- ds[studies.complete,]
+  
+  if (nstudies < length(studies.complete)) {
+    warning("Some studies were removed due to missing data!")
+  }
+
+  
+  if (method %in% c("E-FIV", "M-FIV")) {
+    suppressWarnings(m.fat <- try(glm(y~x, weights=ds$w, data=ds), silent=T))
   } else if (method=="E-UW")  {
-    suppressWarnings(m.fat <- try(glm(b~b.se), silent=T))
+    suppressWarnings(m.fat <- try(glm(y~x, data=ds), silent=T))
   } else {
-    stop("Invalid method for Egger's test")
+    stop("Method for testing funnel plot asymmetry currently not implemented")
   }
   
   if ("try-error" %in% attr(m.fat,"class")) {
-    warning("Estimation of the regression model unsuccessful, results omitted.")
+    warning("Estimation of the regression model unsuccessful, P-value omitted.")
     z.fat <- NA
     p.fat <- NA
-    m.fat <- NA
   } else {
     z.fat <- coefficients(m.fat)[2]/sqrt(diag(vcov(m.fat))[2])
     p.fat <- 2*pt(-abs(z.fat),df=(nstudies-2))

@@ -83,8 +83,9 @@ fitted <- predict(mp, newdata = DVTipd.reordered)
 
 }
 \references{
-Debray TPA, Moons KGM, Ahmed I, Koffijberg H, Riley RD. A framework for developing, implementing, and evaluating 
-clinical prediction models in an individual participant data meta-analysis. \emph{Stat Med}. 2013 Aug 15;32(18):3158-80.
+Debray TPA, Moons KGM, Ahmed I, Koffijberg H, Riley RD. A framework for developing, implementing, 
+and evaluating clinical prediction models in an individual participant data meta-analysis. 
+\emph{Stat Med}. 2013;32(18):3158-80.
 }
 \author{
 Valentijn de Jong
