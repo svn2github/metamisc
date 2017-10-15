@@ -18,8 +18,9 @@
 #' log relative risk. 
 #' @param b.se Vector with the standard error of the effect size of each study
 #' @param n.total Optional vector with the total sample size of each study
+#' @param n.events Optional vector with the total number of observed events for each study
 #' @param method Method for testing funnel plot asymmetry, defaults to \code{"E-UW"} (Egger's test). 
-#' Other options are \code{E-FIV}, \code{M-FIV}. More info in "Details"
+#' Other options are \code{E-FIV}, \code{M-FIV}, \code{M-FPV}. More info in "Details"
 #'
 #' @details A common method to test the presence of small-study effects is given as the 
 #' following unweighted regression model (\code{method="E-UW"}, Egger 1997): 
@@ -36,13 +37,20 @@
 #' when the effect sizes \eqn{\hat{b}_k}{b} represent log odds ratios or log hazard ratios, Macaskill et al. 
 #' proposed to use the following regression model (\code{method="M-FIV"}, Macaskill 2001):
 #' \deqn{\hat{\upbeta}_k = a + b \,n_k + \epsilon_k \;,\; \epsilon_k \sim \mathcal{N}(0, \phi \; \widehat \mathrm{var}(\hat{\upbeta}_k))}{b = B0 + B1*n.total + e;  e~N(0, P*b.se^2)}
+#' Macaskill et al. also proposed an alternative test where a 'pooled' estimate of the outcome proportion is used
+#' for the variance \eqn{\widehat \mathrm{var}(\hat{b}_k)}{b.se^2} (\code{method="M-FPV"}, Macaskill 2001):
+#' \deqn{\hat{\upbeta}_k = a + b \,n_k + \epsilon_k \;,\; \epsilon_k \sim \mathcal{N}\left(0, \phi \; \frac{1}{d_k (1-d_k/n_k)}\right)}{b = B0 + B1*n.total + e;  e~N(0, P/(n.events * (1-n.events/n.total)))}
+#' For studies with zero events, a continuity correction is applied by adding 0.5 to all cells.
+
 
 #' 
 #' @return a list containing the following entries:
 #' \describe{
 ##'  \item{"pval"}{A two-sided P-value indicating statistical significance of the funnel plot asymettry test. 
-##'  Values below the significance level (usually defined as 10\%) support the presence of funnel plot asymmetry.  }
-##'  \item{"model"}{A fitted \code{glm} object, representing the estimated regression model}
+##'  Values below the significance level (usually defined as 10\%) support the presence of funnel plot asymmetry,
+##'  and thus small-study effects.  }
+##'  \item{"model"}{A fitted \code{glm} object, representing the estimated regression model used for testing funnel
+##'  plot asymmetry.}
 ##' }
 #' @author Thomas Debray
 #' 
@@ -76,18 +84,21 @@
 #' @export
 #' 
 #'
-fat <- function(b, b.se, n.total, method="E-UW") 
+fat <- function(b, b.se, n.total, n.events, method="E-UW") 
 {
-  
-  if (length(b) != length(b.se))
-    stop("Incompatible vector sizes for 'b' and 'b.se'!")
   
   # Identify studies with complete information
   if (method == "E-UW") {
+    if (length(b) != length(b.se)) {
+      stop("Incompatible vector sizes for 'b' and 'b.se'!")
+    }
     studies.complete <- c(!is.na(b) & !is.na(b.se))
     ds <- as.data.frame(cbind(b, b.se))
     colnames(ds) <- c("y","x")
   } else if (method== "E-FIV") {
+    if (length(b) != length(b.se)) {
+      stop("Incompatible vector sizes for 'b' and 'b.se'!")
+    }
     studies.complete <- c(!is.na(b) & !is.na(b.se))
     ds <- as.data.frame(cbind(b, b.se, (1/(b.se**2))))
     colnames(ds) <- c("y","x","w")
@@ -95,13 +106,39 @@ fat <- function(b, b.se, n.total, method="E-UW")
     if (missing(n.total)) {
       stop ("No values given for 'n.total'")
     }
+    if (length(b) != length(b.se)) {
+      stop("Incompatible vector sizes for 'b' and 'b.se'!")
+    }
     if (length(b) != length(n.total)) {
       stop("Incompatible vector sizes for 'b' and 'n.total'!")
     }
     studies.complete <- c(!is.na(b) & !is.na(b.se) & !is.na(n.total))
     ds <- as.data.frame(cbind(b, n.total, (1/(b.se**2))))
     colnames(ds) <- c("y","x","w")
-  } else {
+  } else if (method=="M-FPV") {
+    if (missing(n.total)) {
+      stop ("No values given for 'n.total'")
+    }
+    if (missing(n.events)) {
+      stop ("No values given for 'n.events'")
+    }
+    if (length(b) != length(n.total)) {
+      stop("Incompatible vector sizes for 'b' and 'n.total'!")
+    }
+    if (length(b) != length(n.events)) {
+      stop("Incompatible vector sizes for 'b' and 'n.events'!")
+    }
+    studies.complete <- c(!is.na(b) & !is.na(n.events) & !is.na(n.total))
+    
+    # Consider continuity corrections
+    n.events.cc <- n.events
+    n.events.cc[n.events==0] <- 1 #0.5 event in exposed group and 0.5 event in non-exposed group
+    n.total[n.events==0] <- n.total[n.events==0]+2 #2*0.5 in the events, and 2*0.5 in the non-events
+    
+    ds <- as.data.frame(cbind(b, n.total, (n.events.cc*(1-n.events.cc/n.total))))
+    colnames(ds) <- c("y","x","w")
+  }
+  else {
     stop("Method for testing funnel plot asymmetry not supported")
   }
   
@@ -116,7 +153,7 @@ fat <- function(b, b.se, n.total, method="E-UW")
   }
 
   
-  if (method %in% c("E-FIV", "M-FIV")) {
+  if (method %in% c("E-FIV", "M-FIV", "M-FPV")) {
     suppressWarnings(m.fat <- try(glm(y~x, weights=ds$w, data=ds), silent=T))
   } else if (method=="E-UW")  {
     suppressWarnings(m.fat <- try(glm(y~x, data=ds), silent=T))

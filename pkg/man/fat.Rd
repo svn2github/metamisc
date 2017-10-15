@@ -4,7 +4,7 @@
 \alias{fat}
 \title{Regression tests for detecting funnel plot asymmetry}
 \usage{
-fat(b, b.se, n.total, method = "E-UW")
+fat(b, b.se, n.total, n.events, method = "E-UW")
 }
 \arguments{
 \item{b}{Vector with the effect size of each study. Examples are log odds ratio, log hazards ratio, 
@@ -14,15 +14,19 @@ log relative risk.}
 
 \item{n.total}{Optional vector with the total sample size of each study}
 
+\item{n.events}{Optional vector with the total number of observed events for each study}
+
 \item{method}{Method for testing funnel plot asymmetry, defaults to \code{"E-UW"} (Egger's test). 
-Other options are \code{E-FIV}, \code{M-FIV}. More info in "Details"}
+Other options are \code{E-FIV}, \code{M-FIV}, \code{M-FPV}. More info in "Details"}
 }
 \value{
 a list containing the following entries:
 \describe{
  \item{"pval"}{A two-sided P-value indicating statistical significance of the funnel plot asymettry test. 
- Values below the significance level (usually defined as 10\%) support the presence of funnel plot asymmetry.  }
- \item{"model"}{A fitted \code{glm} object, representing the estimated regression model}
+ Values below the significance level (usually defined as 10\%) support the presence of funnel plot asymmetry,
+ and thus small-study effects.  }
+ \item{"model"}{A fitted \code{glm} object, representing the estimated regression model used for testing funnel
+ plot asymmetry.}
 }
 }
 \description{
@@ -53,6 +57,10 @@ Because the use of \eqn{\widehat \mathrm{SE}(\hat{b}_k)}{b.se} as independet var
 when the effect sizes \eqn{\hat{b}_k}{b} represent log odds ratios or log hazard ratios, Macaskill et al. 
 proposed to use the following regression model (\code{method="M-FIV"}, Macaskill 2001):
 \deqn{\hat{\upbeta}_k = a + b \,n_k + \epsilon_k \;,\; \epsilon_k \sim \mathcal{N}(0, \phi \; \widehat \mathrm{var}(\hat{\upbeta}_k))}{b = B0 + B1*n.total + e;  e~N(0, P*b.se^2)}
+Macaskill et al. also proposed an alternative test where a 'pooled' estimate of the outcome proportion is used
+for the variance \eqn{\widehat \mathrm{var}(\hat{b}_k)}{b.se^2} (\code{method="M-FPV"}, Macaskill 2001):
+\deqn{\hat{\upbeta}_k = a + b \,n_k + \epsilon_k \;,\; \epsilon_k \sim \mathcal{N}\left(0, \phi \; \frac{1}{d_k (1-d_k/n_k)}\right)}{b = B0 + B1*n.total + e;  e~N(0, P/(n.events * (1-n.events/n.total)))}
+For studies with zero events, a continuity correction is applied by adding 0.5 to all cells.
 }
 \examples{
 data(Fibrinogen)
