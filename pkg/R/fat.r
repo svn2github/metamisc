@@ -1,5 +1,5 @@
 ### To add / change:
-# 
+# Add plot support for P-FPV, D-FIV and D-FAV
 # 
 #' Regression tests for detecting funnel plot asymmetry
 #'
@@ -55,9 +55,6 @@
 #' Alternatively, when \eqn{\widehat \mathrm{var}(\hat{\upbeta}_k)}{b.se} is unknown or derived from small samples, 
 #' Debray at al.proposed to use the following regression model (\code{D-FAV}, Debray 2017):
 #' \deqn{\hat{\upbeta}_k = a + b\, \frac{1}{d_k} + \epsilon_k  \;,\; \epsilon_k \sim \mathcal{N}\left(0, \phi \; \left(\frac{1}{d_{k1}}+\frac{1}{d_{k2}}\right)\right)}{b = B0 + B1/d.total + e;  e~N(0, P/(1/d1 + 1/d2))}
-
-
-
 #' 
 #' @return a list containing the following entries:
 #' \describe{
@@ -83,8 +80,8 @@
 #' \cr 
 #' Sterne JA, Gavaghan D, Egger M. Publication and related bias in meta-analysis: power of statistical tests 
 #' and prevalence in the literature. \emph{J Clin Epidemiol}. 2000;53(11):1119--29. 
-
-
+#' 
+#' @seealso \code{\link{plot.fat}}
 #'
 #' @examples 
 #' data(Fibrinogen)
@@ -96,15 +93,12 @@
 #' fat(b=b, b.se=b.se)
 #' fat(b=b, n.total=n.total, d.total=d.total, method="P-FPV")
 #' fat(b=b, b.se=b.se, d.total=d.total, method="D-FIV")
-
 #'
 #' @import stats
 #' @importFrom stats pt
 #' @importFrom stats qnorm
 #' 
 #' @export
-#' 
-#'
 fat <- function(b, b.se, n.total, d.total, d1, d2, method="E-UW") 
 {
   if (missing(b)) {
@@ -275,8 +269,107 @@ fat <- function(b, b.se, n.total, d.total, d1, d2, method="E-UW")
 
   out <- list()
   out$call <- match.call()
+  out$method <- method
   out$pval <- p.fat
   out$model <- m.fat
   class(out) <- "fat"
   return(out)
+}
+
+#' @export
+print.fat <- function(x, ...) {
+  print_fat(x, ...)
+}
+
+
+print_fat <- function(object, digits = max(3, getOption("digits") - 3), ...) {
+  cat("Call: ");                       print(object$call); cat("\n")
+  cat("Evidence of asymmetry: \n"); 
+  cat(c("\tPr(>|t|) =",round(object$pval, digits = digits))); cat("\n")
+}
+
+#' Display results from the funnel plot asymmetry test
+#' 
+#' Generates a funnel plot for a fitted \code{fat} object, with boundaries for the 90\% confidence interval.
+#' @param x An object of class \code{fat}
+#' @param ... Additional arguments for \code{\link{plot}}. The argument \code{funnel.xlab} can be used to define the x-label axis.
+#' The argument \code{ref} represents a numeric value indicating the fixed or random effects summary estimate. If no value is provided
+#' then it will be retrieved from a fixed effects meta-analysis (if possible). The argument \code{x.rescale} is a character string indicating how effect sizes should be rescaled. Options are \code{exp} 
+#' (e.g. for log odds or log hazard ratios).
+#' 
+#' @examples 
+#' data(Fibrinogen)
+#' b <- log(Fibrinogen$HR)
+#' b.se <- ((log(Fibrinogen$HR.975) - log(Fibrinogen$HR.025))/(2*qnorm(0.975)))
+#' n.total <- Fibrinogen$N.total
+#' 
+#' plot(fat(b=b, b.se=b.se))
+#' plot(fat(b=b, b.se=b.se, n.total=n.total, method="M-FIV"), funnel.xlab="Log hazard ratio")
+#' plot(fat(b=b, b.se=b.se), funnel.xlab="Hazard ratio", x.rescale="exp")
+#' @importFrom metafor rma
+#' @importFrom methods hasArg
+#' @export
+plot.fat <- function(x,  ...) {
+  funnel.xlab <- ifelse(hasArg(funnel.xlab), list(...)$funnel.xlab, "Effect size")
+  ref <- ifelse(hasArg(ref), list(...)$ref, NA)
+  x.rescale <- ifelse(hasArg(x.rescale), list(...)$x.rescale, NA)
+  
+  plot_fat(object=x, ref=ref, funnel.xlab=funnel.xlab, x.rescale=x.rescale)
+
+}
+
+plot_fat <- function (object, ref, funnel.xlab, x.rescale) {
+  xval <-  object$model$data[,"y"]
+  
+  if (object$method %in% c("E-UW", "E-FIV")) {
+    ylab <- "Standard error"
+    yval <- (object$model$data[,"x"])
+    ylim <- rev(c(0, max(yval, na.rm=T))) #Reverse y axis scale
+    yval.min <- -1
+    
+    # Get the fixed effect summary estimate
+    res <- rma(yi=object$model$data[,"y"], sei=object$model$data[,"x"], method="FE")
+  } else if (object$method %in% c("M-FIV")) {
+    ylab <- "Sample size"
+    yval <- (object$model$data[,"x"]) # Sample size
+    ylim <- (c(0, max(yval, na.rm=T))) #Reverse y axis scale
+    yval.min <- -max(yval) #Generate a minimum value for predictions
+    
+    # Get the fixed effect summary estimate
+    res <- rma(yi=object$model$data[,"y"], sei=(1/sqrt(object$model$data[,"w"])), method="FE")
+  } else {
+    stop("Plot not supported!")
+  }
+  
+  
+  if(is.na(x.rescale)) {
+    plot(NULL, xlim=c(min(c(0,xval)), max(xval)), ylim=ylim, 
+         ylab=ylab, xlab=funnel.xlab)
+  } else if (x.rescale=="exp") {
+    plot(NULL, xlim=c(min(c(0,xval)), max((xval))), ylim=ylim, 
+         ylab=ylab, xlab=funnel.xlab, xaxt="n")
+    axis(1, at=c(log(0.5), log(1), log(2), log(3), log(4)), labels=c(0.5, 1,2,3,4))
+  } else {
+    stop("Provided argument for 'x.rescale' not supported!")
+  }
+  
+  
+  
+  
+  newdata <- sort(c(yval.min,object$model$data[,"x"], 2*max(object$model$data[,"x"])))
+  newdata <- as.data.frame(cbind(newdata,NA))
+  colnames(newdata) <- c("x","y")
+  predy <- predict(object$model, newdata=newdata, se.fit=T)#
+  predy.lowerInt <- as.vector(predy$fit + qnorm(0.05)*predy$se.fit) #90% confidence band
+  predy.upperInt <- as.vector(predy$fit + qnorm(0.95)*predy$se.fit) #90% confidence band
+  
+  polygon(x=c(predy.upperInt,rev(predy.lowerInt)), y=c(newdata[,"x"],rev(newdata[,"x"])), col="skyblue")  
+  lines(x=as.vector(predy$fit), y=(newdata[,"x"]), lty=2 )
+  points(xval, yval, pch=19)
+  box()
+  if (is.na(ref)) {
+    abline(v=(res$b))
+  } else {
+    abline(v=ref)
+  }
 }

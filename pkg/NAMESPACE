@@ -12,6 +12,7 @@ importFrom("lme4", "glmer")
 importFrom("graphics", "abline", "axis", "box", "lines", "par", "plot", "points", "polygon", "text", "segments", "strheight")
 importFrom("stats", "coef", "coefficients", "dnorm", "glm", "nobs", "optim", "pchisq", "qnorm", "qt", "pt", "rnorm", "runif", "confint", 
            "poisson", "predict", "vcov", "as.formula", "formula", "model.frame", "model.frame.default", "update.formula", "family")
+importFrom("methods", "hasArg")
 
 #Riley methods
 S3method(print, riley)
@@ -34,6 +35,8 @@ S3method(plot, valmeta)
 #S3method(valmeta, default)
 
 #fat methods
+S3method(print, fat)
+S3method(plot, fat)
 
 
 #metapred methods

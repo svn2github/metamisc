@@ -106,6 +106,9 @@ in meta-analysis. \emph{JAMA}. 2006 Feb 8;295(6):676--80.\cr
 Sterne JA, Gavaghan D, Egger M. Publication and related bias in meta-analysis: power of statistical tests 
 and prevalence in the literature. \emph{J Clin Epidemiol}. 2000;53(11):1119--29.
 }
+\seealso{
+\code{\link{plot.fat}}
+}
 \author{
 Thomas Debray
 }
