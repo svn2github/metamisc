@@ -4,7 +4,7 @@
 \alias{fat}
 \title{Regression tests for detecting funnel plot asymmetry}
 \usage{
-fat(b, b.se, n.total, d.total, d1, d2, method = "E-UW")
+fat(b, b.se, n.total, d.total, d1, d2, method = "E-FIV")
 }
 \arguments{
 \item{b}{Vector with the effect size of each study. Examples are log odds ratio, log hazards ratio, 
@@ -20,8 +20,9 @@ log relative risk.}
 
 \item{d2}{Optional vector with the total number of observed events in the unexposed groups}
 
-\item{method}{Method for testing funnel plot asymmetry, defaults to \code{"E-UW"} (Egger's test). 
-Other options are \code{E-FIV}, \code{M-FIV}, \code{M-FPV}, \code{D-FIV} and \code{D-FAV}. More info in "Details"}
+\item{method}{Method for testing funnel plot asymmetry, defaults to \code{"E-FIV"} (Egger's test with 
+multiplicative dispersion). Other options are \code{E-UW}, \code{M-FIV}, \code{M-FPV}, \code{D-FIV} and 
+\code{D-FAV}. More info in "Details"}
 }
 \value{
 a list containing the following entries:
@@ -86,8 +87,12 @@ n.total <- Fibrinogen$N.total
 d.total <- Fibrinogen$N.events
 
 fat(b=b, b.se=b.se)
-fat(b=b, n.total=n.total, d.total=d.total, method="P-FPV")
 fat(b=b, b.se=b.se, d.total=d.total, method="D-FIV")
+
+# Note that many methods are also possible via metafor
+require(metafor)
+fat(b=b, b.se=b.se, n.total=n.total, method="M-FIV")
+regtest(x=b, sei=b.se, ni=n.total, model="lm", predictor="ni") 
 
 }
 \references{

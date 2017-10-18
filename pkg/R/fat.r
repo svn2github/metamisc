@@ -21,8 +21,9 @@
 #' @param d.total Optional vector with the total number of observed events for each study
 #' @param d1 Optional vector with the total number of observed events in the exposed groups
 #' @param d2 Optional vector with the total number of observed events in the unexposed groups
-#' @param method Method for testing funnel plot asymmetry, defaults to \code{"E-UW"} (Egger's test). 
-#' Other options are \code{E-FIV}, \code{M-FIV}, \code{M-FPV}, \code{D-FIV} and \code{D-FAV}. More info in "Details"
+#' @param method Method for testing funnel plot asymmetry, defaults to \code{"E-FIV"} (Egger's test with 
+#' multiplicative dispersion). Other options are \code{E-UW}, \code{M-FIV}, \code{M-FPV}, \code{D-FIV} and 
+#' \code{D-FAV}. More info in "Details"
 #'
 #' @details A common method to test the presence of small-study effects is given as the 
 #' following unweighted regression model (\code{method="E-UW"}, Egger 1997): 
@@ -91,15 +92,20 @@
 #' d.total <- Fibrinogen$N.events
 #' 
 #' fat(b=b, b.se=b.se)
-#' fat(b=b, n.total=n.total, d.total=d.total, method="P-FPV")
 #' fat(b=b, b.se=b.se, d.total=d.total, method="D-FIV")
+#' 
+#' # Note that many tests are also available via metafor
+#' require(metafor)
+#' fat(b=b, b.se=b.se, n.total=n.total, method="M-FIV")
+#' regtest(x=b, sei=b.se, ni=n.total, model="lm", predictor="ni") 
 #'
 #' @import stats
 #' @importFrom stats pt
 #' @importFrom stats qnorm
+#' @importFrom metafor rma
 #' 
 #' @export
-fat <- function(b, b.se, n.total, d.total, d1, d2, method="E-UW") 
+fat <- function(b, b.se, n.total, d.total, d1, d2, method="E-FIV") 
 {
   if (missing(b)) {
     stop ("No values given for 'b'")
@@ -248,6 +254,13 @@ fat <- function(b, b.se, n.total, d.total, d1, d2, method="E-UW")
   if (nstudies < length(studies.complete)) {
     warning("Some studies were removed due to missing data!")
   }
+  
+  # Get the fixed effect summary estimate
+  res <- NULL
+  if (!missing(b.se)) {
+    res <- rma(yi=b[studies.complete], sei=b.se[studies.complete], method="FE")
+  }
+  
 
   
   if (method %in% c("E-FIV", "M-FIV", "M-FPV", "P-FPV", "D-FIV", "D-FAV")) {
@@ -260,18 +273,20 @@ fat <- function(b, b.se, n.total, d.total, d1, d2, method="E-UW")
   
   if ("try-error" %in% attr(m.fat,"class")) {
     warning("Estimation of the regression model unsuccessful, P-value omitted.")
-    z.fat <- NA
+    t.fat <- NA
     p.fat <- NA
   } else {
-    z.fat <- coefficients(m.fat)[2]/sqrt(diag(vcov(m.fat))[2])
-    p.fat <- 2*pt(-abs(z.fat),df=(nstudies-2))
+    t.fat <- coefficients(m.fat)[2]/sqrt(diag(vcov(m.fat))[2])
+    p.fat <- 2*pt(-abs(t.fat),df=(nstudies-2))
   }
 
   out <- list()
   out$call <- match.call()
   out$method <- method
+  out$tval <- t.fat
   out$pval <- p.fat
-  out$nstudies <- nstudies
+  out$fema <- res
+  out$df <- nstudies-2
   out$model <- m.fat
   class(out) <- "fat"
   return(out)
@@ -281,10 +296,13 @@ fat <- function(b, b.se, n.total, d.total, d1, d2, method="E-UW")
 print.fat <- function(x, digits = max(3, getOption("digits") - 3), ...) {
   cat("Call: ");                       
   print(x$call); 
+  if (!is.null(x$fema)) {
+    cat(c("\nFixed effect summary estimate: ", round(x$fema$b, digits = digits), " \n"))
+  }
   cat("\n")
-  cat("Evidence of asymmetry: \n"); 
-  cat(c("\tPr(>|t|) =", round(x$pval, digits = digits))); 
-  cat("\n")
+  cat(paste("test for funnel plot asymmetry: t =", round(x$tval, digits = digits), ", df = ", x$df, ", ", sep=""))
+  cat(paste("p = ", round(x$pval, digits = digits), "\n", sep=""))
+  
 }
 
 #' Display results from the funnel plot asymmetry test
@@ -316,7 +334,6 @@ print.fat <- function(x, digits = max(3, getOption("digits") - 3), ...) {
 #' # Add custom tickmarks for the X-axis
 #' plot(fat(b=b, b.se=b.se, n.total=n.total, method="M-FIV"), xlab="Hazard ratio", xaxt="n")
 #' axis(1, at=c(log(0.5), log(1), log(1.5), log(2), log(3)), labels=c(0.5, 1, 1.5, 2,3))
-#' @importFrom metafor rma
 #' @importFrom stats qt
 #' @export
 plot.fat <- function(x, ref, confint=TRUE, confint.level=0.10, confint.col="skyblue", confint.density=NULL,
@@ -334,42 +351,44 @@ plot.fat <- function(x, ref, confint=TRUE, confint.level=0.10, confint.col="skyb
     ylab <- "Standard error"
     yval <- (x$model$data[,"x"])
     ylim <- rev(c(0, max(yval, na.rm=T))) #Reverse y axis scale
-    yval.min <- -1
-    
-    # Get the fixed effect summary estimate
-    res <- rma(yi=x$model$data[,"y"], sei=x$model$data[,"x"], method="FE")
   } else if (x$method %in% c("M-FIV")) {
     ylab <- "Sample size"
     yval <- (x$model$data[,"x"]) # Sample size
-    ylim <- (c(0, max(yval, na.rm=T))) #Reverse y axis scale
-    yval.min <- -max(yval) #Generate a minimum value for predictions
-    
-    # Get the fixed effect summary estimate
-    res <- rma(yi=x$model$data[,"y"], sei=(1/sqrt(x$model$data[,"w"])), method="FE")
+    ylim <- (c(0, max(yval, na.rm=T))) 
+  } else if (x$method == "P-FPV") {
+    ylab <- "Sample size"
+    yval <- 1/(x$model$data[,"x"]) # 1/Sample size
+    ylim <- (c(0, max(yval, na.rm=T))) 
   } else {
     stop("Plot not supported!")
   }
   
   plot(NULL, xlim=c(min(c(0,xval)), max(xval)), ylim=ylim, ylab=ylab, xlab=xlab, ...)
   
-  newdata <- sort(c(yval.min, x$model$data[,"x"], 2*max(x$model$data[,"x"])))
+  newdata <- sort(c(-max(x$model$data[,"x"]), x$model$data[,"x"], 2*max(x$model$data[,"x"])))
   newdata <- as.data.frame(cbind(newdata,NA))
   colnames(newdata) <- c("x","y")
   predy <- predict(x$model, newdata=newdata, se.fit=T)#
-  predy.lowerInt <- as.vector(predy$fit + qt(confint.level/2, df=x$nstudies-2)*predy$se.fit) #90% confidence band
-  predy.upperInt <- as.vector(predy$fit + qt((1-confint.level/2), df=x$nstudies-2)*predy$se.fit) #90% confidence band
+  predy.lowerInt <- as.vector(predy$fit + qt(confint.level/2, df=x$df)*predy$se.fit) #90% confidence band
+  predy.upperInt <- as.vector(predy$fit + qt((1-confint.level/2), df=x$df)*predy$se.fit) #90% confidence band
   
   if (confint) {
     polygon(x=c(predy.upperInt,rev(predy.lowerInt)), y=c(newdata[,"x"],rev(newdata[,"x"])), col=confint.col, 
             density=confint.density)  
   }
-  
-  lines(x=as.vector(predy$fit), y=(newdata[,"x"]), lty=2 )
   points(xval, yval, pch=19)
+  if (x$method == "P-FPV") {
+    # Need to transform the scale of the vertical axis
+    #lines(x=as.vector(predy$fit), y=(newdata[,"x"]), lty=2 )
+    stop("Currently not supported!")
+  } else {
+    lines(x=as.vector(predy$fit), y=(newdata[,"x"]), lty=2 )
+  }
+  
   box()
   
   if (missing(ref)) {
-    abline(v=(res$b))
+    abline(v=(x$fema$b))
   } else {
     abline(v=ref)
   }

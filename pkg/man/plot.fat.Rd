@@ -4,8 +4,9 @@
 \alias{plot.fat}
 \title{Display results from the funnel plot asymmetry test}
 \usage{
-\method{plot}{fat}(x, ref, confint = TRUE, confint.col = "skyblue",
-  confint.density = NULL, xlab = "Effect size", ...)
+\method{plot}{fat}(x, ref, confint = TRUE, confint.level = 0.1,
+  confint.col = "skyblue", confint.density = NULL, xlab = "Effect size",
+  ...)
 }
 \arguments{
 \item{x}{An object of class \code{fat}}
@@ -15,6 +16,8 @@ then it will be retrieved from a fixed effects meta-analysis (if possible).}
 
 \item{confint}{A logical indicator. If \code{TRUE}, a confidence interval will be displayed for the estimated
 regression model (based on a Student-T distribution)}
+
+\item{confint.level}{Significance level for constructing the confidence interval.}
 
 \item{confint.col}{The color for filling the confidence interval. Choose \code{NA} to leave polygons unfilled. 
 If \code{confint.density} is specified with a positive value this gives the color of the shading lines.}
@@ -28,7 +31,7 @@ and \code{NA} suppress shading (and so allow color filling).}
 \item{...}{Additional arguments for \code{\link{plot}}.}
 }
 \description{
-Generates a funnel plot for a fitted \code{fat} object, with boundaries for the 90\% confidence interval (based on a Student-T distribution)
+Generates a funnel plot for a fitted \code{fat} object.
 }
 \examples{
 data(Fibrinogen)
@@ -36,8 +39,10 @@ b <- log(Fibrinogen$HR)
 b.se <- ((log(Fibrinogen$HR.975) - log(Fibrinogen$HR.025))/(2*qnorm(0.975)))
 n.total <- Fibrinogen$N.total
 
+# A very simple funnel plot
 plot(fat(b=b, b.se=b.se))
-plot(fat(b=b, b.se=b.se, n.total=n.total, method="M-FIV"), xlab="Log hazard ratio")
+
+# Add custom tickmarks for the X-axis
 plot(fat(b=b, b.se=b.se, n.total=n.total, method="M-FIV"), xlab="Hazard ratio", xaxt="n")
 axis(1, at=c(log(0.5), log(1), log(1.5), log(2), log(3)), labels=c(0.5, 1, 1.5, 2,3))
 }
