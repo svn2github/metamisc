@@ -289,12 +289,20 @@ print.fat <- function(x, digits = max(3, getOption("digits") - 3), ...) {
 
 #' Display results from the funnel plot asymmetry test
 #' 
-#' Generates a funnel plot for a fitted \code{fat} object, with boundaries for the 90\% confidence interval (based on a Student-T distribution)
+#' Generates a funnel plot for a fitted \code{fat} object.
 #' @param x An object of class \code{fat}
-#' @param ... Additional arguments for \code{\link{plot}}. The argument \code{funnel.xlab} can be used to define the x-label axis.
-#' The argument \code{ref} represents a numeric value indicating the fixed or random effects summary estimate. If no value is provided
-#' then it will be retrieved from a fixed effects meta-analysis (if possible). The argument \code{x.rescale} is a character string indicating how effect sizes should be rescaled. Options are \code{exp} 
-#' (e.g. for log odds or log hazard ratios).
+#' @param ref A numeric value indicating the fixed or random effects summary estimate. If no value is provided
+#' then it will be retrieved from a fixed effects meta-analysis (if possible).
+#' @param confint A logical indicator. If \code{TRUE}, a confidence interval will be displayed for the estimated
+#' regression model (based on a Student-T distribution)
+#' @param confint.level Significance level for constructing the confidence interval.
+#' @param confint.col The color for filling the confidence interval. Choose \code{NA} to leave polygons unfilled. 
+#' If \code{confint.density} is specified with a positive value this gives the color of the shading lines. 
+#' @param confint.density The density of shading lines, in lines per inch. The default value of \code{NULL} means 
+#' that no shading lines are drawn. A zero value of density means no shading nor filling whereas negative values 
+#' and \code{NA} suppress shading (and so allow color filling).
+#' @param xlab A title for the x axis
+#' @param ... Additional arguments for \code{\link{plot}}. 
 #' 
 #' @examples 
 #' data(Fibrinogen)
@@ -302,72 +310,65 @@ print.fat <- function(x, digits = max(3, getOption("digits") - 3), ...) {
 #' b.se <- ((log(Fibrinogen$HR.975) - log(Fibrinogen$HR.025))/(2*qnorm(0.975)))
 #' n.total <- Fibrinogen$N.total
 #' 
+#' # A very simple funnel plot
 #' plot(fat(b=b, b.se=b.se))
-#' plot(fat(b=b, b.se=b.se, n.total=n.total, method="M-FIV"), funnel.xlab="Log hazard ratio")
-#' plot(fat(b=b, b.se=b.se), funnel.xlab="Hazard ratio", x.rescale="exp")
+#' 
+#' # Add custom tickmarks for the X-axis
+#' plot(fat(b=b, b.se=b.se, n.total=n.total, method="M-FIV"), xlab="Hazard ratio", xaxt="n")
+#' axis(1, at=c(log(0.5), log(1), log(1.5), log(2), log(3)), labels=c(0.5, 1, 1.5, 2,3))
 #' @importFrom metafor rma
 #' @importFrom stats qt
-#' @importFrom methods hasArg
 #' @export
-plot.fat <- function(x,  ...) {
-  funnel.xlab <- ifelse(hasArg(funnel.xlab), list(...)$funnel.xlab, "Effect size")
-  ref <- ifelse(hasArg(ref), list(...)$ref, NA)
-  x.rescale <- ifelse(hasArg(x.rescale), list(...)$x.rescale, NA)
+plot.fat <- function(x, ref, confint=TRUE, confint.level=0.10, confint.col="skyblue", confint.density=NULL,
+                     xlab="Effect size", ...) {
+  if (!inherits(x, "fat")) 
+    stop("Argument 'x' must be an object of class \"fat\".")
   
-  plot_fat(object=x, ref=ref, funnel.xlab=funnel.xlab, x.rescale=x.rescale)
-
-}
-
-plot_fat <- function (object, ref, funnel.xlab, x.rescale) {
-  xval <-  object$model$data[,"y"]
+  if (confint.level < 0 | confint.level > 1) {
+    stop("Argument 'confint.level' must be between 0 and 1.")
+  }
   
-  if (object$method %in% c("E-UW", "E-FIV")) {
+  xval <-  x$model$data[,"y"]
+  
+  if (x$method %in% c("E-UW", "E-FIV")) {
     ylab <- "Standard error"
-    yval <- (object$model$data[,"x"])
+    yval <- (x$model$data[,"x"])
     ylim <- rev(c(0, max(yval, na.rm=T))) #Reverse y axis scale
     yval.min <- -1
     
     # Get the fixed effect summary estimate
-    res <- rma(yi=object$model$data[,"y"], sei=object$model$data[,"x"], method="FE")
-  } else if (object$method %in% c("M-FIV")) {
+    res <- rma(yi=x$model$data[,"y"], sei=x$model$data[,"x"], method="FE")
+  } else if (x$method %in% c("M-FIV")) {
     ylab <- "Sample size"
-    yval <- (object$model$data[,"x"]) # Sample size
+    yval <- (x$model$data[,"x"]) # Sample size
     ylim <- (c(0, max(yval, na.rm=T))) #Reverse y axis scale
     yval.min <- -max(yval) #Generate a minimum value for predictions
     
     # Get the fixed effect summary estimate
-    res <- rma(yi=object$model$data[,"y"], sei=(1/sqrt(object$model$data[,"w"])), method="FE")
+    res <- rma(yi=x$model$data[,"y"], sei=(1/sqrt(x$model$data[,"w"])), method="FE")
   } else {
     stop("Plot not supported!")
   }
   
+  plot(NULL, xlim=c(min(c(0,xval)), max(xval)), ylim=ylim, ylab=ylab, xlab=xlab, ...)
   
-  if(is.na(x.rescale)) {
-    plot(NULL, xlim=c(min(c(0,xval)), max(xval)), ylim=ylim, 
-         ylab=ylab, xlab=funnel.xlab)
-  } else if (x.rescale=="exp") {
-    plot(NULL, xlim=c(min(c(0,xval)), max((xval))), ylim=ylim, 
-         ylab=ylab, xlab=funnel.xlab, xaxt="n")
-    axis(1, at=c(log(0.5), log(1), log(2), log(3), log(4)), labels=c(0.5, 1,2,3,4))
-  } else {
-    stop("Provided argument for 'x.rescale' not supported!")
-  }
-  
-  
-  
-  
-  newdata <- sort(c(yval.min,object$model$data[,"x"], 2*max(object$model$data[,"x"])))
+  newdata <- sort(c(yval.min, x$model$data[,"x"], 2*max(x$model$data[,"x"])))
   newdata <- as.data.frame(cbind(newdata,NA))
   colnames(newdata) <- c("x","y")
-  predy <- predict(object$model, newdata=newdata, se.fit=T)#
-  predy.lowerInt <- as.vector(predy$fit + qt(0.05, df=object$nstudies-2)*predy$se.fit) #90% confidence band
-  predy.upperInt <- as.vector(predy$fit + qt(0.95, df=object$nstudies-2)*predy$se.fit) #90% confidence band
+  predy <- predict(x$model, newdata=newdata, se.fit=T)#
+  predy.lowerInt <- as.vector(predy$fit + qt(confint.level/2, df=x$nstudies-2)*predy$se.fit) #90% confidence band
+  predy.upperInt <- as.vector(predy$fit + qt((1-confint.level/2), df=x$nstudies-2)*predy$se.fit) #90% confidence band
   
-  polygon(x=c(predy.upperInt,rev(predy.lowerInt)), y=c(newdata[,"x"],rev(newdata[,"x"])), col="skyblue")  
+  if (confint) {
+    polygon(x=c(predy.upperInt,rev(predy.lowerInt)), y=c(newdata[,"x"],rev(newdata[,"x"])), col=confint.col, 
+            density=confint.density)  
+  }
+  
   lines(x=as.vector(predy$fit), y=(newdata[,"x"]), lty=2 )
   points(xval, yval, pch=19)
   box()
-  if (is.na(ref)) {
+  
+  if (missing(ref)) {
     abline(v=(res$b))
   } else {
     abline(v=ref)
