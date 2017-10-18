@@ -271,26 +271,25 @@ fat <- function(b, b.se, n.total, d.total, d1, d2, method="E-UW")
   out$call <- match.call()
   out$method <- method
   out$pval <- p.fat
+  out$nstudies <- nstudies
   out$model <- m.fat
   class(out) <- "fat"
   return(out)
 }
 
 #' @export
-print.fat <- function(x, ...) {
-  print_fat(x, ...)
-}
-
-
-print_fat <- function(object, digits = max(3, getOption("digits") - 3), ...) {
-  cat("Call: ");                       print(object$call); cat("\n")
+print.fat <- function(x, digits = max(3, getOption("digits") - 3), ...) {
+  cat("Call: ");                       
+  print(x$call); 
+  cat("\n")
   cat("Evidence of asymmetry: \n"); 
-  cat(c("\tPr(>|t|) =",round(object$pval, digits = digits))); cat("\n")
+  cat(c("\tPr(>|t|) =", round(x$pval, digits = digits))); 
+  cat("\n")
 }
 
 #' Display results from the funnel plot asymmetry test
 #' 
-#' Generates a funnel plot for a fitted \code{fat} object, with boundaries for the 90\% confidence interval.
+#' Generates a funnel plot for a fitted \code{fat} object, with boundaries for the 90\% confidence interval (based on a Student-T distribution)
 #' @param x An object of class \code{fat}
 #' @param ... Additional arguments for \code{\link{plot}}. The argument \code{funnel.xlab} can be used to define the x-label axis.
 #' The argument \code{ref} represents a numeric value indicating the fixed or random effects summary estimate. If no value is provided
@@ -307,6 +306,7 @@ print_fat <- function(object, digits = max(3, getOption("digits") - 3), ...) {
 #' plot(fat(b=b, b.se=b.se, n.total=n.total, method="M-FIV"), funnel.xlab="Log hazard ratio")
 #' plot(fat(b=b, b.se=b.se), funnel.xlab="Hazard ratio", x.rescale="exp")
 #' @importFrom metafor rma
+#' @importFrom stats qt
 #' @importFrom methods hasArg
 #' @export
 plot.fat <- function(x,  ...) {
@@ -360,8 +360,8 @@ plot_fat <- function (object, ref, funnel.xlab, x.rescale) {
   newdata <- as.data.frame(cbind(newdata,NA))
   colnames(newdata) <- c("x","y")
   predy <- predict(object$model, newdata=newdata, se.fit=T)#
-  predy.lowerInt <- as.vector(predy$fit + qnorm(0.05)*predy$se.fit) #90% confidence band
-  predy.upperInt <- as.vector(predy$fit + qnorm(0.95)*predy$se.fit) #90% confidence band
+  predy.lowerInt <- as.vector(predy$fit + qt(0.05, df=object$nstudies-2)*predy$se.fit) #90% confidence band
+  predy.upperInt <- as.vector(predy$fit + qt(0.95, df=object$nstudies-2)*predy$se.fit) #90% confidence band
   
   polygon(x=c(predy.upperInt,rev(predy.lowerInt)), y=c(newdata[,"x"],rev(newdata[,"x"])), col="skyblue")  
   lines(x=as.vector(predy$fit), y=(newdata[,"x"]), lty=2 )

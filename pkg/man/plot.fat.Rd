@@ -15,7 +15,7 @@ then it will be retrieved from a fixed effects meta-analysis (if possible). The 
 (e.g. for log odds or log hazard ratios).}
 }
 \description{
-Generates a funnel plot for a fitted \code{fat} object, with boundaries for the 90\% confidence interval.
+Generates a funnel plot for a fitted \code{fat} object, with boundaries for the 90\% confidence interval (based on a Student-T distribution)
 }
 \examples{
 data(Fibrinogen)
