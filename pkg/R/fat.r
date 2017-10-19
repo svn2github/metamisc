@@ -356,9 +356,17 @@ plot.fat <- function(x, ref, confint=TRUE, confint.level=0.10, confint.col="skyb
     yval <- (x$model$data[,"x"]) # Sample size
     ylim <- (c(0, max(yval, na.rm=T))) 
   } else if (x$method == "P-FPV") {
-    ylab <- "Sample size"
-    yval <- 1/(x$model$data[,"x"]) # 1/Sample size
-    ylim <- (c(0, max(yval, na.rm=T))) 
+    ylab <- "1/Sample size"
+    yval <- (x$model$data[,"x"]) # 1/Sample size
+    ylim <- rev(c(0, max(yval, na.rm=T))) #Reverse y axis scale
+  } else if (x$method == "D-FIV") {
+    ylab <- "1/Total events"
+    yval <- (x$model$data[,"x"]) # 1/Total events
+    ylim <- rev(c(0, max(yval, na.rm=T))) #Reverse y axis scale
+  } else if (x$method == "D-FAV") {
+    ylab <- "1/Total events"
+    yval <- (x$model$data[,"x"]) # 1/Total events
+    ylim <- rev(c(0, max(yval, na.rm=T))) #Reverse y axis scale
   } else {
     stop("Plot not supported!")
   }
@@ -369,21 +377,25 @@ plot.fat <- function(x, ref, confint=TRUE, confint.level=0.10, confint.col="skyb
   newdata <- as.data.frame(cbind(newdata,NA))
   colnames(newdata) <- c("x","y")
   predy <- predict(x$model, newdata=newdata, se.fit=T)#
+  predy.mean <- predy$fit
   predy.lowerInt <- as.vector(predy$fit + qt(confint.level/2, df=x$df)*predy$se.fit) #90% confidence band
   predy.upperInt <- as.vector(predy$fit + qt((1-confint.level/2), df=x$df)*predy$se.fit) #90% confidence band
+  
+  #if (x$method == "P-FPV") {
+  #  #Re-sort newdata and predy according to 1/sample size
+  #  i.sorted <- order((1/newdata[,"x"]), decreasing=FALSE)
+  #  newdata[,"x"] <- 1/newdata[i.sorted, "x"]
+  #  predy.mean <- predy.mean[i.sorted]
+  #  predy.lowerInt <- predy.lowerInt[i.sorted]
+  #  predy.upperInt <- predy.upperInt[i.sorted]
+  #}
   
   if (confint) {
     polygon(x=c(predy.upperInt,rev(predy.lowerInt)), y=c(newdata[,"x"],rev(newdata[,"x"])), col=confint.col, 
             density=confint.density)  
   }
   points(xval, yval, pch=19)
-  if (x$method == "P-FPV") {
-    # Need to transform the scale of the vertical axis
-    #lines(x=as.vector(predy$fit), y=(newdata[,"x"]), lty=2 )
-    stop("Currently not supported!")
-  } else {
-    lines(x=as.vector(predy$fit), y=(newdata[,"x"]), lty=2 )
-  }
+  lines(x=predy.mean, y=(newdata[,"x"]), lty=2 )
   
   box()
   
