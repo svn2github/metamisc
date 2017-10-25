@@ -67,14 +67,17 @@ data from individuals in multiple studies.
 \examples{
 data(DVTipd)
 DVTipd$cluster <- 1:4 # Add a fictional clustering to the data set.
-metamisc:::metapred(DVTipd, strata = "cluster", f = dvt ~ vein + malign, family = binomial)
-metamisc:::metapred(DVTipd, strata = "cluster", f = dvt ~ sex + vein + malign, family = binomial, 
-stepwise = FALSE)
-metamisc:::metapred(DVTipd, strata = "cluster", f = dvt ~ altdiagn + histdvt, 
-family = binomial, recal.int = TRUE)
-metamisc:::metapred(DVTipd, strata = "cluster", f = dvt ~ altdiagn + histdvt, 
-family = binomial, meta.method = "DL")
+metamisc:::metapred(DVTipd, strata = "cluster", f = dvt ~ sex + vein + malign, family = binomial)
 
+\dontrun{
+# Some additional examples:
+metamisc:::metapred(DVTipd, strata = "cluster", f = dvt ~ sex + vein + malign
+, family = binomial, stepwise = FALSE)
+metamisc:::metapred(DVTipd, strata = "cluster", f = dvt ~ sex + altdiagn + histdvt
+, family = binomial, recal.int = TRUE)
+metamisc:::metapred(DVTipd, strata = "cluster", f = dvt ~ sex + altdiagn + histdvt
+, family = binomial, meta.method = "DL")
+}
 # By default, metapred assumes the first column is the outcome.
 DVTipd.reordered <- DVTipd[c("dvt", "ddimdich", "histdvt", "cluster")]
 mp <- metamisc:::metapred(DVTipd.reordered, strata = "cluster", family = binomial)
