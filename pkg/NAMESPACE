@@ -12,6 +12,7 @@ importFrom("lme4", "glmer")
 importFrom("graphics", "abline", "axis", "box", "lines", "par", "plot", "points", "polygon", "text", "segments", "strheight")
 importFrom("stats", "coef", "coefficients", "dnorm", "glm", "nobs", "optim", "pchisq", "qnorm", "qt", "pt", "rnorm", "runif", "confint", 
            "poisson", "predict", "vcov", "as.formula", "formula", "model.frame", "model.frame.default", "update.formula", "family")
+importFrom("plyr","round_any")
 
 #Riley methods
 S3method(print, riley)

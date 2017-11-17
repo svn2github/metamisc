@@ -57,27 +57,27 @@ corresponding estimates for the standard error \eqn{\widehat \mathrm{SE}(\hat{b}
 studies, indicating no asymmetry and thus no small-study effects. \cr \cr
 It is possible to allow for between-study heterogeneity by adopting a multiplicative overdispersion parameter 
 by which the variance in each study is multiplied (\code{method="E-FIV"}, Sterne 2000):
-\deqn{\hat{\upbeta}_k = a + b\, \widehat \mathrm{SE}(\hat{\upbeta}_k) + \epsilon_k \;,\; \epsilon_k \sim \mathcal{N}(0, \phi \; \widehat \mathrm{var}(\hat{\upbeta}_k))}{b = B0 + B1*b.se + e;  e~N(0, P*b.se^2)}
+\deqn{\hat{\beta}_k = a + b\, \widehat \mathrm{SE}(\hat{\beta}_k) + \epsilon_k \;,\; \epsilon_k \sim \mathcal{N}(0, \phi \; \widehat \mathrm{var}(\hat{\beta}_k))}{b = B0 + B1*b.se + e;  e~N(0, P*b.se^2)}
 Because the use of \eqn{\widehat \mathrm{SE}(\hat{b}_k)}{b.se} as independet variable is rather problemetic 
 when the effect sizes \eqn{\hat{b}_k}{b} represent log odds ratios or log hazard ratios, Macaskill et al. 
 proposed to use the following regression model (\code{method="M-FIV"}, Macaskill 2001):
-\deqn{\hat{\upbeta}_k = a + b \,n_k + \epsilon_k \;,\; \epsilon_k \sim \mathcal{N}(0, \phi \; \widehat \mathrm{var}(\hat{\upbeta}_k))}{b = B0 + B1*n.total + e;  e~N(0, P*b.se^2)}
+\deqn{\hat{\beta}_k = a + b \,n_k + \epsilon_k \;,\; \epsilon_k \sim \mathcal{N}(0, \phi \; \widehat \mathrm{var}(\hat{\beta}_k))}{b = B0 + B1*n.total + e;  e~N(0, P*b.se^2)}
 Macaskill et al. also proposed an alternative test where a 'pooled' estimate of the outcome proportion is used
 for the variance \eqn{\widehat \mathrm{var}(\hat{b}_k)}{b.se^2} (\code{method="M-FPV"}, Macaskill 2001):
-\deqn{\hat{\upbeta}_k = a + b \,n_k + \epsilon_k \;,\; \epsilon_k \sim \mathcal{N}\left(0, \phi \; \frac{1}{d_k (1-d_k/n_k)}\right)}{b = B0 + B1*n.total + e;  e~N(0, P/(d.total * (1-d.total/n.total)))}
+\deqn{\hat{\beta}_k = a + b \,n_k + \epsilon_k \;,\; \epsilon_k \sim \mathcal{N}\left(0, \phi \; \frac{1}{d_k (1-d_k/n_k)}\right)}{b = B0 + B1*n.total + e;  e~N(0, P/(d.total * (1-d.total/n.total)))}
 For studies with zero events, a continuity correction is applied by adding 0.5 to cell counts.
 A modification of Macaskill's test was proposed by Peters et al. to obtain more balanced type-I error rates 
 in the tail probability areas  (\code{method="P-FPV"}, Peters 2006):
-\deqn{\hat{\upbeta}_k = a + b \,\frac{1}{n_k} + \epsilon_k \;,\; \epsilon_k \sim \mathcal{N}\left(0, \phi \; \frac{1}{d_k (1-d_k/n_k)}\right)}{b = B0 + B1/n.total + e;  e~N(0, P/(d.total * (1-d.total/n.total)))}
+\deqn{\hat{\beta}_k = a + b \,\frac{1}{n_k} + \epsilon_k \;,\; \epsilon_k \sim \mathcal{N}\left(0, \phi \; \frac{1}{d_k (1-d_k/n_k)}\right)}{b = B0 + B1/n.total + e;  e~N(0, P/(d.total * (1-d.total/n.total)))}
 Again, 0.5 is added to all cells for studies with zero events.\cr
 \cr
 Because the use of aforementioned tests may be less appropriate in the presence of survival data, Debray et al. 
 proposed using the total number of events as independent variable (\code{D-FIV}, Debray 2017):
-\deqn{\hat{\upbeta}_k = a + b\, \frac{1}{d_k} + \epsilon_k  \;,\; \epsilon_k \sim \mathcal{N}(0, \phi \; \widehat \mathrm{var}(\hat{\upbeta}_k))}{b = B0 + B1/d.total + e;  e~N(0, P*b.se^2)}
+\deqn{\hat{\beta}_k = a + b\, \frac{1}{d_k} + \epsilon_k  \;,\; \epsilon_k \sim \mathcal{N}(0, \phi \; \widehat \mathrm{var}(\hat{\beta}_k))}{b = B0 + B1/d.total + e;  e~N(0, P*b.se^2)}
 For studies with zero events, the total number of observed events is set to 1.
-Alternatively, when \eqn{\widehat \mathrm{var}(\hat{\upbeta}_k)}{b.se} is unknown or derived from small samples, 
+Alternatively, when \eqn{\widehat \mathrm{var}(\hat{\beta}_k)}{b.se} is unknown or derived from small samples, 
 Debray at al.proposed to use the following regression model (\code{D-FAV}, Debray 2017):
-\deqn{\hat{\upbeta}_k = a + b\, \frac{1}{d_k} + \epsilon_k  \;,\; \epsilon_k \sim \mathcal{N}\left(0, \phi \; \left(\frac{1}{d_{k1}}+\frac{1}{d_{k2}}\right)\right)}{b = B0 + B1/d.total + e;  e~N(0, P/(1/d1 + 1/d2))}
+\deqn{\hat{\beta}_k = a + b\, \frac{1}{d_k} + \epsilon_k  \;,\; \epsilon_k \sim \mathcal{N}\left(0, \phi \; \left(\frac{1}{d_{k1}}+\frac{1}{d_{k2}}\right)\right)}{b = B0 + B1/d.total + e;  e~N(0, P/(1/d1 + 1/d2))}
 }
 \examples{
 data(Fibrinogen)
@@ -89,7 +89,7 @@ d.total <- Fibrinogen$N.events
 fat(b=b, b.se=b.se)
 fat(b=b, b.se=b.se, d.total=d.total, method="D-FIV")
 
-# Note that many methods are also possible via metafor
+# Note that many tests are also available via metafor
 require(metafor)
 fat(b=b, b.se=b.se, n.total=n.total, method="M-FIV")
 regtest(x=b, sei=b.se, ni=n.total, model="lm", predictor="ni") 
