@@ -65,7 +65,7 @@
 ##'  \item{"model"}{A fitted \code{glm} object, representing the estimated regression model used for testing funnel
 ##'  plot asymmetry.}
 ##' }
-#' @author Thomas Debray
+#' @author Thomas Debray <thomas.debray@gmail.com>
 #' 
 #' @references Debray TPA, Moons KGM, Riley RD. Detecting small-study effects and funnel plot asymmetry in 
 #' meta-analysis of survival data: a comparison of new and existing tests. \emph{Res Syn Meth}. 2017.\cr
@@ -100,8 +100,7 @@
 #' regtest(x=b, sei=b.se, ni=n.total, model="lm", predictor="ni") 
 #'
 #' @import stats
-#' @importFrom stats pt
-#' @importFrom stats qnorm
+#' @importFrom stats pt qnorm
 #' @importFrom metafor rma
 #' @importFrom plyr round_any
 #' 

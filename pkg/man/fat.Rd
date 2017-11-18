@@ -115,5 +115,5 @@ and prevalence in the literature. \emph{J Clin Epidemiol}. 2000;53(11):1119--29.
 \code{\link{plot.fat}}
 }
 \author{
-Thomas Debray
+Thomas Debray <thomas.debray@gmail.com>
 }
