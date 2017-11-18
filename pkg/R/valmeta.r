@@ -183,9 +183,14 @@
 #' # Meta-analysis of total O:E ratio after 10 years of follow-up
 #' with(Framingham, valmeta(measure="OE", Po=Po, Pe=Pe, N=n, t.val=t.val, t.ma=10))
 #' with(Framingham, valmeta(measure="OE", Po=Po, Pe=Pe, N=n, t.val=t.val, t.ma=10, t.extrapolate=TRUE))
+#' 
 #' @keywords meta-analysis discrimination  calibration
+#' 
 #' @author Thomas Debray <thomas.debray@gmail.com>
+#' 
 #' @export
+#' @import metafor
+#' @import mvtnorm
 #' @importFrom lme4 glmer
 #' @importFrom stats coef coefficients dnorm glm nobs optim pchisq qnorm qt pt rnorm runif confint poisson
 #' predict vcov as.formula formula model.frame model.frame.default update.formula family
@@ -670,8 +675,47 @@ print.valmeta <- function(x, ...) {
   }
 }
 
-
+#' Forest Plots
+#' 
+#' Function to create forest plots for objects of class \code{"valmeta"}.
+#' 
+#' @param x An object of class \code{"valmeta"}
+#' @param \ldots Additional arguments which are passed to \code{forest} from the package \code{metafor}.
+#' 
+#' @details Plots are generated using functionalities provided by the \code{metafor} pacakge. The forest plot 
+#' shows the performance estimates of each validation with corresponding confidence intervals. A polygon is 
+#' added to the bottom of the forest plot, showing the summary estimate based on the model (with the outer 
+#' edges of the polygon indicating the confidence interval limits). A 95\% prediction interval is added by default,  
+#' the dotted line indicates its (approximate) bounds.
+#' 
+#' @references 
+#' Debray TPA, Damen JAAG, Snell KIE, Ensor J, Hooft L, Reitsma JB, et al. A guide to systematic review 
+#' and meta-analysis of prediction model performance. \emph{BMJ}. 2017;356:i6460.\cr
+#' \cr
+#' Lewis S, Clarke M. Forest plots: trying to see the wood and the trees. \emph{BMJ}. 2001; 322(7300):1479--80. \cr
+#' \cr
+#' Riley RD, Higgins JPT, Deeks JJ. Interpretation of random effects meta-analyses. \emph{BMJ}. 2011 342:d549--d549.\cr
+#' \cr
+#'  Viechtbauer W. Conducting Meta-Analyses in R with the metafor Package. \emph{Journal of Statistical Software}. 
+#'  2010; 36(3). Available from: \url{http://www.jstatsoft.org/v36/i03/}
+#' @note As indicated by \code{metafor}, the labels, annotations, and symbols may become quite small and 
+#' impossible to read when the number of studies is quite large. Stretching the plot window vertically may 
+#' then provide a more readable figure (one should call the function again after adjusting the window size, 
+#' so that the label/symbol sizes can be properly adjusted). Also, the \code{cex}, \code{cex.lab}, and 
+#' \code{cex.axis} arguments are then useful to adjust the symbol and text sizes.
+#' 
+#' @examples 
+#' data(EuroSCORE)
+#' fit <- with(EuroSCORE, valmeta(cstat=c.index, cstat.se=se.c.index, 
+#'             cstat.95CI=cbind(c.index.95CIl,c.index.95CIu), N=n, O=n.events))
+#' plot(fit)
+#' 
+#' @keywords meta-analysis discrimination calibration
+#'             
 #' @author Thomas Debray <thomas.debray@gmail.com>
+#' 
+#' @import metafor
+#' @import ellipse
 #' @export
 plot.valmeta <- function(x, ...) {
   if (x$measure=="cstat") {
