@@ -7,7 +7,7 @@ Author: Thomas Debray [aut, cre],
   Valentijn de Jong [aut]
 Maintainer: Thomas Debray <thomas.debray@gmail.com>
 Description: Meta-analysis of diagnostic and prognostic modeling studies. Summarize estimates of diagnostic test accuracy and prediction model performance. Validate, update and combine published prediction models. Develop new prediction models with data from multiple studies. 
-Imports: metafor (>= 2.0.0), mvtnorm, ellipse, lme4, plyr
+Imports: metafor (>= 2.0.0), mvtnorm, ellipse, lme4, plyr, ggplot2
 Depends: stats, graphics
 Suggests: runjags, rjags, testthat (>= 1.0.2)
 License: GPL-2

@@ -6,12 +6,14 @@ export("valmeta")
 import("ellipse")
 import("metafor")
 import("mvtnorm")
+import("ggplot2")
 
 # Imports of specific functions
 importFrom("lme4", "glmer")
 importFrom("graphics", "abline", "axis", "box", "lines", "par", "plot", "points", "polygon", "text", "segments", "strheight")
 importFrom("stats", "coef", "coefficients", "dnorm", "glm", "nobs", "optim", "pchisq", "qnorm", "qt", "pt", "rnorm", "runif", "confint", 
-           "poisson", "predict", "vcov", "as.formula", "formula", "model.frame", "model.frame.default", "update.formula", "family")
+           "poisson", "predict", "vcov", "as.formula", "formula", "model.frame", "model.frame.default", "update.formula", "family",
+           "reorder")
 importFrom("plyr","round_any")
 
 #Riley methods
