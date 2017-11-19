@@ -287,11 +287,10 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, OE, OE.se, OE.
   # Assign study labels
   #######################################################################################
   if(missing(slab)) {
-    out$slab <- paste("Study",seq(1, k))
+    out$slab <- paste("Study", seq(1, k))
   } else {
-    out$slab <- as.character(slab)
+    out$slab <- make.unique(as.character(slab))
   }
-  
 
   #######################################################################################
   # Meta-analysis of the c-statistic
@@ -716,10 +715,12 @@ print.valmeta <- function(x, ...) {
 #' 
 #' @import metafor
 #' @import ellipse
+#' @import ggplot2
+#' @importFrom stats reorder
 #' @export
 plot.valmeta <- function(x, ...) {
   if (x$measure=="cstat") {
-    plotForest(x, xlab="c-statistic", refline=NULL, ...)
+    plotForest(x, xlab="c-statistic", refline=0.5, ...)
   } else if (x$measure=="OE") {
     plotForest(x, xlab="Total O:E ratio", refline=1, ...)
   }
