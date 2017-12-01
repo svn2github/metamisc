@@ -13,7 +13,7 @@ importFrom("lme4", "glmer")
 importFrom("graphics", "abline", "axis", "box", "lines", "par", "plot", "points", "polygon", "text", "segments", "strheight")
 importFrom("stats", "coef", "coefficients", "dnorm", "glm", "nobs", "optim", "pchisq", "qnorm", "qt", "pt", "rnorm", "runif", "confint", 
            "poisson", "predict", "vcov", "as.formula", "formula", "model.frame", "model.frame.default", "update.formula", "family",
-           "reorder")
+           "reorder", "binomial")
 importFrom("plyr","round_any")
 
 #Riley methods

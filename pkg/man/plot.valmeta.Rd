@@ -11,6 +11,9 @@
 
 \item{\ldots}{Additional arguments which are passed to \code{forest} from the package \code{metafor}.}
 }
+\value{
+An object of class \code{ggplot}
+}
 \description{
 Function to create forest plots for objects of class \code{"valmeta"}.
 }

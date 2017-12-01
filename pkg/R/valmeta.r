@@ -717,6 +717,7 @@ print.valmeta <- function(x, ...) {
 #' @import ellipse
 #' @import ggplot2
 #' @importFrom stats reorder
+#' @return An object of class \code{ggplot}
 #' @export
 plot.valmeta <- function(x, ...) {
   if (x$measure=="cstat") {
