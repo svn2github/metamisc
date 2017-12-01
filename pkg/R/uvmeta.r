@@ -173,7 +173,7 @@ plot.uvmeta <- function(x, ...) {
 }
 
 
-
+#' @export
 print.uvmeta <- function(x, ...)
 {
   out <- (x$results)[c("estimate", "95CIl", "95CIu")]
@@ -204,7 +204,27 @@ print.uvmeta <- function(x, ...)
 	out
 }
 
-
+#' Summarizing Univariate Meta-Analysis Models
+#' 
+#' This function provides summary estimates of a fitted univariate meta-analysis model.
+#' 
+#' @method summary uvmeta
+#' @S3method summary uvmeta
+#' 
+#' @param  object  An object of class \code{"uvmeta"}
+#' @param \dots Optional arguments to be passed on to other functions
+#' 
+#' @references  \itemize{
+#' \item Borenstein M, Hedges LV, Higgins JPT, Rothstein HR. A basic introduction to fixed-effect and random-effects models for meta-analysis. \emph{Research Synthesis Methods} 2010; \bold{1}: 97--111.
+#' \item DerSimonian R, Laird N. Meta-analysis in clinical trials. \emph{Controlled Clinical Trials} 1986; \bold{7}: 177--188.
+#' \item Riley RD, Higgins JPT, Deeks JJ. Interpretation of random effects meta-analyses. \emph{British Medical Journal} 2011; \bold{342}: d549.
+#' }
+#' 
+#' @author Thomas Debray <thomas.debray@gmail.com>
+#' @seealso \code{\link{uvmeta}}
+#' 
+#' @export
+#' @keywords DerSimonian  Laird univariate random-effects meta-analysis 
 summary.uvmeta <- function(object, ...)
 {
     cat("Call:\n")

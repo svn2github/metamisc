@@ -8,7 +8,7 @@
 %\tabular{ll}{
 %Package: \tab metamisc\cr
 %Type: \tab Package\cr
-%Version: \tab 0.1.7\cr
+%Version: \tab 0.1.8\cr
 %Date: \tab 2017-11-19\cr
 %License: \tab GPL-2 \cr
 %}
