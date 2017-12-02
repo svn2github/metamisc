@@ -208,17 +208,20 @@ generateOEdata <- function(O, E, Po, Po.se, Pe, OE, OE.se, OE.95CI, citl, citl.s
   return(ds)
 }
 
+#' @author Thomas Debray <thomas.debray@gmail.com>
+#' @import ggplot2
+#' @importFrom graphics plot axis polygon points lines box abline strheight segments text
 plotForestDeprecated <- function(vmasum, xlab, refline, ...) {
   inv.logit <- function(x) {1/(1+exp(-x)) }
   
   if (!is.null(vmasum$rma)) {
     # Forest plot
     if (vmasum$model=="normal/logit") {
-      forest(vmasum$rma, transf=inv.logit, xlab=xlab, addcred=T, refline=refline, ...)
+      metafor::forest(vmasum$rma, transf=inv.logit, xlab=xlab, addcred=T, refline=refline, ...)
     } else if (vmasum$model == "normal/log") {
-      forest(vmasum$rma, transf=exp, xlab=xlab, addcred=T, refline=refline,...)
+      metafor::forest(vmasum$rma, transf=exp, xlab=xlab, addcred=T, refline=refline,...)
     } else if (vmasum$model=="normal/identity") {
-      forest(vmasum$rma, transf=NULL, xlab=xlab, addcred=T, refline=refline, ...)
+      metafor::forest(vmasum$rma, transf=NULL, xlab=xlab, addcred=T, refline=refline, ...)
     } else {
       stop ("Invalid meta-analysis model!")
     }

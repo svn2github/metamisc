@@ -86,7 +86,7 @@
 #' 
 #' @import stats
 #'
-#' @importFrom stats formula
+#' @importFrom stats formula var
 #'
 #' @export
 
@@ -208,6 +208,7 @@ metapred <- function(data, strata, formula = NULL, estFUN = "glm", stepwise = TR
   return(out)
 }
 
+#' @method print metapred
 #' @export
 print.metapred <- function(x, digits = max(3L, getOption("digits") - 3L), ...) {
   cat("Call: ");                       print(x$call); cat("\n")

@@ -118,7 +118,7 @@
 ##'  \item{"method"}{character string specifying the meta-analysis method.}
 ##'  \item{"model"}{character string specifying the meta-analysis model (link function).}
 ##'  \item{"results"}{numeric vector containing the meta-analysis results}
-##'  \item{"rma"}{a fitted object of class \code{rma} (if \code{metafor} was used for meta-analysis).}
+##'  \item{"rma"}{a fitted object of class \link[metafor]{rma} (if \code{metafor} was used for meta-analysis).}
 ##'  \item{"runjags"}{a fitted object of class \code{runjags} (if \code{runjags} was used for meta-analysis).}
 ##'  \item{"se.source"}{character vector specifying the source of the studies' standard errors.}
 ##'  \item{"slab"}{vector specifying the label of each study.}
@@ -636,6 +636,7 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, OE, OE.se, OE.
 }
 
 #' @author Thomas Debray <thomas.debray@gmail.com>
+#' @method print valmeta
 #' @export
 print.valmeta <- function(x, ...) {
   if (x$measure=="cstat") {
@@ -679,14 +680,11 @@ print.valmeta <- function(x, ...) {
 #' Function to create forest plots for objects of class \code{"valmeta"}.
 #' 
 #' @param x An object of class \code{"valmeta"}
-#' @param \ldots Additional arguments which are passed to \code{forest} from the package \code{metafor}.
+#' @param \ldots Additional arguments which are passed to \link[ggplot2]{ggplot}.
 #' 
-#' @details Plots are generated using functionalities provided by the \code{metafor} pacakge. The forest plot 
-#' shows the performance estimates of each validation with corresponding confidence intervals or credibility
-#' intervals (if \code{method="BAYES"}). A polygon is 
-#' added to the bottom of the forest plot, showing the summary estimate based on the model (with the outer 
-#' edges of the polygon indicating the confidence interval limits). A 95\% prediction interval is added by default,  
-#' the dotted line indicates its (approximate) bounds.
+#' @details The forest plot shows the performance estimates of each validation with corresponding confidence 
+#' intervals. A polygon is added to the bottom of the forest plot, showing the summary estimate based on the model. 
+#' A 95\% prediction interval is added by default for random-effects models,  the dotted line indicates its (approximate) bounds.
 #' 
 #' @references \itemize{
 #' \item Debray TPA, Damen JAAG, Snell KIE, Ensor J, Hooft L, Reitsma JB, et al. A guide to systematic review 
@@ -695,19 +693,13 @@ print.valmeta <- function(x, ...) {
 #' \item Riley RD, Higgins JPT, Deeks JJ. Interpretation of random effects meta-analyses. \emph{BMJ}. 2011 342:d549--d549.
 #' }
 #' 
-#' @note As indicated by \code{metafor}, the labels, annotations, and symbols may become quite small and 
-#' impossible to read when the number of studies is quite large. Stretching the plot window vertically may 
-#' then provide a more readable figure (one should call the function again after adjusting the window size, 
-#' so that the label/symbol sizes can be properly adjusted). Also, the \code{cex}, \code{cex.lab}, and 
-#' \code{cex.axis} arguments are then useful to adjust the symbol and text sizes.
-#' 
 #' @examples 
 #' data(EuroSCORE)
 #' fit <- with(EuroSCORE, valmeta(cstat=c.index, cstat.se=se.c.index, 
 #'             cstat.95CI=cbind(c.index.95CIl,c.index.95CIu), N=n, O=n.events))
 #' plot(fit)
 #' 
-#' @keywords meta-analysis discrimination calibration
+#' @keywords meta-analysis discrimination calibration forest
 #'             
 #' @author Thomas Debray <thomas.debray@gmail.com>
 #' 
@@ -718,10 +710,37 @@ print.valmeta <- function(x, ...) {
 #' @return An object of class \code{ggplot}
 #' @export
 plot.valmeta <- function(x, ...) {
-  if (x$measure=="cstat") {
-    plotForest(x, xlab="c-statistic", refline=0.5, ...)
-  } else if (x$measure=="OE") {
-    plotForest(x, xlab="Total O:E ratio", refline=1, ...)
+  
+  k <- dim(x$data)[1]
+  yi.slab <- c(as.character(x$slab))
+  yi <- c(x$data[,"theta"])
+  ci.lb <- c(x$data[,"theta.95CIl"])
+  ci.ub <- c(x$data[,"theta.95CIu"])
+  
+  if (x$model=="normal/logit") {
+    yi <- sapply(yi, inv.logit)
+    ci.lb <- sapply(ci.lb, inv.logit)
+    ci.ub <- sapply(ci.ub, inv.logit)
+  } else if (x$model == "normal/log" | x$model == "poisson/log") {
+    yi <- sapply(yi, exp)
+    ci.lb <- sapply(ci.lb, exp)
+    ci.ub <- sapply(ci.ub, exp)
   }
+  
+  yi.ci <- cbind(ci.lb, ci.ub)
+  
+  if (x$measure=="cstat") {
+    xlab <- "c-statistic"
+    refline <- 0.5
+  } else if (x$measure=="OE") {
+    xlab <- "Total O:E ratio"
+    refline <- 1
+  }
+  
+  forest(theta=yi, theta.ci=yi.ci, theta.slab=yi.slab, 
+         theta.summary=x$results["estimate"], 
+         theta.summary.ci=x$results[c("95CIl","95CIu")], 
+         theta.summary.pi=x$results[c("95PIl","95PIu")], 
+         refline=refline, xlab=xlab, ...)
 }
 

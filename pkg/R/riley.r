@@ -1,5 +1,91 @@
+#TODO: incoroporate level in meta-analysis, and omit it from plots and summaries
+#TODO: use generic forest method for generating plots
+#TODO: make riley submethods (DA and SE) invisible
+#TODO: re-enable plot examples
+
+
+#' Fit the alternative model for bivariate random-effects meta-analysis
+#' 
+#' This function fits the alternative model for bivariate random-effects meta-analysis when the within-study correlations 
+#' are unknown. This bivariate model was proposed by Riley et al. (2008) and is similar to the general bivariate 
+#' random-effects model (van Houwelingen et al. 2002), but includes an overall correlation parameter rather than 
+#' separating the (usually unknown) within- and between-study correlation. As a consequence, the alternative model 
+#' is not fully hierarchical, and estimates of additional variation beyond sampling error (\code{psi}) are not 
+#' directly equivalent to the between-study variation (\code{tau}) from the general model. This model is particularly 
+#' useful when there is large within-study variability, few primary studies are available or the general model 
+#' estimates the between-study correlation as 1 or -1. 
+#' 
+#' @param  X data frame containing integer variables \code{TP}, \code{FN}, \code{FP} and \code{TN} 
+#' (for diagnostic test accuracy data, cfr. \code{\link{rileyDA}}) or numeric variables 
+#' \code{Y1}, \code{vars1}, \code{Y2} and \code{vars2} (for effect size data, cfr. \code{\link{rileyES}}).
+#' @param type a character string defining the type of data that is being summarized. Defaults to 
+#' "\code{effect.size}" for summarizing effect sizes for which the normality assumption holds 
+#' (for more details see \code{\link{rileyES}}). Diagnostic test accuracy data 
+#' (i.e. sensitivities and specificities) can be pooled by choosing "\code{test.accuracy}" 
+#' (for more details see \code{\link{rileyDA}}).
+#' @param optimization The optimization method that should be used for minimizing the negative (restricted) 
+#' log-likelihood function. The default method is an implementation of that of Nelder and Mead (1965), 
+#' that uses only function values and is robust but relatively slow. Other methods are described in \link[stats]{optim}.
+#' @param control A list of control parameters to pass to \link[stats]{optim}.
+#' @param \dots Arguments to be passed on to other functions.
+#' 
+#' @return An object of the class \code{riley} for which many standard methods are available.
+#' 
+#' @details 
+#' Parameters are estimated by iteratively maximizing the restriced log-likelihood using the Newton-Raphson procedure. 
+#' Algorithms for dealing with missing data are currently not implemented, but Bayesian approaches will become 
+#' available in later versions.
+#' 
+#' \subsection{Meta-analysis of diagnostic test accuracy}{
+#' Although the model can also be used for diagnostic test 
+#' accuracy data when substantial within-study correlations are expected, assuming zero within-study correlations 
+#' (i.e. applying Reitsma's approach) is usually justified (Reitsma et al. 2005, Daniels and Hughes 1997, 
+#' Korn et al. 2005, Thompson et al. 2005, Van Houwelingen et al. 2002).
+#' }
+#' 
+#' @references
+#' \itemize{
+#' \item Korn EL, Albert PS, McShane LM. Assessing surrogates as trial endpoints using mixed models. 
+#' \emph{Statistics in Medicine} 2005; \bold{24}: 163--182.
+#' \item Nelder JA, Mead R. A simplex algorithm for function minimization. \emph{Computer Journal} (1965); \bold{7}: 308--313.
+#' \item Reitsma J, Glas A, Rutjes A, Scholten R, Bossuyt P, Zwinderman A. Bivariate analysis of sensitivity and 
+#' specificity produces informative summary measures in diagnostic reviews. \emph{Journal of Clinical Epidemiology} 2005; 
+#' \bold{58}: 982--990.
+#' \item Riley RD, Thompson JR, Abrams KR. An alternative model for bivariate random-effects meta-analysis when 
+#' the within-study correlations are unknown. \emph{Biostatistics} 2008; \bold{9}: 172--186.
+#' \item Thompson JR, Minelli C, Abrams KR, Tobin MD, Riley RD. Meta-analysis of genetic studies using mendelian 
+#' randomization--a multivariate approach. \emph{Statistics in Medicine} 2005; \bold{24}: 2241--2254.
+#' \item van Houwelingen HC, Arends LR, Stijnen T. Advanced methods in meta-analysis: multivariate approach and 
+#' meta-regression. \emph{Statistics in Medicine} 2002; \bold{21}: 589--624.
+#' }
+#' 
+#' @examples 
+#' data(Scheidler)
+#' data(Daniels)
+#' data(Kertai)
+#' 
+#' #Meta-analysis of potential surrogate markers data
+#' fit1 <- riley(Daniels) #Maxit reached, try again with more iterations
+#' fit1 <- riley(Daniels,control=list(maxit=10000))
+#' summary(fit1)
+#' 
+#' #Meta-analysis of prognostic test studies
+#' fit2 <- riley(Kertai,type="test.accuracy")
+#' summary(fit2)
+#' 
+#' #Meta-analysis of computed tomography data 
+#' ds <- Scheidler[which(Scheidler$modality==1),]
+#' fit3 <- riley(ds,type="test.accuracy")
+#' summary(fit3)
+#' 
+#' @keywords regression multivariate bivariate riley meta-analysis
+#' 
+#' @author Thomas Debray <thomas.debray@gmail.com>
+#'
+#' @export
 riley <- function(X, type="effect.size", optimization = "Nelder-Mead", control = list(), ...) UseMethod("riley")
 
+#' @export
 riley.default <- function(X, type="effect.size", optimization = "Nelder-Mead", control = list(), ...)
 {
 	est <- NA    
@@ -163,6 +249,9 @@ rileyDA <-
       return(output)
   }
 
+#' @author Thomas Debray <thomas.debray@gmail.com>
+#' @method print riley
+#' @export
 print.riley <- function(x, ...)
 {
   cat("Call:\n")
@@ -201,7 +290,9 @@ predict.riley <- function(object, level = 0.95, ...)
   predint
 }
 
-
+#' @author Thomas Debray <thomas.debray@gmail.com>
+#' @method summary riley
+#' @export
 summary.riley <- function(object, level = 0.95, ...)
 {
 	confints <- cbind(object$coefficients, confint(object,level=level))
@@ -229,21 +320,53 @@ print.summary.riley <- function(x, ...)
   print(x$confints)
 }
 
-vcov.riley <- function(object, ...){
+#' @author Thomas Debray <thomas.debray@gmail.com>
+#' @method vcov riley
+#' @export
+vcov.riley <- function(object, ...) {
   if (length(which(eigen(object$hessian,symmetric=TRUE)$values<0))>0) warning("The Hessian contains negative eigenvalues!")
  
-  # It is known that 'optim' has problems.  Perhaps the simplest thing to do is to call 'optim' with each of the 'methods' in sequence, using the 'optim' found by each 'method' as the starting value for the next.  When I do this, I often skip 'SANN', because it typically takes so much more time than the other methods.  However, if there might be multiple local minima, then SANN may be the best way to find a global minimum, though you may want to call 'optim' again with another method, starting from optimal solution returned by 'SANN'. 
+  # It is known that 'optim' has problems.  Perhaps the simplest thing to do is to call 'optim' with each of 
+  # the 'methods' in sequence, using the 'optim' found by each 'method' as the starting value for the next.  
+  # When I do this, I often skip 'SANN', because it typically takes so much more time than the other methods.  
+  # However, if there might be multiple local minima, then SANN may be the best way to find a global minimum, 
+  # though you may want to call 'optim' again with another method, starting from optimal solution returned by 'SANN'. 
 
   Sigma = solve(object$hessian)
   Sigma
-  }
+}
 
-logLik.riley <- function(object, ...){
-	val 				<- object$logLik
-	attr(val, "nobs") 	<- object$nobs
+#' Print the log-likelihood
+#' 
+#' This function provides the (restricted) log-likelihood of a fitted model.
+#' 
+#' @param  object A \code{riley} object, representing a fitted alternative model for bivariate random-effects 
+#' meta-analysis when the within-study correlations are unknown.
+#' @param \dots Additional arguments to be passed on to other functions, currently ignored.
+#' @return Returns an object of class \code{logLik}. This is the (restricted) log-likelihood of the model represented 
+#' by \code{object} evaluated at the estimated coefficients. It contains at least one attribute, 
+#' "\code{df}" (degrees of freedom), giving the number of (estimated) parameters in the model.
+#' 
+#' @references Riley RD, Thompson JR, Abrams KR. An alternative model for bivariate random-effects meta-analysis when 
+#' the within-study correlations are unknown. \emph{Biostatistics} 2008; \bold{9}: 172--186.
+#' 
+#' @examples 
+#' data(Daniels)
+#' fit <- riley(Daniels,control=list(maxit=10000))
+#' logLik(fit)
+#' 
+#' @keywords likelihood riley bivariate meta-analysis
+#' 
+#' @author Thomas Debray <thomas.debray@gmail.com>
+#' 
+#' @method logLik riley
+#' @export
+logLik.riley <- function(object, ...) {
+	val 				      <- object$logLik
+	attr(val, "nobs") <- object$nobs
 	attr(val, "df") 	<- object$df
-	class(val) 			<- "logLik"
-	val
+	class(val) 			  <- "logLik"
+	return(val)
 }
 
 

@@ -97,7 +97,7 @@ An object of class \code{valmeta} with the following elements:
  \item{"method"}{character string specifying the meta-analysis method.}
  \item{"model"}{character string specifying the meta-analysis model (link function).}
  \item{"results"}{numeric vector containing the meta-analysis results}
- \item{"rma"}{a fitted object of class \code{rma} (if \code{metafor} was used for meta-analysis).}
+ \item{"rma"}{a fitted object of class \link[metafor]{rma} (if \code{metafor} was used for meta-analysis).}
  \item{"runjags"}{a fitted object of class \code{runjags} (if \code{runjags} was used for meta-analysis).}
  \item{"se.source"}{character vector specifying the source of the studies' standard errors.}
  \item{"slab"}{vector specifying the label of each study.}

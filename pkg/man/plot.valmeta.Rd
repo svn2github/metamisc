@@ -9,7 +9,7 @@
 \arguments{
 \item{x}{An object of class \code{"valmeta"}}
 
-\item{\ldots}{Additional arguments which are passed to \code{forest} from the package \code{metafor}.}
+\item{\ldots}{Additional arguments which are passed to \link[ggplot2]{ggplot}.}
 }
 \value{
 An object of class \code{ggplot}
@@ -18,19 +18,9 @@ An object of class \code{ggplot}
 Function to create forest plots for objects of class \code{"valmeta"}.
 }
 \details{
-Plots are generated using functionalities provided by the \code{metafor} pacakge. The forest plot 
-shows the performance estimates of each validation with corresponding confidence intervals or credibility
-intervals (if \code{method="BAYES"}). A polygon is 
-added to the bottom of the forest plot, showing the summary estimate based on the model (with the outer 
-edges of the polygon indicating the confidence interval limits). A 95\% prediction interval is added by default,  
-the dotted line indicates its (approximate) bounds.
-}
-\note{
-As indicated by \code{metafor}, the labels, annotations, and symbols may become quite small and 
-impossible to read when the number of studies is quite large. Stretching the plot window vertically may 
-then provide a more readable figure (one should call the function again after adjusting the window size, 
-so that the label/symbol sizes can be properly adjusted). Also, the \code{cex}, \code{cex.lab}, and 
-\code{cex.axis} arguments are then useful to adjust the symbol and text sizes.
+The forest plot shows the performance estimates of each validation with corresponding confidence 
+intervals. A polygon is added to the bottom of the forest plot, showing the summary estimate based on the model. 
+A 95\% prediction interval is added by default for random-effects models,  the dotted line indicates its (approximate) bounds.
 }
 \examples{
 data(EuroSCORE)
@@ -52,4 +42,5 @@ Thomas Debray <thomas.debray@gmail.com>
 }
 \keyword{calibration}
 \keyword{discrimination}
+\keyword{forest}
 \keyword{meta-analysis}
