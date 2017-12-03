@@ -4,7 +4,7 @@
 \alias{riley}
 \title{Fit the alternative model for bivariate random-effects meta-analysis}
 \usage{
-riley(X, optimization = "Nelder-Mead", control = list(), ...)
+riley(X, optimization = "Nelder-Mead", control = list(), pars, ...)
 }
 \arguments{
 \item{X}{data frame containing integer variables \code{Y1}, \code{vars1}, \code{Y2} and \code{vars2},
@@ -19,6 +19,9 @@ log-likelihood function. The default method is an implementation of that of Neld
 that uses only function values and is robust but relatively slow. Other methods are described in \link[stats]{optim}.}
 
 \item{control}{A list of control parameters to pass to \link[stats]{optim}.}
+
+\item{pars}{List with additional arguments. The width of confidence, credibility and prediction intervals is 
+defined by \code{level} (defaults to 0.95).}
 
 \item{\dots}{Arguments to be passed on to other functions. See "Details" for more information.}
 }
@@ -77,19 +80,25 @@ data(Scheidler)
 data(Daniels)
 data(Kertai)
 
-#Meta-analysis of potential surrogate markers data
-fit1 <- riley(Daniels) #Maxit reached, try again with more iterations
-fit1 <- riley(Daniels,control=list(maxit=10000))
+# Meta-analysis of potential surrogate markers data
+# The results obtained by Riley (2008) were as follows:
+# beta1 = -0.042 (SE = 0.063),
+# beta2 = 14.072 (SE = 4.871)
+# rho   = -0.759
+\dontrun{
+fit1 <- riley(Daniels) #maxit reached, try again with more iterations
+}
+fit1 <- riley(Daniels, control=list(maxit=10000))
 summary(fit1)
 
-#Meta-analysis of prognostic test studies
-fit2 <- riley(Kertai,type="test.accuracy")
-summary(fit2)
+# Meta-analysis of prognostic test studies
+fit2 <- riley(Kertai)
+fit2
 
-#Meta-analysis of computed tomography data 
+# Meta-analysis of computed tomography data 
 ds <- Scheidler[which(Scheidler$modality==1),]
-fit3 <- riley(ds,type="test.accuracy")
-summary(fit3)
+fit3 <- riley(ds)
+fit3
 
 }
 \references{

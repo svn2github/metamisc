@@ -172,7 +172,7 @@ uvmeta.default <- function(r, r.se, method="REML", test="knha", labels, na.actio
   out$level <- pars.default$level
   quantiles <- c((1-pars.default$level)/2, 0.50, (1-((1-pars.default$level)/2)))
   
-  if (sum(quantiles < 0 | quantiles > 1) > 0) {
+  if (out$level < 0 | out$level > 1) {
     stop ("Invalid value for 'level'!")
   } 
   

@@ -1,8 +1,8 @@
 #TODO: incoroporate level in meta-analysis, and omit it from plots and summaries
 #TODO: use generic forest method for generating plots
-#TODO: make riley submethods (DA and SE) invisible
-#TODO: re-enable plot examples
-#TODO: Omit param "type" and infer the correct type from the provided data frame
+#TODO: check prediction intervals
+#TODO: Add cholesky decomposition in loglikelihood
+#TODO: Alter design matrix in LogLik to set entries with missing data to zero (in which case #df needs to be altered)
 
 
 #' Fit the alternative model for bivariate random-effects meta-analysis
@@ -26,6 +26,8 @@
 #' log-likelihood function. The default method is an implementation of that of Nelder and Mead (1965), 
 #' that uses only function values and is robust but relatively slow. Other methods are described in \link[stats]{optim}.
 #' @param control A list of control parameters to pass to \link[stats]{optim}.
+#' @param pars List with additional arguments. The width of confidence, credibility and prediction intervals is 
+#' defined by \code{level} (defaults to 0.95). 
 #' @param \dots Arguments to be passed on to other functions. See "Details" for more information.
 #' 
 #' @details Parameters are estimated by iteratively maximizing the restriced log-likelihood using the Newton-Raphson procedure. 
@@ -82,19 +84,25 @@
 #' data(Daniels)
 #' data(Kertai)
 #' 
-#' #Meta-analysis of potential surrogate markers data
-#' fit1 <- riley(Daniels) #Maxit reached, try again with more iterations
-#' fit1 <- riley(Daniels,control=list(maxit=10000))
+#' # Meta-analysis of potential surrogate markers data
+#' # The results obtained by Riley (2008) were as follows:
+#' # beta1 = -0.042 (SE = 0.063),
+#' # beta2 = 14.072 (SE = 4.871)
+#' # rho   = -0.759
+#' \dontrun{
+#' fit1 <- riley(Daniels) #maxit reached, try again with more iterations
+#' }
+#' fit1 <- riley(Daniels, control=list(maxit=10000))
 #' summary(fit1)
 #' 
-#' #Meta-analysis of prognostic test studies
-#' fit2 <- riley(Kertai,type="test.accuracy")
-#' summary(fit2)
+#' # Meta-analysis of prognostic test studies
+#' fit2 <- riley(Kertai)
+#' fit2
 #' 
-#' #Meta-analysis of computed tomography data 
+#' # Meta-analysis of computed tomography data 
 #' ds <- Scheidler[which(Scheidler$modality==1),]
-#' fit3 <- riley(ds,type="test.accuracy")
-#' summary(fit3)
+#' fit3 <- riley(ds)
+#' fit3
 #' 
 #' @return An object of the class \code{riley} for which many standard methods are available. A warning message is 
 #' casted when the Hessian matrix contains negative eigenvalues, which implies that the identified solution is a 
@@ -106,12 +114,29 @@
 #' @author Thomas Debray <thomas.debray@gmail.com>
 #'
 #' @export
-riley <- function(X, optimization = "Nelder-Mead", control = list(), ...) UseMethod("riley")
+riley <- function(X, optimization = "Nelder-Mead", control = list(), pars, ...) UseMethod("riley")
 
 #' @export
-riley.default <- function(X, optimization = "Nelder-Mead", control = list(), ...)
+riley.default <- function(X, optimization = "Nelder-Mead", control = list(), pars, ...)
 {
-  est <- NA   
+  
+  pars.default <- list(level = 0.95)
+  
+  # Load default parameters
+  if (!missing(pars)) {
+    for (i in 1:length(pars)) {
+      element <- ls(pars)[i]
+      pars.default[[element]] <- pars[[element]]
+    }
+  }
+  
+  # Check parameter values
+  if (pars.default$level < 0 | pars.default$level > 1) {
+    stop ("Invalid value for significance level!")
+  } 
+  
+  out <- NA
+
   
   if(missing(X)) stop("X is missing!")
   
@@ -121,23 +146,51 @@ riley.default <- function(X, optimization = "Nelder-Mead", control = list(), ...
                "or a meta-analysis of diagnostic test accuracy data!"))
   }
   if (sum(c("Y1","vars1","Y2","vars2") %in% colnames(X))==4) {
-    est <- rileyES(X, optimization = optimization, control=control, ...)
+    out <- rileyES(X, optimization = optimization, control=control, pars=pars.default, ...)
   } else if (sum(c("Y1","vars1","Y2","vars2") %in% colnames(X))>0) {
     stop ("Missing column(s) in X!")
   } else if (sum(c("TP","FN","FP","TN") %in% colnames(X))==4) {
-    est <- rileyDA(X, optimization = optimization, control=control, ...)
+    out <- rileyDA(X, optimization = optimization, control=control, pars=pars.default, ...)
   } else if (sum(c("TP","FN","FP","TN") %in% colnames(X))>0) {
     stop ("Missing column(s) in X!")
   } else {
     stop ("Provided data not supported, please verify column names in X!")
   }
   
-	class(est) <- "riley"
-	est
+	class(out) <- "riley"
+	out
+}
+
+negfullloglikRiley <- function(parsll,Y,vars)
+{
+
+  Beta = rbind(parsll[1], parsll[2]) #Beta vector
+  psisq1 = parsll[3]**2 #ensure variance is positive
+  psisq2 = parsll[4]**2 #ensure variance is positive
+  rho = inv.logit(parsll[5])*2-1 #ensure correlation is in [-1,1], and values in that interval move symmetric from -1 to 0 and from 1 to 0
+  k = 2 #2 endpoints
+  n = dim(Y)[1]/2
+  
+  #Design matrix
+  X = array(NA,dim=c(n*2,2))
+  X[,1] = rep(c(1,0),n)
+  X[,2] = rep(c(0,1),n)
+  
+  #Create Phi matrix
+  Phi = array(0,dim=c((n*2),(n*2)))
+  for (i in 1:n) {
+    Phi[((i-1)*2+1),((i-1)*2+1)] = vars[i,1]+psisq1
+    Phi[((i-1)*2+2),((i-1)*2+2)] = vars[i,2]+psisq2
+    Phi[((i-1)*2+1),((i-1)*2+2)] = rho*sqrt((vars[i,1]+psisq1)*(vars[i,2]+psisq2))
+    Phi[((i-1)*2+2),((i-1)*2+1)] = rho*sqrt((vars[i,1]+psisq1)*(vars[i,2]+psisq2))
+  }
+  
+  #Minimize the negative of the restricted log-lkh
+  0.5*((n-k)*log(2*pi)-log(det(t(X)%*%X))+log(det(Phi))+log(det(t(X)%*%solve(Phi)%*%X))+(t(Y-X%*%Beta)%*%solve(Phi)%*%(Y-X%*%Beta)))
 }
 
 # effect sizes data meta-analysis
-rileyES <- function(X = NULL, Y1, Y2, vars1, vars2, optimization = "Nelder-Mead", control = list(),...)
+rileyES <- function(X = NULL, Y1, Y2, vars1, vars2, optimization = "Nelder-Mead", control = list(), pars=list(level=0.95), ...)
 {
 	if(!is.null(X)){
 		X <- as.data.frame(X)
@@ -175,38 +228,9 @@ rileyES <- function(X = NULL, Y1, Y2, vars1, vars2, optimization = "Nelder-Mead"
 		pars.start = c(sumlY1$results["estimate"],sumlY2$results["estimate"],sumlY1$results["SE"],sumlY2$results["SE"],0)
 	}
 	
-	negfullloglik <- function(pars,Y,vars)
-	{
-		beta1 = pars[1]
-		beta2 = pars[2]
-		psisq1 = pars[3]**2 #ensure variance is positive
-		psisq2 = pars[4]**2 #ensure variance is positive
-		rho = inv.logit(pars[5])*2-1 #ensure correlation is in [-1,1], and values in that interval move symmetric from -1 to 0 and from 1 to 0
-		k = 2 #2 endpoints
-		n = dim(Y)[1]/2
 	
-		#Beta vector
-		Beta = rbind(beta1,beta2)
 	
-		#Design matrix
-		X = array(NA,dim=c(n*2,2))
-		X[,1] = rep(c(1,0),n)
-		X[,2] = rep(c(0,1),n)
-	
-		#Create Phi matrix
-		Phi = array(0,dim=c((n*2),(n*2)))
-		for (i in 1:n) {
-			Phi[((i-1)*2+1),((i-1)*2+1)] = vars[i,1]+psisq1
-			Phi[((i-1)*2+2),((i-1)*2+2)] = vars[i,2]+psisq2
-			Phi[((i-1)*2+1),((i-1)*2+2)] = rho*sqrt((vars[i,1]+psisq1)*(vars[i,2]+psisq2))
-			Phi[((i-1)*2+2),((i-1)*2+1)] = rho*sqrt((vars[i,1]+psisq1)*(vars[i,2]+psisq2))
-		}
-		
-		#Minimize the negative of the restricted log-lkh
-		0.5*((n-k)*log(2*pi)-log(det(t(X)%*%X))+log(det(Phi))+log(det(t(X)%*%solve(Phi)%*%X))+(t(Y-X%*%Beta)%*%solve(Phi)%*%(Y-X%*%Beta)))
-	}
-	
-	fit = optim(pars.start,negfullloglik,Y=Y,vars=vars,method=optimization,hessian=T,control=control)
+	fit = optim(pars.start, negfullloglikRiley, Y=Y, vars=vars, method=optimization, hessian=T, control=control)
 	
 	if(fit$convergence != 0) { 
 		if(fit$convergence == 1) warning ("Iteration limit had been reached.")
@@ -233,14 +257,14 @@ rileyES <- function(X = NULL, Y1, Y2, vars1, vars2, optimization = "Nelder-Mead"
 	logLik <- -fit$value
 	
 	output <- list(coefficients = coefficients, hessian = hessian, df = df, numstudies = numstudies, nobs = nobs, logLik = logLik,
-			   iterations = (iterations+1), call = match.call(), data = origdata, type="effect.size")  
+			   iterations = (iterations+1), call = match.call(), data = origdata, type="effect.size", level=pars$level)  
 	return(output)
 }
 
 # Diagnostic test accuracy data meta-analysis
 rileyDA <-
   function(X = NULL, TP, FN, FP, TN, correction = 0.5, 
-           correction.control = "all", optimization = "Nelder-Mead", control = list(), ...)
+           correction.control = "all", optimization = "Nelder-Mead", control = list(), pars=list(level=0.95), ...)
   {
       if(!is.null(X)){
         X <- as.data.frame(X)
@@ -284,6 +308,7 @@ rileyDA <-
       output$data = newdata
       output$correction = correction 
       output$correction.control = correction.control
+      output$level <- pars$level
       
       return(output)
   }
@@ -300,10 +325,26 @@ print.riley <- function(x, ...)
   if (length(which(eigen(x$hessian,symmetric=TRUE)$values<0))>0) cat("\nWarning: the Hessian matrix contains negative eigenvalues, parameter estimates are thus not optimally fitted!\n")
 }
 
-# Calculate prediction interval (not identical interpretation to random effects!)
-predict.riley <- function(object, level = 0.95, ...)
+#' Prediction Interval
+#' Calculates a prediction interval for the summary parameters of Riley's alternative model for bivariate random-effects 
+#' meta-analysis. This interval predicts in what range future observations will fall given what has already been observed.
+#' 
+#' @param object  A \code{riley} object.
+#' @param \dots Additional arguments (currently ignored)
+#' 
+#' @details Prediction intervals are based on Student's t-distribution with (numstudies - 5) degrees of freedom. The width of 
+#' the interval is specified by the significance level chosen during meta-analysis.
+#' 
+#' @return Data frame containing prediction intervals with the summary estimates \code{beta1} and \code{beta2} 
+#' (for effect size data), or with the mean sensitivity and false positive rate (for diagnostic test accuracy data).
+#' 
+#' @author Thomas Debray <thomas.debray@gmail.com>
+#' 
+#' @method predict riley
+#' @export
+predict.riley <- function(object,  ...)
 {
-  alpha <- (1-level)/2
+  alpha <- (1-object$level)/2
   
   predint		<- array(NA,dim=c(2,3))
   colnames(predint) <- c("Estimate", paste((alpha*100),"%"),paste(((1-alpha)*100),"%"))
