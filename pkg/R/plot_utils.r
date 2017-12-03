@@ -2,7 +2,7 @@
 #' 
 #' Generate a forest plot by specifying the various effect sizes, confidence intervals and summary estimate.
 #' @param theta Numeric vector with effect size for each study
-#' @param theta.ci Numeric array specifying the lower bound (first column) and upper bound (second column) of the 
+#' @param theta.ci Two-dimensional array specifying the lower bound (first column) and upper bound (second column) of the 
 #' confidence interval of the effect sizes
 #' @param theta.slab Character vector specifying the study labels
 #' @param theta.summary Meta-analysis summary estimate of the effect sizes
@@ -10,6 +10,9 @@
 #' confidence interval of the summary estimate
 #' @param theta.summary.pi Numeric vector specifying the lower bound (first item) and upper bound (second item) of the 
 #' prediction interval of the summary estimate. 
+#' @param theme Theme to generate the forest plot. By default, the classic dark-on-light ggplot2 theme is used. 
+#' See \link[ggplot2]{theme_bw} for more information.
+#' @param xlim The \code{x} limits \code{(x1, x2)} of the forest plot
 #' @param xlab Optional character string specifying the X label
 #' @param refline Optional numeric specifying a reference line
 #' @param label.summary Optional character string specifying the label for the summary estimate
@@ -19,14 +22,19 @@
 #' 
 #' @export
 forest <- function (theta, theta.ci, theta.slab, theta.summary, 
-                        theta.summary.ci, 
-                        theta.summary.pi=c(NA, NA),
-                        xlab="", refline=0, label.summary="Summary Estimate", ...) {
+                    theta.summary.ci, 
+                    theta.summary.pi=c(NA, NA),
+                    theme = theme_bw(),
+                    xlim,
+                    xlab="", refline=0, label.summary="Summary Estimate", ...) {
 
   if (missing(theta)) stop("Study effect sizes are missing!")
   if (missing(theta.ci)) stop("Confidence intervals of effect sizes missing!")
   if (missing(theta.slab)) stop("Study labels are missing!")
-  if (length(unique(c(length(theta), dim(theta.ci)[1], length(theta.slab))))>1) stop("Mismatch in dimensions!")
+  
+  num.studies <- unique(c(length(theta), dim(theta.ci)[1], length(theta.slab)))
+  if (length(num.studies)>1) stop(paste("Mismatch in data dimensions!"))
+  
   #Extract data
   yi <- theta
   slab <- theta.slab
@@ -49,9 +57,13 @@ forest <- function (theta, theta.ci, theta.slab, theta.summary,
                         aes(x = study.ES_order, y = mean, ymin = m.lower, ymax = m.upper)) + 
               geom_pointrange() + 
               coord_flip() + 
-              theme_bw() + 
+              theme +
               ylab(xlab) + 
               xlab(""))
+  
+  if (!missing(xlim)) {
+    p <- p + ylim(xlim)
+  }
   
   # Add refline
   if (is.numeric(refline)) {

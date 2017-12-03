@@ -105,6 +105,7 @@ uvmeta.default <- function(r, r.se, method="REML", test="knha", labels, na.actio
   out <- list()
   out$call <- match.call()
   out$method <- method
+  out$test <- test
   class(out) <- "uvmeta"
 
   
@@ -251,7 +252,7 @@ uvmeta.default <- function(r, r.se, method="REML", test="knha", labels, na.actio
 #' Function to create forest plots for objects of class \code{"uvmeta"}.
 #' 
 #' @param x An object of class \code{"uvmeta"}
-#' @param \dots Additional arguments which are passed to \link[ggplot2]{ggplot}.
+#' @param \dots Additional arguments which are passed to \link{forest}.
 #' 
 #' @details The forest plot shows the performance estimates of each validation with corresponding confidence 
 #' intervals. A polygon is added to the bottom of the forest plot, showing the summary estimate based on the model. 

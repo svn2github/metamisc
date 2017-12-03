@@ -5,13 +5,13 @@
 \title{Forest plot}
 \usage{
 forest(theta, theta.ci, theta.slab, theta.summary, theta.summary.ci,
-  theta.summary.pi = c(NA, NA), xlab = "", refline = 0,
-  label.summary = "Summary Estimate", ...)
+  theta.summary.pi = c(NA, NA), theme = theme_bw(), xlim, xlab = "",
+  refline = 0, label.summary = "Summary Estimate", ...)
 }
 \arguments{
 \item{theta}{Numeric vector with effect size for each study}
 
-\item{theta.ci}{Numeric array specifying the lower bound (first column) and upper bound (second column) of the 
+\item{theta.ci}{Two-dimensional array specifying the lower bound (first column) and upper bound (second column) of the 
 confidence interval of the effect sizes}
 
 \item{theta.slab}{Character vector specifying the study labels}
@@ -23,6 +23,11 @@ confidence interval of the summary estimate}
 
 \item{theta.summary.pi}{Numeric vector specifying the lower bound (first item) and upper bound (second item) of the 
 prediction interval of the summary estimate.}
+
+\item{theme}{Theme to generate the forest plot. By default, the classic dark-on-light ggplot2 theme is used. 
+See \link[ggplot2]{theme_bw} for more information.}
+
+\item{xlim}{The \code{x} limits \code{(x1, x2)} of the forest plot}
 
 \item{xlab}{Optional character string specifying the X label}
 

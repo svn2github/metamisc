@@ -92,13 +92,13 @@ the c-statistic; see "Details"), \code{model.oe} (The likelihood/link for modeli
 An object of class \code{valmeta} with the following elements:
 \describe{
  \item{"data"}{array with (transformed) data used for meta-analysis }
- \item{"lme4"}{a fitted object of class \code{glmerMod} (if \code{lme4} was used for meta-analysis).}
+ \item{"lme4"}{a fitted object of class \code{glmerMod} (if \pkg{lme4} was used for meta-analysis).}
  \item{"measure"}{character string specifying the performance measure that has been meta-analysed.}
  \item{"method"}{character string specifying the meta-analysis method.}
  \item{"model"}{character string specifying the meta-analysis model (link function).}
  \item{"results"}{numeric vector containing the meta-analysis results}
- \item{"rma"}{a fitted object of class \link[metafor]{rma} (if \code{metafor} was used for meta-analysis).}
- \item{"runjags"}{a fitted object of class \code{runjags} (if \code{runjags} was used for meta-analysis).}
+ \item{"rma"}{a fitted object of class \link[metafor]{rma} (if \pkg{metafor} was used for meta-analysis).}
+ \item{"runjags"}{a fitted object of class \code{runjags} (if \pkg{runjags} was used for meta-analysis).}
  \item{"se.source"}{character vector specifying the source of the studies' standard errors.}
  \item{"slab"}{vector specifying the label of each study.}
 }
@@ -205,20 +205,18 @@ with(Framingham, valmeta(measure="OE", Po=Po, Pe=Pe, N=n, t.val=t.val, t.ma=10, 
 
 }
 \references{
-Debray TPA, Damen JAAG, Snell KIE, Ensor J, Hooft L, Reitsma JB, et al. A guide to systematic review 
-and meta-analysis of prediction model performance. \emph{BMJ}. 2017; 356:i6460.\cr
-\cr
- Hanley JA, McNeil BJ. The meaning and use of the area under a receiver operating characteristic (ROC) 
- curve. \emph{Radiology}. 1982; 143(1):29--36.\cr
- \cr
- Newcombe RG. Confidence intervals for an effect size measure based on the Mann-Whitney statistic. 
- Part 2: asymptotic methods and evaluation. \emph{Stat Med}. 2006; 25(4):559--73.\cr
- \cr
- Stijnen T, Hamza TH, Ozdemir P. Random effects meta-analysis of event outcome in the framework of 
- the generalized linear mixed model with applications in sparse data. \emph{Stat Med}. 2010; 29(29):3046--67.\cr
- \cr
-  Viechtbauer W. Conducting Meta-Analyses in R with the metafor Package. \emph{Journal of Statistical Software}. 
-  2010; 36(3). Available from: \url{http://www.jstatsoft.org/v36/i03/}
+\itemize{
+\item Debray TPA, Damen JAAG, Snell KIE, Ensor J, Hooft L, Reitsma JB, et al. A guide to systematic review 
+and meta-analysis of prediction model performance. \emph{BMJ}. 2017; 356:i6460.
+\item Hanley JA, McNeil BJ. The meaning and use of the area under a receiver operating characteristic (ROC) 
+curve. \emph{Radiology}. 1982; 143(1):29--36.
+\item Newcombe RG. Confidence intervals for an effect size measure based on the Mann-Whitney statistic. 
+Part 2: asymptotic methods and evaluation. \emph{Stat Med}. 2006; 25(4):559--73.
+\item Stijnen T, Hamza TH, Ozdemir P. Random effects meta-analysis of event outcome in the framework of 
+the generalized linear mixed model with applications in sparse data. \emph{Stat Med}. 2010; 29(29):3046--67.
+\item Viechtbauer W. Conducting Meta-Analyses in R with the metafor Package. \emph{Journal of Statistical Software}. 
+2010; 36(3). Available from: \url{http://www.jstatsoft.org/v36/i03/}
+}
 }
 \seealso{
 \code{\link{plot.valmeta}}

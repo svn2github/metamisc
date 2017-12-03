@@ -9,7 +9,7 @@
 \arguments{
 \item{x}{An object of class \code{"uvmeta"}}
 
-\item{\dots}{Additional arguments which are passed to \link[ggplot2]{ggplot}.}
+\item{\dots}{Additional arguments which are passed to \link{forest}.}
 }
 \description{
 Function to create forest plots for objects of class \code{"uvmeta"}.

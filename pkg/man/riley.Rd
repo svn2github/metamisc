@@ -4,19 +4,15 @@
 \alias{riley}
 \title{Fit the alternative model for bivariate random-effects meta-analysis}
 \usage{
-riley(X, type = "effect.size", optimization = "Nelder-Mead",
-  control = list(), ...)
+riley(X, optimization = "Nelder-Mead", control = list(), ...)
 }
 \arguments{
-\item{X}{data frame containing integer variables \code{TP}, \code{FN}, \code{FP} and \code{TN} 
-(for diagnostic test accuracy data, cfr. \code{\link{rileyDA}}) or numeric variables 
-\code{Y1}, \code{vars1}, \code{Y2} and \code{vars2} (for effect size data, cfr. \code{\link{rileyES}}).}
-
-\item{type}{a character string defining the type of data that is being summarized. Defaults to 
-"\code{effect.size}" for summarizing effect sizes for which the normality assumption holds 
-(for more details see \code{\link{rileyES}}). Diagnostic test accuracy data 
-(i.e. sensitivities and specificities) can be pooled by choosing "\code{test.accuracy}" 
-(for more details see \code{\link{rileyDA}}).}
+\item{X}{data frame containing integer variables \code{Y1}, \code{vars1}, \code{Y2} and \code{vars2},
+where the columns \code{Y1} and \code{Y2} represent the effect sizes of outcome 1 and, respectively, outcome 2. The columns 
+\code{vars1} and \code{vars2} represent the error variances of \code{Y1} and, respectively, \code{Y2}. Alternatively, 
+when considering a meta-analysis of diagnostic test accuracy data, the columns \code{TP}, \code{FN}, \code{FP} and 
+\code{TN} may be specified. Corresponding values then represent the number of true positives, the number of false negatives,
+the number of false positives and, respectively, the number of true negatives.}
 
 \item{optimization}{The optimization method that should be used for minimizing the negative (restricted) 
 log-likelihood function. The default method is an implementation of that of Nelder and Mead (1965), 
@@ -24,10 +20,12 @@ that uses only function values and is robust but relatively slow. Other methods 
 
 \item{control}{A list of control parameters to pass to \link[stats]{optim}.}
 
-\item{\dots}{Arguments to be passed on to other functions.}
+\item{\dots}{Arguments to be passed on to other functions. See "Details" for more information.}
 }
 \value{
-An object of the class \code{riley} for which many standard methods are available.
+An object of the class \code{riley} for which many standard methods are available. A warning message is 
+casted when the Hessian matrix contains negative eigenvalues, which implies that the identified solution is a 
+saddle point and thus not optimal.
 }
 \description{
 This function fits the alternative model for bivariate random-effects meta-analysis when the within-study correlations 
@@ -41,15 +39,38 @@ estimates the between-study correlation as 1 or -1.
 }
 \details{
 Parameters are estimated by iteratively maximizing the restriced log-likelihood using the Newton-Raphson procedure. 
-Algorithms for dealing with missing data are currently not implemented, but Bayesian approaches will become 
-available in later versions.
+The results from a univariate random-effects meta-analysis with a method-of-moments estimator are used as starting 
+values for \code{beta1}, \code{beta2}, \code{psi1} and \code{psi2} in the \code{optim} command. 
+The starting value for the transformed correlation \code{rhoT} is 0. Standard errors for all parameters are obtained 
+from the inverse Hessian matrix. The original correlation is given as \code{inv.logit(rhoT)*2-1}. 
+
+\subsection{Meta-analysis of effect sizes}{
+The following parameters are estimated by iteratively maximizing the restriced log-likelihood using the Newton-Raphson 
+procedure: pooled effect size for outcome 1 (\code{beta1}), pooled effect size for outcome 2 (\code{beta2}), 
+additional variation of \code{beta1} beyond sampling error (\code{psi1}), additional variation of \code{beta2} 
+beyond sampling error (\code{psi2}) and the (transformed) correlation \code{rhoT} between \code{psi1} and \code{psi2}. 
+
+}
 
 \subsection{Meta-analysis of diagnostic test accuracy}{
-Although the model can also be used for diagnostic test 
-accuracy data when substantial within-study correlations are expected, assuming zero within-study correlations 
-(i.e. applying Reitsma's approach) is usually justified (Reitsma et al. 2005, Daniels and Hughes 1997, 
-Korn et al. 2005, Thompson et al. 2005, Van Houwelingen et al. 2002).
+Although the model can also be used for diagnostic test accuracy data when substantial within-study correlations 
+are expected, assuming zero within-study correlations (i.e. applying Reitsma's approach) is usually justified 
+(Reitsma et al. 2005, Daniels and Hughes 1997, Korn et al. 2005, Thompson et al. 2005, Van Houwelingen et al. 2002).
+
+A transformation is applied to the sensitivities ans false positive rates of each study, in order to meet the normality 
+assumptions. When zero cell counts occur, continuity corrections may be required. The correction value can be specified using
+\code{correction} (defaults to 0.5). Further, when the argument \code{correction.control} is set to \code{"all"} 
+(the default) the continuity correction is added to the whole data if only one cell in one study is zero. 
+If \code{correction.control="single"} the correction is only applied to rows of the data which have a zero.
+
+The following parameters are estimated: logit of sensitivity (\code{beta1}), logit of false positive rate (\code{beta2}), 
+additional variation of \code{beta1} beyond sampling error (\code{psi1}), additional variation of \code{beta2} beyond 
+sampling error (\code{psi2}) and the (transformed) correlation \code{rhoT} between \code{psi1} and \code{psi2}. 
 }
+}
+\note{
+Algorithms for dealing with missing data are currently not implemented, but Bayesian approaches will become 
+available in later versions.
 }
 \examples{
 data(Scheidler)
