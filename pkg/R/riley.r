@@ -161,7 +161,8 @@ riley.default <- function(X, optimization = "Nelder-Mead", control = list(), par
 	out
 }
 
-negfullloglikRiley <- function(parsll,Y,vars)
+# X is the design matrix
+negfullloglikRiley <- function(parsll, X, Y,vars)
 {
 
   Beta = rbind(parsll[1], parsll[2]) #Beta vector
@@ -170,11 +171,6 @@ negfullloglikRiley <- function(parsll,Y,vars)
   rho = inv.logit(parsll[5])*2-1 #ensure correlation is in [-1,1], and values in that interval move symmetric from -1 to 0 and from 1 to 0
   k = 2 #2 endpoints
   n = dim(Y)[1]/2
-  
-  #Design matrix
-  X = array(NA,dim=c(n*2,2))
-  X[,1] = rep(c(1,0),n)
-  X[,2] = rep(c(0,1),n)
   
   #Create Phi matrix
   Phi = array(0,dim=c((n*2),(n*2)))
@@ -201,10 +197,10 @@ rileyES <- function(X = NULL, Y1, Y2, vars1, vars2, optimization = "Nelder-Mead"
 		vars2 <- X$vars2
 	} else {
 		origdata <- cbind(Y1,vars1,Y2,vars2)
-		colnames(origdata) = c("Y1","vars1","Y2","vars2")
+		colnames(origdata) <- c("Y1","vars1","Y2","vars2")
 	}
   
-	numstudies = length(Y1)
+	numstudies <- length(Y1)
 	nobs <- length(which(!is.na(Y1)))+length(which(!is.na(Y2)))
 	
 	if(nobs != numstudies*2){warning("There are missing observations in the data!")}
@@ -212,25 +208,28 @@ rileyES <- function(X = NULL, Y1, Y2, vars1, vars2, optimization = "Nelder-Mead"
 	df <- 5 #There are 5 parameters to estimate
 	if(numstudies-df < 0){warning("There are very few primary studies!")}
 	
-	vars = cbind(vars1, vars2)
-	Y = array(NA,dim=c((length(Y1)*2),1))
-	for (i in 1:length(Y1))
-	{
-		Y[((i-1)*2+1)] = Y1[i]
-		Y[((i-1)*2+2)] = Y2[i]
-	}
+	# Set up the design matrix
+	Xdesign <- array(0,dim=c(numstudies*2,2))
+	Xdesign[seq(from=1, to=(numstudies*2), by=2)[which(!is.na(Y1))],1] <- 1 #Indicate which variables are observed for Y1
+	Xdesign[seq(from=2, to=(numstudies*2), by=2)[which(!is.na(Y2))],2] <- 1
+	
+	
+	vars <- cbind(vars1, vars2)
+	Y <- array(NA,dim=c((length(Y1)*2),1))
+	Y[seq(from=1, to=(numstudies*2), by=2)] <- Y1
+	Y[seq(from=2, to=(numstudies*2), by=2)] <- Y2
 	
 	#Calculate starting values for optim
 	pars.start = c(0,0,0,0,0)
 	if (numstudies >= 2) {
-		sumlY1 <- uvmeta(r=Y1, r.se=sqrt(vars1), method="DL")
-		sumlY2 <- uvmeta(r=Y2, r.se=sqrt(vars2), method="DL")
-		pars.start = c(sumlY1$results["estimate"],sumlY2$results["estimate"],sumlY1$results["SE"],sumlY2$results["SE"],0)
+		sumlY1 <- metafor::rma(yi=Y1, vi=vars1, method="DL")
+		sumlY2 <- metafor::rma(yi=Y2, vi=vars2, method="DL")
+		pars.start = c(sumlY1$beta[1], sumlY2$beta[1], sqrt(vcov(sumlY1)[1,1]), sqrt(vcov(sumlY2)[1,1]), 0)
 	}
 	
 	
 	
-	fit = optim(pars.start, negfullloglikRiley, Y=Y, vars=vars, method=optimization, hessian=T, control=control)
+	fit = optim(pars.start, negfullloglikRiley, X=Xdesign, Y=Y, vars=vars, method=optimization, hessian=T, control=control)
 	
 	if(fit$convergence != 0) { 
 		if(fit$convergence == 1) warning ("Iteration limit had been reached.")
