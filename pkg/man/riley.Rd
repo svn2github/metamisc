@@ -43,15 +43,14 @@ estimates the between-study correlation as 1 or -1.
 \details{
 Parameters are estimated by iteratively maximizing the restriced log-likelihood using the Newton-Raphson procedure. 
 The results from a univariate random-effects meta-analysis with a method-of-moments estimator are used as starting 
-values for \code{beta1}, \code{beta2}, \code{psi1} and \code{psi2} in the \code{optim} command. 
-The starting value for the transformed correlation \code{rhoT} is 0. Standard errors for all parameters are obtained 
-from the inverse Hessian matrix. The original correlation is given as \code{inv.logit(rhoT)*2-1}. 
+values for \code{beta1}, \code{beta2}, \code{psi1} and \code{psi2} in the \code{optim} command. Standard errors for all parameters are obtained 
+from the inverse Hessian matrix.
 
 \subsection{Meta-analysis of effect sizes}{
 The following parameters are estimated by iteratively maximizing the restriced log-likelihood using the Newton-Raphson 
 procedure: pooled effect size for outcome 1 (\code{beta1}), pooled effect size for outcome 2 (\code{beta2}), 
 additional variation of \code{beta1} beyond sampling error (\code{psi1}), additional variation of \code{beta2} 
-beyond sampling error (\code{psi2}) and the (transformed) correlation \code{rhoT} between \code{psi1} and \code{psi2}. 
+beyond sampling error (\code{psi2}) and the correlation \code{rho} between \code{psi1} and \code{psi2}. 
 
 }
 
@@ -60,7 +59,7 @@ Although the model can also be used for diagnostic test accuracy data when subst
 are expected, assuming zero within-study correlations (i.e. applying Reitsma's approach) is usually justified 
 (Reitsma et al. 2005, Daniels and Hughes 1997, Korn et al. 2005, Thompson et al. 2005, Van Houwelingen et al. 2002).
 
-A transformation is applied to the sensitivities ans false positive rates of each study, in order to meet the normality 
+A logit transformation is applied to the sensitivities ans false positive rates of each study, in order to meet the normality 
 assumptions. When zero cell counts occur, continuity corrections may be required. The correction value can be specified using
 \code{correction} (defaults to 0.5). Further, when the argument \code{correction.control} is set to \code{"all"} 
 (the default) the continuity correction is added to the whole data if only one cell in one study is zero. 
@@ -68,10 +67,16 @@ If \code{correction.control="single"} the correction is only applied to rows of 
 
 The following parameters are estimated: logit of sensitivity (\code{beta1}), logit of false positive rate (\code{beta2}), 
 additional variation of \code{beta1} beyond sampling error (\code{psi1}), additional variation of \code{beta2} beyond 
-sampling error (\code{psi2}) and the (transformed) correlation \code{rhoT} between \code{psi1} and \code{psi2}. 
+sampling error (\code{psi2}) and the correlation (\code{rho}) between \code{psi1} and \code{psi2}. 
 }
 }
 \note{
+The overall correlation parameter \code{rho} is transformed during estimation to ensure that corresponding values
+remain between -1 and 1. The transformed correlation \code{rhoT} is given as \code{logit((rho+1)/2)}. During optimization,
+the starting value for \code{rhoT} is set to 0.  The standard error of \code{rho} is derived from \code{rhoT} using 
+the Delta method. Similarly, the Delta methods is used to derive the standard error of the sensitivity and false 
+positive rate from \code{beta1} and, respectively, \code{beta2}.
+
 Algorithms for dealing with missing data are currently not implemented, but Bayesian approaches will become 
 available in later versions.
 }

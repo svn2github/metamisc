@@ -3,6 +3,7 @@
 #TODO: check prediction intervals
 #TODO: Add cholesky decomposition in loglikelihood
 #TODO: Alter design matrix in LogLik to set entries with missing data to zero (in which case #df needs to be altered)
+#TODO: Calculate SE of rho using Delta method
 
 
 #' Fit the alternative model for bivariate random-effects meta-analysis
@@ -32,15 +33,14 @@
 #' 
 #' @details Parameters are estimated by iteratively maximizing the restriced log-likelihood using the Newton-Raphson procedure. 
 #' The results from a univariate random-effects meta-analysis with a method-of-moments estimator are used as starting 
-#' values for \code{beta1}, \code{beta2}, \code{psi1} and \code{psi2} in the \code{optim} command. 
-#' The starting value for the transformed correlation \code{rhoT} is 0. Standard errors for all parameters are obtained 
-#' from the inverse Hessian matrix. The original correlation is given as \code{inv.logit(rhoT)*2-1}. 
+#' values for \code{beta1}, \code{beta2}, \code{psi1} and \code{psi2} in the \code{optim} command. Standard errors for all parameters are obtained 
+#' from the inverse Hessian matrix.
 #' 
 #' \subsection{Meta-analysis of effect sizes}{
 #' The following parameters are estimated by iteratively maximizing the restriced log-likelihood using the Newton-Raphson 
 #' procedure: pooled effect size for outcome 1 (\code{beta1}), pooled effect size for outcome 2 (\code{beta2}), 
 #' additional variation of \code{beta1} beyond sampling error (\code{psi1}), additional variation of \code{beta2} 
-#' beyond sampling error (\code{psi2}) and the (transformed) correlation \code{rhoT} between \code{psi1} and \code{psi2}. 
+#' beyond sampling error (\code{psi2}) and the correlation \code{rho} between \code{psi1} and \code{psi2}. 
 #' 
 #' }
 #' 
@@ -49,7 +49,7 @@
 #' are expected, assuming zero within-study correlations (i.e. applying Reitsma's approach) is usually justified 
 #' (Reitsma et al. 2005, Daniels and Hughes 1997, Korn et al. 2005, Thompson et al. 2005, Van Houwelingen et al. 2002).
 #' 
-#' A transformation is applied to the sensitivities ans false positive rates of each study, in order to meet the normality 
+#' A logit transformation is applied to the sensitivities ans false positive rates of each study, in order to meet the normality 
 #' assumptions. When zero cell counts occur, continuity corrections may be required. The correction value can be specified using
 #' \code{correction} (defaults to 0.5). Further, when the argument \code{correction.control} is set to \code{"all"} 
 #' (the default) the continuity correction is added to the whole data if only one cell in one study is zero. 
@@ -57,11 +57,17 @@
 #' 
 #' The following parameters are estimated: logit of sensitivity (\code{beta1}), logit of false positive rate (\code{beta2}), 
 #' additional variation of \code{beta1} beyond sampling error (\code{psi1}), additional variation of \code{beta2} beyond 
-#' sampling error (\code{psi2}) and the (transformed) correlation \code{rhoT} between \code{psi1} and \code{psi2}. 
+#' sampling error (\code{psi2}) and the correlation (\code{rho}) between \code{psi1} and \code{psi2}. 
 #' }
 #' 
-#' @note Algorithms for dealing with missing data are currently not implemented, but Bayesian approaches will become 
-#' available in later versions.
+#' @note The overall correlation parameter \code{rho} is transformed during estimation to ensure that corresponding values
+#' remain between -1 and 1. The transformed correlation \code{rhoT} is given as \code{logit((rho+1)/2)}. During optimization,
+#' the starting value for \code{rhoT} is set to 0.  The standard error of \code{rho} is derived from \code{rhoT} using 
+#' the Delta method. Similarly, the Delta methods is used to derive the standard error of the sensitivity and false 
+#' positive rate from \code{beta1} and, respectively, \code{beta2}.
+#' 
+#' Algorithms for dealing with missing data are currently not implemented, but Bayesian approaches will become 
+#' available in later versions. 
 #' 
 #' @references
 #' \itemize{
@@ -157,6 +163,8 @@ riley.default <- function(X, optimization = "Nelder-Mead", control = list(), par
     stop ("Provided data not supported, please verify column names in X!")
   }
   
+  out$call <- match.call()
+  
 	class(out) <- "riley"
 	out
 }
@@ -173,7 +181,7 @@ negfullloglikRiley <- function(parsll, X, Y,vars)
   n = dim(Y)[1]/2
   
   #Create Phi matrix
-  Phi = array(0,dim=c((n*2),(n*2)))
+  Phi = array(0,dim=c((n*k),(n*k)))
   for (i in 1:n) {
     Phi[((i-1)*2+1),((i-1)*2+1)] = vars[i,1]+psisq1
     Phi[((i-1)*2+2),((i-1)*2+2)] = vars[i,2]+psisq2
@@ -206,7 +214,7 @@ rileyES <- function(X = NULL, Y1, Y2, vars1, vars2, optimization = "Nelder-Mead"
 	if(nobs != numstudies*2){warning("There are missing observations in the data!")}
 	
 	df <- 5 #There are 5 parameters to estimate
-	if(numstudies-df < 0){warning("There are very few primary studies!")}
+	if(numstudies*2-df < 0){warning("There are very few primary studies!")}
 	
 	# Set up the design matrix
 	Xdesign <- array(0,dim=c(numstudies*2,2))
@@ -255,8 +263,9 @@ rileyES <- function(X = NULL, Y1, Y2, vars1, vars2, optimization = "Nelder-Mead"
 	iterations <- fit$iterations
 	logLik <- -fit$value
 	
-	output <- list(coefficients = coefficients, hessian = hessian, df = df, numstudies = numstudies, nobs = nobs, logLik = logLik,
-			   iterations = (iterations+1), call = match.call(), data = origdata, type="effect.size", level=pars$level)  
+	output <- list(coefficients = coefficients, hessian = hessian, df = df, numstudies = numstudies, nobs = nobs, 
+	               df.residual = (sum(Xdesign)-5), #Remainig degrees of freedom
+	               logLik = logLik, iterations = (iterations+1), data = origdata, type="effect.size", level=pars$level)  
 	return(output)
 }
 
@@ -315,13 +324,90 @@ rileyDA <-
 #' @author Thomas Debray <thomas.debray@gmail.com>
 #' @method print riley
 #' @export
-print.riley <- function(x, ...)
+print.riley <- function(x, digits = max(3L, getOption("digits") - 3L), ...)
 {
+  # calculate rho and its standard error
+  rho <- inv.logit(x$coefficients["rhoT"])*2-1
+  rho.se <- estSErho(rhoT=x$coefficients["rhoT"], var.rhoT=sqrt(vcov(x)["rhoT","rhoT"]))
+  
   cat("Call:\n")
   print(x$call)
-  cat("\nCoefficients:\n")
-  print(x$coefficients)
+  coefs <- x$coefficients
+  coefs["rhoT"] <- inv.logit(x$coefficients["rhoT"])*2-1
+  names(coefs)[which(names(coefs)=="rhoT")] <- "rho"
+  cat("\nCoefficients\n")
+  print(coefs)
+  cat("\nDegrees of Freedom: ", x$df.residual, " Residual", sep="")
+  
   if (length(which(eigen(x$hessian,symmetric=TRUE)$values<0))>0) cat("\nWarning: the Hessian matrix contains negative eigenvalues, parameter estimates are thus not optimally fitted!\n")
+}
+
+
+#' Parameter summaries
+#' Provides the summary estimates of the alternative model for bivariate random-effects meta-analysis by Riley et al. 
+#' (2008) with their corresponding standard errors (derived from the inverse Hessian). For confidence intervals,
+#' asymptotic normality is assumed.
+#' 
+#' @param object A \code{riley} object
+#' @param \dots Arguments to be passed on to other functions (currently ignored)
+#' 
+#' @details For meta-analysis of diagnostic test accuracy data, \code{beta1} equals the logit sensitivity (Sens) and 
+#' \code{beta2} equals the logit false positive rate (FPR).
+#' 
+#' @note For the overall correlation (\code{rho}) confidence intervals are derived using the transformation 
+#' \code{logit((rho+1)/2)}. Similarly, the logit transformation is used to derive confidence intervals for the summary
+#' sensitivity and false positive rate.
+#' @author Thomas Debray <thomas.debray@gmail.com>
+#' @method summary riley
+#' 
+#' @references 
+#' Riley RD, Thompson JR, Abrams KR. An alternative model for bivariate random-effects meta-analysis when the 
+#' within-study correlations are unknown. \emph{Biostatistics} 2008; \bold{9}: 172--186.
+#' 
+#' @return array with confidence intervals for the estimated model parameters. For diagnostic test accuracy data, 
+#' the resulting summary sensitivity and false positive rate are included.
+#' 
+#' @export
+summary.riley <- function(object,  ...)
+{
+  # calculate rho and its standard error
+  rho <- inv.logit(object$coefficients["rhoT"])*2-1
+  rho.se <- estSErho(rhoT=object$coefficients["rhoT"], var.rhoT=sqrt(vcov(object)["rhoT","rhoT"]))
+  
+  results <- cbind(object$coefficients, sqrt(diag(vcov(object))), confint(object))
+  colnames(results)[1:2] <- c("Estimate", "SE")
+  
+  # Change rhoT to rho
+  results["rhoT", ] <- c(rho, rho.se, inv.logit(results["rhoT", 3:4])*2-1)
+  rownames(results)[5] <- "rho"
+  
+  if (object$type=="test.accuracy") {
+    se.sens <- estSEexpit(beta=object$coefficients["beta1"], var.beta=diag(vcov(object))["beta1"])
+    se.fpr  <- estSEexpit(beta=object$coefficients["beta2"], var.beta=diag(vcov(object))["beta2"])
+    results <- rbind(results, cbind(inv.logit(object$coefficients["beta1"]), se.sens, inv.logit(results["beta1", 3]), inv.logit(results["beta1", 4])))
+    results <- rbind(results, cbind(inv.logit(object$coefficients["beta2"]), se.fpr, inv.logit(results["beta2", 3]), inv.logit(results["beta2", 4])))
+    rownames(results)[6] <-  "Sens"
+    rownames(results)[7] <-  "FPR"
+  } 
+ 
+  
+  res <- list(call=object$call, confints = results)
+  class(res) <- "summary.riley"
+  res
+}
+
+estSEexpit <- function(beta, var.beta) {
+  # Use Delta method to calculate SE(expit(beta))
+  sqrt((((exp(beta)/(exp(beta)+1)**2))**2) * var.beta)
+}
+
+estSErho <- function(rhoT, var.rhoT) {
+  # Use Delta method to calculate SE(rho)
+  # rhoT = logit((rho+1)/2)
+  # rho  = expit(rhoT)*2-1
+  # var(rho) = (deriv(expit(rhoT)*2-1))**2 * var(rhoT)
+  # 
+  sqrt((((2*exp(rhoT)/(exp(rhoT)+1)**2))**2) * var.rhoT)
 }
 
 #' Prediction Interval
@@ -369,27 +455,6 @@ predict.riley <- function(object,  ...)
   predint
 }
 
-#' @author Thomas Debray <thomas.debray@gmail.com>
-#' @method summary riley
-#' @export
-summary.riley <- function(object, level = 0.95, ...)
-{
-	confints <- cbind(object$coefficients, confint(object,level=level))
-	colnames(confints)[1] <- "Estimate"
-	
-	if (object$type=="test.accuracy") {
-		confints <- rbind(inv.logit(confints[1:2,]),confints)
-		rownames(confints)[1:2] <-  c("Sens", "FPR") 
-	} 
-	
-	#Transform last parameter back to rho
-	confints["rhoT",] =  inv.logit(confints["rhoT",])*2-1
-	rownames(confints)[which(rownames(confints)=="rhoT")] = "rho"
-	
-	res <- list(call=object$call, confints = confints)
-	class(res) <- "summary.riley"
-	res
-}
 
 print.summary.riley <- function(x, ...)
 {
