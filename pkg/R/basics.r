@@ -19,34 +19,7 @@ generateMCMCinits <- function(n.chains, model.pars)
 }
 
 
-#Update SE(c.index) using Method 4 of Newcombe
-restore.c.var<- function(cstat, N.subjects, N.events, restore.method="Newcombe.4", model="normal/logit") {
-  n <- N.events #Number of events
-  m <- N.subjects-N.events #Number of non-events
-  
-  if (missing(restore.method)) {
-    restore.method <- "Newcombe.4"
-  }
-  
-  if (restore.method=="Hanley" | restore.method=="Newcombe.2") {
-    mstar <- m-1
-    nstar <- n-1
-  } else if (restore.method=="Newcombe.4") {
-    mstar <- nstar <- N.subjects/2-1
-  } else {
-    stop ("Method not implemented yet!")
-  }
-  
-  if (model=="normal/logit") {
-    out <- (((1+nstar*(1-cstat)/(2-cstat) + mstar*cstat/(1+cstat)))/(m*n*cstat*(1-cstat)))
-  } else if (model=="normal/identity") {
-    out <- ((cstat*(1-cstat)*(1+nstar*(1-cstat)/(2-cstat) + mstar*cstat/(1+cstat)))/(m*n))
-  } else {
-    stop ("Meta-analysis model not implemented!")
-  }
-  
-  return(out)
-}
+
 
 restore.oe.var <- function(citl, citl.se, Po) {
   nom <- ((Po-1)**2)*((Po**2)+1)*((exp(Po+citl))**2)*(citl.se**2)
@@ -104,7 +77,9 @@ generateOEdata <- function(O, E, Po, Po.se, Pe, OE, OE.se, OE.95CI, citl, citl.s
   O <- ifelse(is.na(O), Po*N, O)
   E <- ifelse(is.na(E), O/OE, E)
   E <- ifelse(is.na(E), Pe*N, E)
-
+  
+  theta.cil <- theta.cul <- rep(NA, length(O))
+ 
   
   # Apply necessary data transformations
   if (pars$model.oe == "normal/identity") {
@@ -124,8 +99,10 @@ generateOEdata <- function(O, E, Po, Po.se, Pe, OE, OE.se, OE.95CI, citl, citl.s
     theta <- ifelse(is.na(theta), Po/Pe, theta)
     theta <- ifelse(is.na(theta), -(exp(citl)*(O/N)-exp(citl)-(O/N)), theta) #derive from CITL
     theta.var <- OE.se**2
-    theta.cil <- OE.95CI[,1]
-    theta.ciu <- OE.95CI[,2]
+    if (pars$level==0.95) {
+      theta.cil <- (OE.95CI[,1])
+      theta.ciu <- (OE.95CI[,2])
+    }
     theta.var <- ifelse(is.na(theta.var), ((theta.ciu - theta.cil)/(2*qnorm(0.975)))**2, theta.var) #Derive from 95% CI
     theta.var <- ifelse(is.na(theta.var), ((Po.se/Pe)**2), theta.var)
     theta.var <- ifelse(is.na(theta.var), O*(1-Po)/(E**2), theta.var) #BMJ eq 20 (binomial var)
@@ -167,9 +144,12 @@ generateOEdata <- function(O, E, Po, Po.se, Pe, OE, OE.se, OE.95CI, citl, citl.s
     theta <- ifelse(is.na(theta), log(Po/Pe), theta)
     theta <- ifelse(is.na(theta), log(-(exp(citl)*(O/N)-exp(citl)-(O/N))), theta) #derive from CITL
     theta.var <- (OE.se/theta)**2
-    theta.cil <- log(OE.95CI[,1])
-    theta.ciu <- log(OE.95CI[,2])
-    theta.var <- ifelse(is.na(theta.var), ((theta.ciu - theta.cil)/(2*qnorm(0.975)))**2, theta.var)
+    
+    if (pars$level==0.95) {
+      theta.cil <- log(OE.95CI[,1])
+      theta.ciu <- log(OE.95CI[,2])
+    }
+    theta.var <- ifelse(is.na(theta.var), ((theta.ciu - theta.cil)/(2*qnorm(0.975)))**2, theta.var) #Derive from available 95% CI
     theta.var <- ifelse(is.na(theta.var), ((Po.se/Po)**2), theta.var)
     theta.var <- ifelse(is.na(theta.var), (1-Po)/O, theta.var) #BMJ eq 27 (binomial var)
     theta.var <- ifelse(is.na(theta.var), (1/O), theta.var) #BMJ eq 36 (Poisson var)
@@ -193,8 +173,8 @@ generateOEdata <- function(O, E, Po, Po.se, Pe, OE, OE.se, OE.95CI, citl, citl.s
   }
   
   #Only calculate 95% CI for which no original values were available
-  theta.cil[is.na(theta.cil)] <- (theta+qnorm(0.025)*sqrt(theta.var))[is.na(theta.cil)]
-  theta.ciu[is.na(theta.ciu)] <- (theta+qnorm(0.975)*sqrt(theta.var))[is.na(theta.ciu)]
+  theta.cil[is.na(theta.cil)] <- (theta+qnorm((1-pars$level)/2)*sqrt(theta.var))[is.na(theta.cil)]
+  theta.ciu[is.na(theta.ciu)] <- (theta+qnorm((1+pars$level)/2)*sqrt(theta.var))[is.na(theta.ciu)]
   
   ds <- cbind(theta, sqrt(theta.var), theta.cil, theta.ciu, t.val, F)
   colnames(ds) <- c("theta", "theta.se", "theta.95CIl", "theta.95CIu", "t.val", "cont.corr")

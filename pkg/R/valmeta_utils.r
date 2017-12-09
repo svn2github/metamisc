@@ -1,3 +1,62 @@
+#Update SE(c.index) using Method 4 of Newcombe
+restore.c.var.hanley <- function(cstat, N.subjects, N.events, restore.method="Newcombe.4", model="normal/logit") {
+  n <- N.events #Number of events
+  m <- N.subjects-N.events #Number of non-events
+  
+  if (missing(restore.method)) {
+    restore.method <- "Newcombe.4"
+  }
+  
+  if (restore.method=="Hanley" | restore.method=="Newcombe.2") {
+    mstar <- m-1
+    nstar <- n-1
+  } else if (restore.method=="Newcombe.4") {
+    mstar <- nstar <- N.subjects/2-1
+  } else {
+    stop ("Method not implemented yet!")
+  }
+  
+  if (model=="normal/logit") {
+    out <- (((1+nstar*(1-cstat)/(2-cstat) + mstar*cstat/(1+cstat)))/(m*n*cstat*(1-cstat)))
+  } else if (model=="normal/identity") {
+    out <- ((cstat*(1-cstat)*(1+nstar*(1-cstat)/(2-cstat) + mstar*cstat/(1+cstat)))/(m*n))
+  } else {
+    stop ("Meta-analysis model not implemented!")
+  }
+  
+  return(out)
+}
+
+restore.c.var.se <- function(c.se, cstat, model="normal/logit") {
+  if (model=="normal/identity") {
+    return (c.se**2)
+  }
+  if (model=="normal/logit") {
+    return((c.se/(cstat*(1-cstat)))**2)
+  }
+  stop("Invalid link function!")
+}
+
+restore.c.var.ci <- function(ci, level=0.95, model="normal/logit") {
+  if (length(dim(ci))>=2) {
+    upper <- ci[,2]
+    lower <- ci[,1]
+  } else {
+    upper <- ci[2]
+    lower <- ci[1]
+  }
+  
+  if (model=="normal/identity") {
+    return(((upper - lower)/(2*qnorm((1-level)/2)))**2)
+  }
+  if (model=="normal/logit") {
+    return(((logit(upper) - logit(lower))/(2*qnorm((1-level)/2)))**2)
+  }
+  stop("Invalid link function!")
+}
+
+
+
 # See params of geom_smooth for more details
 # Smoothed calibration plot: use  formula = obsy ~ splines::bs(predy, 3)
 plotCalibration <- function(predy, obsy, modelname="Model", 

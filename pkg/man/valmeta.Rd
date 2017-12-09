@@ -73,7 +73,8 @@ adjusting test statistics and confidence intervals. Type '\code{?rma}' for more 
 (if \code{method="BAYES"}). More chains will improve the sensitivity of the convergence diagnostic, but will 
 cause the simulation to run more slowly. The default number of chains is 4.}
 
-\item{pars}{A list with additional arguments.  The following parameters configure the MCMC sampling procedure:
+\item{pars}{A list with additional arguments.  The width of confidence, credibility and prediction intervals is 
+defined by \code{level} (defaults to 0.95). The following parameters configure the MCMC sampling procedure:  
 \code{hp.mu.mean} (mean of the prior distribution of the random effects model, defaults to 0), 
 \code{hp.mu.var} (variance of the prior distribution of the random effects model, defaults to 1E6), 
 \code{hp.tau.min} (minimum value for the between-study standard deviation, defaults to 0), 

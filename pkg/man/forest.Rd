@@ -5,8 +5,8 @@
 \title{Forest plot}
 \usage{
 forest(theta, theta.ci, theta.slab, theta.summary, theta.summary.ci,
-  theta.summary.pi = c(NA, NA), theme = theme_bw(), xlim, xlab = "",
-  refline = 0, label.summary = "Summary Estimate", ...)
+  theta.summary.pi = c(NA, NA), theme = theme_bw(), predint.linetype = 1,
+  xlim, xlab = "", refline = 0, label.summary = "Summary Estimate", ...)
 }
 \arguments{
 \item{theta}{Numeric vector with effect size for each study}
@@ -26,6 +26,8 @@ prediction interval of the summary estimate.}
 
 \item{theme}{Theme to generate the forest plot. By default, the classic dark-on-light ggplot2 theme is used. 
 See \link[ggplot2]{theme_bw} for more information.}
+
+\item{predint.linetype}{The linetype of the prediction interval}
 
 \item{xlim}{The \code{x} limits \code{(x1, x2)} of the forest plot}
 

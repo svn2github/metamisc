@@ -12,6 +12,7 @@
 #' prediction interval of the summary estimate. 
 #' @param theme Theme to generate the forest plot. By default, the classic dark-on-light ggplot2 theme is used. 
 #' See \link[ggplot2]{theme_bw} for more information.
+#' @param predint.linetype The linetype of the prediction interval
 #' @param xlim The \code{x} limits \code{(x1, x2)} of the forest plot
 #' @param xlab Optional character string specifying the X label
 #' @param refline Optional numeric specifying a reference line
@@ -25,6 +26,7 @@ forest <- function (theta, theta.ci, theta.slab, theta.summary,
                     theta.summary.ci, 
                     theta.summary.pi=c(NA, NA),
                     theme = theme_bw(),
+                    predint.linetype=1,
                     xlim,
                     xlab="", refline=0, label.summary="Summary Estimate", ...) {
 
@@ -35,6 +37,8 @@ forest <- function (theta, theta.ci, theta.slab, theta.summary,
   num.studies <- unique(c(length(theta), dim(theta.ci)[1], length(theta.slab)))
   if (length(num.studies)>1) stop(paste("Mismatch in data dimensions!"))
   
+  label.predint <- "Prediction Interval"
+  
   #Extract data
   yi <- theta
   slab <- theta.slab
@@ -43,19 +47,30 @@ forest <- function (theta, theta.ci, theta.slab, theta.summary,
   i.index <- order(yi)
   
   # Add meta-analysis results
-  slab <- c(slab[i.index], label.summary)
-  yi <- c(yi[i.index], theta.summary)
-  ci.lb <- c(theta.ci[i.index,1], theta.summary.ci[1])
-  ci.ub <- c(theta.ci[i.index,2], theta.summary.ci[2])
+  if (NA %in% theta.summary.pi) {
+    scat  <- c(rep(1, num.studies), 0) #indicator variable for data points
+    slab  <- c(slab[i.index], label.summary)
+    yi    <- c(yi[i.index], theta.summary)
+    ci.lb <- c(theta.ci[i.index,1], theta.summary.ci[1])
+    ci.ub <- c(theta.ci[i.index,2], theta.summary.ci[2])
+  } else {
+    scat  <- c(rep(1,length(i.index)), 0, 0)
+    slab  <- c(slab[i.index], label.summary, label.predint)
+    yi    <- c(yi[i.index], theta.summary, theta.summary)
+    ci.lb <- c(theta.ci[i.index,1], theta.summary.ci[1], theta.summary.pi[1])
+    ci.ub <- c(theta.ci[i.index,2], theta.summary.ci[2], theta.summary.pi[2])
+  }
   
-  ALL <- data.frame(study=slab, mean=yi, m.lower=ci.lb, m.upper=ci.ub, order=length(yi):1)
+  
+  ALL <- data.frame(study=slab, mean=yi, m.lower=ci.lb, m.upper=ci.ub, order=length(yi):1, scat=scat)
   
   # reorder factor levels based on another variable (HPD.mean)
   ALL$study.ES_order <- reorder(ALL$study, ALL$order, mean)    
   
   p <- with(ALL, ggplot(ALL[!is.na(ALL$mean), ], 
-                        aes(x = study.ES_order, y = mean, ymin = m.lower, ymax = m.upper)) + 
-              geom_pointrange() + 
+                        aes(x = study.ES_order, y = mean, ymin = m.lower, ymax = m.upper)) +
+              geom_pointrange(data = subset(ALL, scat == 1)) + 
+              scale_x_discrete(limits=rev(slab)) + #change order of studies
               coord_flip() + 
               theme +
               ylab(xlab) + 
@@ -77,19 +92,22 @@ forest <- function (theta, theta.ci, theta.slab, theta.summary,
   g2$ci.upper <- theta.summary.ci[2]
   g2$ci.lower <- theta.summary.ci[1]
   
+  # Add meta-analysis summary
+  g3 <- with(ALL, subset(ALL, study == label.predint))
+  g3$pi.upper <- theta.summary.pi[2]
+  g3$pi.lower <- theta.summary.pi[1]
+  
   # Prediction interval
-  #p <- p + with(g2, geom_segment(data=g2, aes(y = pi.lower, x="Summary Est.", xend = "Summary Est.", yend = pi.upper), linetype=2))
-  if (!is.na(g2$pi.lower) & !is.na(g2$pi.upper)) {
-    p <- p +with(g2, geom_errorbar(data=g2, aes(ymin = pi.lower, ymax = ci.lower, x=label.summary), width = 0.5, linetype=2))
-    p <- p +with(g2, geom_errorbar(data=g2, aes(ymin = ci.upper, ymax = pi.upper, x=label.summary), width = 0.5, linetype=2))
+  if (!is.na(g3$pi.lower) & !is.na(g3$pi.upper)) {
+    p <- p +with(g3, geom_errorbar(data=g3, aes(ymin = pi.lower, ymax = pi.upper, x=label.predint), 
+                                   width = 0.5, size=1.0, linetype=predint.linetype))
   }
 
   # Confidence interval
-  p <- p +with(g2, geom_errorbar(data=g2, aes(ymin = ci.lower, ymax = ci.upper, x=label.summary), width = 0.5, size=1.3))
-  #p <- p + with(g2, geom_segment(data=g2, aes(y = m.lower, x="Summary Est.", xend = "Summary Est.", yend = m.upper), size=1.4))
-  
+  p <- p + with(g2, geom_errorbar(data=g2, aes(ymin = ci.lower, ymax = ci.upper, x=label.summary), width = 0.5, size=1.0))
+
   # Summary estimate
   p <- p + with(g2, geom_point(data=g2, shape=23, size=3, fill="white"))
-  
+
   p
 }

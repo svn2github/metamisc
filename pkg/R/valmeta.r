@@ -1,4 +1,4 @@
-#TODO: Add option to choose custom significance level in pars argument
+#TODO: Level is currently always 0.95 for frequentist meta-analysis of OE ratio. Need to customize!
 #TODO: Change 95CI and 95PI to CI and PI in results
 
 #' Meta-analysis of prediction model performance
@@ -50,7 +50,8 @@
 #' @param n.chains Optional numeric specifying the number of chains to use in the Gibbs sampler 
 #' (if \code{method="BAYES"}). More chains will improve the sensitivity of the convergence diagnostic, but will 
 #' cause the simulation to run more slowly. The default number of chains is 4.
-#' @param pars A list with additional arguments.  The following parameters configure the MCMC sampling procedure:  
+#' @param pars A list with additional arguments.  The width of confidence, credibility and prediction intervals is 
+#' defined by \code{level} (defaults to 0.95). The following parameters configure the MCMC sampling procedure:  
 #' \code{hp.mu.mean} (mean of the prior distribution of the random effects model, defaults to 0), 
 #' \code{hp.mu.var} (variance of the prior distribution of the random effects model, defaults to 1E6), 
 #' \code{hp.tau.min} (minimum value for the between-study standard deviation, defaults to 0), 
@@ -199,7 +200,8 @@
 valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.se,
                     N, O, E, Po, Po.se, Pe, t.val, t.ma, t.extrapolate=FALSE, method="REML", test="knha", 
                     verbose=FALSE, slab, n.chains = 4, pars, ...) {
-  pars.default <- list(hp.mu.mean = 0, 
+  pars.default <- list(level = 0.95,
+                       hp.mu.mean = 0, 
                        hp.mu.var = 1E6,
                        hp.tau.min = 0,
                        hp.tau.max = 2,
@@ -219,6 +221,10 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, OE, OE.se, OE.
   
   if (!is.element(measure, c("cstat","OE")))
     stop("Unknown 'measure' specified.")
+  
+  if (pars.default$level < 0 | pars.default$level > 1) {
+    stop ("Invalid value for 'level'!")
+  } 
   
   #######################################################################################
   # Check if we need to load runjags
@@ -281,6 +287,7 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, OE, OE.se, OE.
   out$call <- match.call()
   out$measure <- measure
   out$method <- method
+  out$level <- pars.default$level 
   class(out) <- "valmeta"
   
   
@@ -316,59 +323,54 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, OE, OE.se, OE.
     
     if (verbose) message("Extracting/computing estimates of the concordance statistic ...")
     
+    # Calculate O and N from other information if possible
+    O <- ifelse(is.na(O), Po*N, O)
+    N <- ifelse(is.na(N), O/Po, N)
     
+    theta.cil <- theta.ciu <- rep(NA, length(cstat))
     
-    # Apply necessary data transformations
+    # Define theta
     if (pars.default$model.cstat == "normal/identity") {
       theta <- cstat
-      theta.var <- (cstat.se)**2
-      theta.var.source[!is.na(theta.var)] <- "Standard Error"
-      theta.cil <- cstat.95CI[,1]
-      theta.ciu <- cstat.95CI[,2]
-      theta.var.CI <- ((theta.ciu - theta.cil)/(2*qnorm(0.975)))**2 #Derive from 95% CI
-      theta.var.source[is.na(theta.var) & !is.na(theta.var.CI)] <- "Confidence Interval"
-      theta.var <- ifelse(is.na(theta.var), theta.var.CI, theta.var) #Prioritize reported SE
+      if (pars.default$level==0.95) {
+        theta.cil <- cstat.95CI[,1]
+        theta.ciu <- cstat.95CI[,2]
+      }
     } else if (pars.default$model.cstat == "normal/logit") {
       theta <- log(cstat/(1-cstat))
-      theta.var <- (cstat.se/(cstat*(1-cstat)))**2
-      theta.var.source[!is.na(theta.var)] <- "Standard Error"
-      theta.cil <- logit(cstat.95CI[,1])
-      theta.ciu <- logit(cstat.95CI[,2])
-      theta.var.CI <- ((theta.ciu - theta.cil)/(2*qnorm(0.975)))**2
-      theta.var.source[is.na(theta.var) & !is.na(theta.var.CI)] <- "Confidence Interval"
-      theta.var <- ifelse(is.na(theta.var.CI), theta.var, theta.var.CI) #Prioritize variance from 95% CI
+      if (pars.default$level==0.95) {
+        theta.cil <- logit(cstat.95CI[,1])
+        theta.ciu <- logit(cstat.95CI[,2])
+      }
     } else {
-      stop(paste("No appropriate meta-analysis model defined: '", pars.default$model.cstat, "'", sep=""))
+      stop("Undefined link function!")
     }
     
-    # Restore missing standard errors
-    if (NA %in% theta.var) {
-      
-      # Calculate O and N from other information if possible
-      O <- ifelse(is.na(O), Po*N, O)
-      N <- ifelse(is.na(N), O/Po, N)
-
-      # Restore missing estimates of the standard error of the c-statistic using information on c, N and O
-      theta.var.hat <- restore.c.var(cstat=cstat, N.subjects=N, N.events=O, 
-                                     restore.method=pars.default$method.restore.c.se, 
-                                     model=pars.default$model.cstat)
-      theta.var.source[is.na(theta.var) & !is.na(theta.var.hat)] <- pars.default$method.restore.c.se
-      theta.var <- ifelse(is.na(theta.var), theta.var.hat, theta.var)
-
-      # Replace remaining missing values in theta.var by very large values
-      # Omitted because it now gives error in metafor
-      # Ratio of largest to smallest sampling variance extremely large. Cannot obtain stable results.
-      #theta.var <- ifelse(is.na(theta.var), 10e6, theta.var)
-    }
+    # Calculate all the possible variations of var(theta)
+    tv.method <- c("Standard Error", "Confidence Interval", pars.default$method.restore.c.se)
+    tv.se     <- restore.c.var.se(c.se=cstat.se, cstat=cstat, model=pars.default$model.cstat) # Derived from standard error
+    tv.ci     <- restore.c.var.ci(ci=cstat.95CI, level=0.95, model=pars.default$model.cstat) # Derived from 95% confidence interval
+    tv.hanley <- restore.c.var.hanley(cstat=cstat, N.subjects=N, N.events=O, restore.method=pars.default$method.restore.c.se,
+                                      model=pars.default$model.cstat)
+                         
+    # Save all estimated variances. The order of the columns indicates the priority             
+    dat <-cbind(tv.se, tv.ci, tv.hanley)  
     
-    #Only calculate 95% CI for which no original values were available
-    theta.cil[is.na(theta.cil)] <- (theta+qnorm(0.025)*sqrt(theta.var))[is.na(theta.cil)]
-    theta.ciu[is.na(theta.ciu)] <- (theta+qnorm(0.975)*sqrt(theta.var))[is.na(theta.ciu)]
+    # For each study, find the first colum without missing
+    myfun = function(dat) { which.min(is.na(dat)) }
+    
+    sel.var <- apply(dat, 1, myfun)
+    theta.var <- dat[cbind(seq_along(sel.var), sel.var)]                            
+    theta.var.source <-  tv.method[sel.var]
+    
+    # Calculate the desired confidence intervals
+    theta.cil[is.na(theta.cil)] <- (theta+qnorm((1-pars.default$level)/2)*sqrt(theta.var))[is.na(theta.cil)]
+    theta.ciu[is.na(theta.ciu)] <- (theta+qnorm((1+pars.default$level)/2)*sqrt(theta.var))[is.na(theta.ciu)]
     
     
-    ds <- cbind(theta, sqrt(theta.var), theta.cil, theta.ciu, NA)
-    colnames(ds) <- c("theta", "theta.se", "theta.95CIl", "theta.95CIu", "theta.blup")
-    
+    # Store results, and method for calculating SE
+    ds <- data.frame(theta=theta, theta.se=sqrt(theta.var), theta.CIl=theta.cil, theta.CIu=theta.ciu, 
+                     theta.blup=rep(NA,length(theta)), theta.se.source=theta.var.source)
     
     if (method != "BAYES") { # Use of rma
       
@@ -377,7 +379,7 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, OE, OE.se, OE.
       
       # Apply the meta-analysis
       fit <- rma(yi=theta, vi=theta.var, data=ds, method=method, test=test, slab=out$cstat$slab, ...) 
-      preds <- predict(fit)
+      preds <- predict(fit, level=pars.default$level)
       
       ds[selstudies, "theta.blup"] <- blup(fit)$pred
       
@@ -393,7 +395,7 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, OE, OE.se, OE.
       } else {
         stop ("Meta-analysis model not implemented yet")
       }
-      names(results) <- c("estimate", "95CIl", "95CIu", "95PIl", "95PIu")
+      names(results) <- c("estimate", "CIl", "CIu", "PIl", "PIu")
       
       out$rma <- fit
       out$numstudies <- fit$k
@@ -417,6 +419,7 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, OE, OE.se, OE.
       jags.model <- runjags::run.jags(model=model, 
                                       monitor = c("mu.tobs", "mu.obs", "pred.obs", "bsTau", "PED"), 
                                       data = mvmeta_dat, 
+                                      confidence = out$level, # Which credibility intervals do we need?
                                       n.chains = n.chains,
                                       silent.jags = !verbose,
                                       inits=inits,
@@ -426,9 +429,10 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, OE, OE.se, OE.
       
       #Extract PED
       fit.dev <- runjags::extract(jags.model,"PED")
+      txtLevel <- (out$level*100)
       
-      results <- c(fit["mu.obs","Mean"], fit["mu.obs", c("Lower95", "Upper95")], fit["pred.obs", c("Lower95", "Upper95")])
-      names(results) <- c("estimate", "95CIl", "95CIu", "95PIl", "95PIu")
+      results <- c(fit["mu.obs","Mean"], fit["mu.obs", paste(c("Lower", "Upper"), txtLevel, sep="")], fit["pred.obs", paste(c("Lower", "Upper"), txtLevel, sep="")])
+      names(results) <- c("estimate", "CIl", "CIu", "PIl", "PIu")
       
       out$runjags <- jags.model
       out$PED <- sum(fit.dev$deviance)+sum(fit.dev$penalty)
@@ -436,7 +440,6 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, OE, OE.se, OE.
     }
     
     out$data <- ds
-    out$se.source <- theta.var.source
     return(out)
   }
   #######################################################################################
@@ -502,7 +505,7 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, OE, OE.se, OE.
       
       if (pars.default$model.oe=="normal/identity") {
         fit <- rma(yi=ds$theta, sei=ds$theta.se, data=ds, method=method, test=test, slab=out$slab, ...) 
-        preds <- predict(fit)
+        preds <- predict(fit, level=pars.default$level)
         cr.lb <- ifelse(method=="FE", NA, preds$cr.lb)
         cr.ub <- ifelse(method=="FE", NA, preds$cr.ub)
         results <- c(coefficients(fit), c(preds$ci.lb, preds$ci.ub, cr.lb, cr.ub))
@@ -510,7 +513,7 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, OE, OE.se, OE.
         out$numstudies <- fit$k
       } else if (pars.default$model.oe=="normal/log") {
         fit <- rma(yi=ds$theta, sei=ds$theta.se, data=ds, method=method, test=test, slab=out$slab, ...) 
-        preds <- predict(fit)
+        preds <- predict(fit, level=pars.default$level)
         cr.lb <- ifelse(method=="FE", NA, preds$cr.lb)
         cr.ub <- ifelse(method=="FE", NA, preds$cr.ub)
         results <- c(exp(coefficients(fit)), exp(c(preds$ci.lb, preds$ci.ub, cr.lb, cr.ub)))
@@ -521,14 +524,14 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, OE, OE.se, OE.
         if (test=="knha") warning("The Sidik-Jonkman-Hartung-Knapp correction cannot be applied")
         
         fit <- glmer(O~1|Study, offset=log(E), family=poisson(link="log"), data=ds)
-        preds.ci <- confint(fit, quiet=!verbose, ...)
-        preds.cr <- lme4::fixef(fit) + qt(c(0.025, 0.975), df=(lme4::ngrps(fit)-2))*sqrt(vcov(fit)[1,1]+(as.data.frame(lme4::VarCorr(fit))["vcov"])[1,1])
+        preds.ci <- confint(fit, level=pars.default$level, quiet=!verbose, ...)
+        preds.cr <- lme4::fixef(fit) + qt(c((1-pars.default$level)/2, (1+pars.default$level)/2), df=(lme4::ngrps(fit)-2))*sqrt(vcov(fit)[1,1]+(as.data.frame(lme4::VarCorr(fit))["vcov"])[1,1])
         results <- c(exp(lme4::fixef(fit)), exp(c(preds.ci["(Intercept)",], preds.cr)))
         out$lme4 <- fit
         out$numstudies <- nobs(fit)
       } else if (pars.default$model.oe=="poisson/log" && method=="FE") {
         fit <- glm(O~1, offset=log(E), family=poisson(link="log"), data=ds)
-        preds.ci <- confint(fit, quiet=!verbose, ...)
+        preds.ci <- confint(fit, level=pars.default$level, quiet=!verbose, ...)
         preds.cr <- c(NA, NA)
         results <- c(exp(coefficients(fit)), exp(c(preds.ci, preds.cr)))
         out$glm <- fit
@@ -536,7 +539,7 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, OE, OE.se, OE.
       } else {
         stop("Model not implemented yet!")
       }
-      names(results) <- c("estimate", "95CIl", "95CIu", "95PIl", "95PIu")
+      names(results) <- c("estimate", "CIl", "CIu", "PIl", "PIu")
       
       out$results <- results
     } else {
@@ -575,6 +578,7 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, OE, OE.se, OE.
                                       monitor = c("mu.tobs", "mu.obs", "pred.obs", "bsTau", "PED"), 
                                       data = mvmeta_dat, 
                                       n.chains = n.chains,
+                                      confidence = out$level, # Which credibility intervals do we need?
                                       silent.jags = !verbose,
                                       inits=inits,
                                       ...)
@@ -583,9 +587,11 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, OE, OE.se, OE.
 
       #Extract PED
       fit.dev <- runjags::extract(jags.model,"PED")
+      txtLevel <- (out$level*100)
       
-      results <- c(fit["mu.obs","Mean"], fit["mu.obs", c("Lower95", "Upper95")], fit["pred.obs", c("Lower95", "Upper95")])
-      names(results) <- c("estimate", "95CIl", "95CIu", "95PIl", "95PIu")
+      results <- c(fit["mu.obs","Mean"], fit["mu.obs", paste(c("Lower", "Upper"), txtLevel, sep="")], 
+                   fit["pred.obs", paste(c("Lower", "Upper"), txtLevel, sep="")])
+      names(results) <- c("estimate", "CIl", "CIu", "PIl", "PIu")
       
       out$runjags <- jags.model
       out$PED <- sum(fit.dev$deviance)+sum(fit.dev$penalty)
@@ -641,12 +647,23 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, OE, OE.se, OE.
 #' @export
 print.valmeta <- function(x, ...) {
   if (x$measure=="cstat") {
-    cat("Model results for the c-statistic:\n\n")
+    text.stat <- "c-statistic"
   } else if (x$measure=="OE") {
-    cat("Model results for the total O:E ratio:\n\n")
+    text.stat <- "O:E ratio"
   }
   
-  print(x$results)
+  text.model <- if (x$method=="FE") "Fixed" else "Random"
+  text.method <- if(x$method=="BAYES") "credibility" else "confidence"
+  
+  
+  if (x$method!="FE") {
+    cat(paste("Summary ", text.stat, " with ",x$level*100, "% ", text.method, " and prediction interval:\n\n", sep=""))
+    print(x$results)
+  } else {
+    cat(paste("Summary ", text.stat, " with ", x$level*100, "% ", text.method, " interval:\n\n", sep=""))
+    print((x$results)[c("estimate", "CIl", "CIu")])
+  }
+  
   if (!is.null(x$runjags)) {
     #Print penalized expected deviance
     cat(paste("\nPenalized expected deviance: ", round(x$PED,2), "\n"))
@@ -668,9 +685,9 @@ print.valmeta <- function(x, ...) {
   cat(paste("Number of studies included: ", x$numstudies))
   if (x$measure=="cstat") {
     se.sources <- c("Hanley","Newcombe.2","Newcombe.4") 
-    num.estimated.var.c <- sum(x$se.source %in% se.sources)
+    num.estimated.var.c <- sum(x$data$theta.se.source %in% se.sources)
     if (num.estimated.var.c > 0) {
-      restore.method <- (se.sources[se.sources %in% x$se.source])[1]
+      restore.method <- (se.sources[se.sources %in% x$data$theta.se.source])[1]
       cat(paste("\nNote: For ", num.estimated.var.c, " validation(s), the standard error of the concordance statistic was estimated using method '", restore.method, "'.\n", sep=""))
     }
   }
@@ -718,8 +735,8 @@ plot.valmeta <- function(x, ...) {
   k <- dim(x$data)[1]
   yi.slab <- c(as.character(x$slab))
   yi <- c(x$data[,"theta"])
-  ci.lb <- c(x$data[,"theta.95CIl"])
-  ci.ub <- c(x$data[,"theta.95CIu"])
+  ci.lb <- c(x$data[,"theta.CIl"])
+  ci.ub <- c(x$data[,"theta.CIu"])
   
   if (x$model=="normal/logit") {
     yi <- sapply(yi, inv.logit)
@@ -736,15 +753,15 @@ plot.valmeta <- function(x, ...) {
   if (x$measure=="cstat") {
     forest(theta=yi, theta.ci=yi.ci, theta.slab=yi.slab, 
            theta.summary=x$results["estimate"], 
-           theta.summary.ci=x$results[c("95CIl","95CIu")], 
-           theta.summary.pi=x$results[c("95PIl","95PIu")], 
+           theta.summary.ci=x$results[c("CIl","CIu")], 
+           theta.summary.pi=x$results[c("PIl","PIu")], 
            xlim=c(0,1),
            refline=0.5, xlab="c-statistic", ...)
   } else if (x$measure=="OE") {
     forest(theta=yi, theta.ci=yi.ci, theta.slab=yi.slab, 
            theta.summary=x$results["estimate"], 
-           theta.summary.ci=x$results[c("95CIl","95CIu")], 
-           theta.summary.pi=x$results[c("95PIl","95PIu")], 
+           theta.summary.ci=x$results[c("CIl","CIu")], 
+           theta.summary.pi=x$results[c("PIl","PIu")], 
            xlim=c(0,NA),
            refline=1, xlab="Total O:E ratio", ...)
   }
