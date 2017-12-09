@@ -305,13 +305,17 @@ plot.uvmeta <- function(x, ...) {
 print.uvmeta <- function(x, ...)
 {
   out <- (x$results)[c("estimate", "CIl", "CIu")]
+  
   text.model <- if (x$method=="FE") "Fixed" else "Random"
-  text.method <- if(x$method=="BAYES") "credibility" else "confidence"
-  cat(paste("Summary estimate with corresponding ", x$level*100, "% ", text.method, " interval:\n\n", sep=""))
-	print(out)
+  text.ci <- if(x$method=="BAYES") "credibility" else "confidence"
+  text.pi <- if(x$method=="BAYES") "" else "(approximate)"
+  
   if (x$method!="FE") {
-    cat(paste("\n\nSummary estimate with corresponding ",x$level*100, "% prediction interval:\n\n", sep=""))
-    print((x$results)[c("estimate", "PIl", "PIu")])
+    cat(paste("Summary estimate with ", x$level*100, "% ", text.ci, " and ", text.pi, " ", x$level*100, "% prediction interval:\n\n", sep=""))
+    print((x$results)[c("estimate", "CIl", "CIu", "PIl", "PIu")])
+  } else {
+    cat(paste("Summary estimate with ", x$level*100, "% ", text.ci, ":\n\n", sep=""))
+    print((x$results)[c("estimate", "CIl", "CIu")])
   }
   if (x$method=="BAYES") {
     cat(paste("\nPenalized expected deviance: ", round(x$PED,3),"\n"))

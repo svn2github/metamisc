@@ -653,14 +653,15 @@ print.valmeta <- function(x, ...) {
   }
   
   text.model <- if (x$method=="FE") "Fixed" else "Random"
-  text.method <- if(x$method=="BAYES") "credibility" else "confidence"
+  text.ci <- if(x$method=="BAYES") "credibility" else "confidence"
+  text.pi <- if(x$method=="BAYES") "" else "(approximate)"
   
   
   if (x$method!="FE") {
-    cat(paste("Summary ", text.stat, " with ",x$level*100, "% ", text.method, " and prediction interval:\n\n", sep=""))
+    cat(paste("Summary ", text.stat, " with ", x$level*100, "% ", text.ci, " and ", text.pi, " ", x$level*100, "% prediction interval:\n\n", sep=""))
     print(x$results)
   } else {
-    cat(paste("Summary ", text.stat, " with ", x$level*100, "% ", text.method, " interval:\n\n", sep=""))
+    cat(paste("Summary ", text.stat, " with ", x$level*100, "% ", text.ci, " interval:\n\n", sep=""))
     print((x$results)[c("estimate", "CIl", "CIu")])
   }
   
