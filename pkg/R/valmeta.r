@@ -1,5 +1,4 @@
-#TODO: Level is currently always 0.95 for frequentist meta-analysis of OE ratio. Need to customize!
-#TODO: Change 95CI and 95PI to CI and PI in results
+#TODO: disable extrapolation for bayesian meta-analysis, use built-in methods
 
 #' Meta-analysis of prediction model performance
 #'
@@ -37,7 +36,8 @@
 #' \code{Pe} are applicable. Also specifies the time point at which \code{OE} and \code{CITL} have been calculated.
 #' @param t.ma Optional numeric value, specifying the target time period (of time point) of the meta-analysis
 #' @param t.extrapolate Optional logical indicating whether calibration performance of the prognostic model 
-#' should be extrapolated to time \code{t.ma}
+#' should be extrapolated to time \code{t.ma}. Otherwise, studies where \code{t.val!=t.ma} will be omitted
+#' when meta-analysing the total O:E ratio. 
 #' @param method Character string specifying whether a fixed- or a random-effects model should be fitted. 
 #' A fixed-effects model is fitted when using \code{method="FE"}. Random-effects models are fitted by setting method 
 #' equal to one of the following: \code{"REML"} (Default), \code{"DL"}, \code{"HE"}, \code{"SJ"}, \code{"ML"}, 
@@ -50,8 +50,7 @@
 #' @param n.chains Optional numeric specifying the number of chains to use in the Gibbs sampler 
 #' (if \code{method="BAYES"}). More chains will improve the sensitivity of the convergence diagnostic, but will 
 #' cause the simulation to run more slowly. The default number of chains is 4.
-#' @param pars A list with additional arguments.  The width of confidence, credibility and prediction intervals is 
-#' defined by \code{level} (defaults to 0.95). The following parameters configure the MCMC sampling procedure:  
+#' @param pars A list with additional arguments.  See 'Details' for more information. The following parameters configure the MCMC sampling procedure:  
 #' \code{hp.mu.mean} (mean of the prior distribution of the random effects model, defaults to 0), 
 #' \code{hp.mu.var} (variance of the prior distribution of the random effects model, defaults to 1E6), 
 #' \code{hp.tau.min} (minimum value for the between-study standard deviation, defaults to 0), 
@@ -85,7 +84,8 @@
 #' entire range of predicted risks). Currently, three methods have been implemented to obtain a summary 
 #' estimate of the total O:E ratio. By default, the meta-analysis model assumes   Normality for the 
 #' (natural) logarithm of the O:E ratios (\code{model.oe = "normal/log"}). Continuity corrections are 
-#' applied when necessary by adding 0.5 to \code{O}, \code{E} and \code{N}. Alternatively, it is possible 
+#' applied when necessary by adding 0.5 to \code{O}, \code{E} and \code{N}. The correction amount can
+#' be specified using \code{correction} in the \code{pars} argument. Alternatively, it is possible 
 #' to model the total number of observed and expected events using a Poisson likelihood (Stijnen 2010). 
 #' The resulting model does not require continuity corrections for \code{O} and can be implemented by 
 #' setting \code{model.oe = "poisson/log"} (note that \code{hp.mu.var} is truncated to a maximum 
@@ -114,6 +114,9 @@
 #' Uniform distribution (\code{hp.tau.dist="dunif"}; default), truncated Student-t distribution  
 #' (\code{hp.tau.dist="dhalft"}).}
 #' 
+#' @note The width of calculated confidence, credibility and prediction intervals can be specified 
+#' using \code{level} in the \code{pars} argument (defaults to 0.95).
+#' 
 #' @return An object of class \code{valmeta} with the following elements:
 #' \describe{
 ##'  \item{"data"}{array with (transformed) data used for meta-analysis }
@@ -124,7 +127,6 @@
 ##'  \item{"results"}{numeric vector containing the meta-analysis results}
 ##'  \item{"rma"}{a fitted object of class \link[metafor]{rma} (if \pkg{metafor} was used for meta-analysis).}
 ##'  \item{"runjags"}{a fitted object of class \code{runjags} (if \pkg{runjags} was used for meta-analysis).}
-##'  \item{"se.source"}{character vector specifying the source of the studies' standard errors.}
 ##'  \item{"slab"}{vector specifying the label of each study.}
 ##' }
 #' @references 
@@ -208,6 +210,7 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, OE, OE.se, OE.
                        hp.tau.sigma = 0.5,
                        hp.tau.dist = "dunif", 
                        hp.tau.df = 3, 
+                       correction = 0.5,
                        method.restore.c.se="Newcombe.4",
                        model.cstat = "normal/logit", #Alternative: "normal/identity"
                        model.oe = "normal/log") #Alternative: "poisson/log" or "normal/identity"
@@ -277,8 +280,6 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, OE, OE.se, OE.
   if (missing(N)) {
     N <- rep(NA, length=k)
   }
-  
-  theta.var.source <- rep("-", k)
   
   #######################################################################################
   # Prepare object
@@ -495,6 +496,62 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, OE, OE.se, OE.
 
     if (verbose) message("Extracting/computing estimates of the total O:E ratio ...")
     
+    theta.cil <- theta.ciu <- rep(NA, k)
+    
+    # Define theta
+    if (pars.default$model.oe == "normal/identity") {
+      theta <- OE
+      if (pars.default$level==0.95) {
+        theta.cil <- OE.95CI[,1]
+        theta.ciu <- OE.95CI[,2]
+      }
+    } else if (pars.default$model.oe == "normal/log" | pars.default$model.oe == "poisson/log") {
+      theta <- log(OE)
+      if (pars.default$level==0.95) {
+        theta.cil <- log(OE.95CI[,1])
+        theta.ciu <- log(OE.95CI[,2])
+      }
+    } else {
+      stop("Undefined link function!")
+    }
+    
+    #####################################################################################
+    # Calculate the OE ratio
+    # Omit studies where t.val != t.ma (unless extrapolation is required)
+    #####################################################################################
+    t.oe     <- restore.oe.OEN(O=O, E=E, N=N, correction = pars.default$correction, 
+                               t.extrapolate=t.extrapolate, t.ma=t.ma, t.val=t.val, model=pars.default$model.oe) 
+    t.open   <- restore.oe.OPeN(O=O, Pe=Pe, N=N, correction = pars.default$correction, 
+                                t.extrapolate=t.extrapolate, t.ma=t.ma, t.val=t.val, model=pars.default$model.oe)
+    t.epon   <- restore.oe.EPoN(E=E, Po=Po, N=N, correction = pars.default$correction, 
+                                t.extrapolate=t.extrapolate, t.ma=t.ma, t.val=t.val, model=pars.default$model.oe)
+    t.popen  <- restore.oe.PoPeN(Po=Po, Pe=Pe, N=N, correction = pars.default$correction, 
+                                 t.extrapolate=t.extrapolate, t.ma=t.ma, t.val=t.val, model=pars.default$model.oe) 
+    t.pope   <- restore.oe.PoPe(Po=Po, Pe=Pe, t.extrapolate=t.extrapolate, t.ma=t.ma, t.val=t.val, model=pars.default$model.oe) 
+    t.citl   <- restore.oe.citl(citl=citl, O=O, Po=Po, N=N, t.extrapolate=t.extrapolate, t.ma=t.ma, t.val=t.val, 
+                                model=pars.default$model.oe) 
+    
+    # Select appropriate estimate for 'theta' and record its source
+    t.method <- c("O and E", "O, Pe and N", "E, Po and N", "Po, Pe and N", "Po and Pe", "CITL")
+    dat      <- cbind(t.oe,   t.open,        t.epon,        t.popen,        t.pope,      t.citl) 
+    myfun = function(dat) { which.min(is.na(dat)) }
+    sel.theta <- apply(dat, 1, myfun)
+    theta <- dat[cbind(seq_along(sel.theta), sel.theta)]                            
+    theta.source <-  t.method[sel.theta]
+    
+    # TODO: Estimate O, E, Po, N etc before we calculate the OE ratio!
+    # TODO: save estimates of O, E, Po, N, etc.
+    
+    #####################################################################################
+    # Calculate SE of the OE ratio
+    # Use theta.source to determine appropriate formula
+    #####################################################################################
+    
+    # Store results, and method for calculating SE
+    ds <- data.frame(theta=theta, theta.source=theta.source)
+    
+    
+    
     ds <- generateOEdata(O=O, E=E, Po=Po, Po.se=Po.se, Pe=Pe, OE=OE, OE.se=OE.se, OE.95CI=OE.95CI, 
                          citl=citl, citl.se=citl.se, N=N, t.ma=t.ma, t.val=t.val, t.extrapolate=t.extrapolate,
                          pars=pars.default, verbose=verbose)
@@ -599,7 +656,7 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, OE, OE.se, OE.
     }
     
     out$data <- ds
-    out$se.source <- theta.var.source
+    #out$se.source <- theta.var.source
     
     return(out)
   }
@@ -699,6 +756,8 @@ print.valmeta <- function(x, ...) {
 #' Function to create forest plots for objects of class \code{"valmeta"}.
 #' 
 #' @param x An object of class \code{"valmeta"}
+#' @param sort By default, studies are ordered by ascending effect size (\code{sort="asc"}). For study ordering by descending
+#' effect size, choose \code{sort="desc"}. For any other value, study ordering is ignored.
 #' @param \ldots Additional arguments which are passed to \link{forest}.
 #' 
 #' @details The forest plot shows the performance estimates of each validation with corresponding confidence 
@@ -731,7 +790,7 @@ print.valmeta <- function(x, ...) {
 #' @importFrom stats reorder
 #' @return An object of class \code{ggplot}
 #' @export
-plot.valmeta <- function(x, ...) {
+plot.valmeta <- function(x, sort="asc", ...) {
   
   k <- dim(x$data)[1]
   yi.slab <- c(as.character(x$slab))
@@ -757,14 +816,14 @@ plot.valmeta <- function(x, ...) {
            theta.summary.ci=x$results[c("CIl","CIu")], 
            theta.summary.pi=x$results[c("PIl","PIu")], 
            xlim=c(0,1),
-           refline=0.5, xlab="c-statistic", ...)
+           refline=0.5, xlab="c-statistic", sort=sort, ...)
   } else if (x$measure=="OE") {
     forest(theta=yi, theta.ci=yi.ci, theta.slab=yi.slab, 
            theta.summary=x$results["estimate"], 
            theta.summary.ci=x$results[c("CIl","CIu")], 
            theta.summary.pi=x$results[c("PIl","PIu")], 
            xlim=c(0,NA),
-           refline=1, xlab="Total O:E ratio", ...)
+           refline=1, xlab="Total O:E ratio", sort=sort, ...)
   }
 }
 

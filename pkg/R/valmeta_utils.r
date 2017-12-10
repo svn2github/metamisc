@@ -56,6 +56,156 @@ restore.c.var.ci <- function(ci, level=0.95, model="normal/logit") {
 }
 
 
+restore.oe.OEN <- function(O, E, N, correction = 0.5, t.extrapolate=F, t.ma=NA, t.val, model="normal/log") {
+  if (model == "normal/identity") {
+    cc <- which(E==0)
+    E[cc] <- E[cc]+correction
+    O[cc] <- O[cc]+correction
+    N[cc] <- N[cc]+correction
+    out <- O/E
+  } else if (model %in% c("normal/log", "poisson/log")) {
+    cc <- which(E==0 | O==0)
+    E[cc] <- E[cc]+correction
+    O[cc] <- O[cc]+correction
+    N[cc] <- N[cc]+correction
+    out <- (log(O)-log(E))
+  } else {
+    out <- rep(NA, length(O)) 
+  }
+  
+  # Apply extrapolation or omit study where t.val != t.ma
+  if (!t.extrapolate & !is.na(t.ma) & class(t.val)=="numeric") {
+    out[which(t.val!=t.ma)] <- NA
+  } else if (t.extrapolate) {
+    out[which(t.val!=t.ma)] <- restore.oe.PoPe(Po=O/N, Pe=E/N, t.extrapolate=T, t.ma=t.ma, t.val=t.val, model=model)[which(t.val!=t.ma)]
+  }
+  
+  return (out)
+}
+
+restore.oe.PoPe <- function (Po, Pe, t.extrapolate=F, t.ma=NA, t.val, model="normal/log") {
+  if (missing(t.val)) {
+    t.val <- rep(NA, length(Po))
+  }
+  
+  if (model == "normal/identity") {
+    out <- Po/Pe
+    
+    # Apply extrapolation using Poisson distribution
+    if (t.extrapolate & !is.na(t.ma) & class(t.val)=="numeric") {
+      Po.new <- 1-exp(t.ma*log(1-Po)/t.val)
+      Pe.new <- 1-exp(t.ma*log(1-Pe)/t.val)
+      out[which(t.val!=t.ma)] <- (Po.new/Pe.new)[which(t.val!=t.ma)]
+    } else if (!t.extrapolate & !is.na(t.ma) & class(t.val)=="numeric") {
+      out[which(t.val!=t.ma)] <- NA
+    }
+  } else if (model %in% c("normal/log", "poisson/log")) {
+    out <- log(Po)-log(Pe)
+    
+    if (t.extrapolate & !is.na(t.ma) & class(t.val)=="numeric") {
+      Po.new <- 1-exp(t.ma*log(1-Po)/t.val)
+      Pe.new <- 1-exp(t.ma*log(1-Pe)/t.val)
+      out[which(t.val!=t.ma)] <- log(Po.new/Pe.new)[which(t.val!=t.ma)]
+    } else if (!t.extrapolate & !is.na(t.ma) & class(t.val)=="numeric") {
+      out[which(t.val!=t.ma)] <- NA
+    }
+  } else {
+    out <- rep(NA, length(Po)) 
+  }
+  
+  return (out)
+}
+
+restore.oe.OPeN <- function(O, Pe, N, correction = 0.5, t.extrapolate=F, t.ma=NA, t.val, model="normal/log") {
+  return(restore.oe.OEN(O=O, E=Pe*N, N=N, correction=correction, t.extrapolate=t.extrapolate, t.ma=t.ma, t.val=t.val, model=model))
+}
+
+restore.oe.EPoN <- function(E, Po, N, correction = 0.5, t.extrapolate=F, t.ma=NA, t.val, model="normal/log") {
+  return(restore.oe.OEN(O=Po*N, E=E, N=N, correction=correction, t.extrapolate=t.extrapolate, t.ma=t.ma, t.val=t.val, model=model))
+}
+
+restore.oe.PoPeN <- function (Po, Pe, N, correction = 0.5, t.extrapolate=F, t.ma=NA, t.val, model="normal/log") {
+  return(restore.oe.OEN(O=Po*N, E=Pe*N, N=N, correction=correction, t.extrapolate=t.extrapolate, t.ma=t.ma, t.val=t.val, model=model))
+}
+
+# Restore OE ratio from calibration-in-the-large
+restore.oe.citl <- function(citl, O, Po, N, t.extrapolate=F, t.ma=NA, t.val, model="normal/log") {
+  if (missing(t.val)) {
+    t.val <- rep(NA, length(citl))
+  }
+  
+  Po[is.na(Po)] <- (O/N)[is.na(Po)]
+  
+  # Apply extrapolation using Poisson distribution
+  if (t.extrapolate & !is.na(t.ma) & class(t.val)=="numeric") {
+    Po[which(t.val!=t.ma)] <- (1-exp(t.ma*log(1-Po)/t.val))[which(t.val!=t.ma)]
+  } else if (!t.extrapolate & !is.na(t.ma) & class(t.val)=="numeric") {
+    Po[which(t.val!=t.ma)] <- NA # Omit studies where follow-up duration is improprer
+  }
+  
+  if (model == "normal/identity") {
+    return(-(exp(citl)*(Po)-exp(citl)-(Po)))
+  }
+  if (model %in% c("normal/log", "poisson/log")) {
+    return (log(-(exp(citl)*(Po)-exp(citl)-(Po))))
+  }
+  return (NA)
+}
+
+restore.oe.var.seOE1 <- function(se, OE, t.extrapolate=F, t.ma=NA, t.val, model="normal/log") {
+  if (model == "normal/identity") {
+    out <- se**2
+    
+    if (!t.extrapolate & !is.na(t.ma) & class(t.val)=="numeric") {
+      out[which(t.val!=t.ma)] <- NA
+    }
+  } else if (model %in% c("normal/log", "poisson/log")) {
+    out <- (se**2)/(OE**2) # Equation 16 in appendix BMJ paper
+    
+    if (!t.extrapolate & !is.na(t.ma) & class(t.val)=="numeric") {
+      out[which(t.val!=t.ma)] <- NA
+    }
+  }
+  return(out)
+}
+
+restore.oe.var.seOE2 <- function(se, O, E, t.extrapolate=F, t.ma=NA, t.val, model="normal/log") {
+  return(restore.oe.var.seOE1(se=se, OE=(O/E), t.extrapolate=t.extrapolate, t.ma=t.ma, t.val=t.val, model=model))
+}
+  
+#In most situations, O and E are reported separately without any estimate of uncertainty.
+#In the following derivations, we regard E as a fixed constant. We treat O as a binomially distributed
+#variable since O is given as the number of successes (events) from N subjects
+restore.oe.var.OEN <- function(O, E, N, correction = 0.5, t.extrapolate=F, t.ma=NA, t.val, model="normal/log") {
+  if (model == "normal/identity") {
+    cc <- which(E==0)
+    E[cc] <- E[cc]+correction
+    O[cc] <- O[cc]+correction
+    N[cc] <- N[cc]+correction
+    Po <- O/N
+    
+    out <- O*(1-Po)/(E**2)
+    
+    if (!t.extrapolate & !is.na(t.ma) & class(t.val)=="numeric") {
+      out[which(t.val!=t.ma)] <- NA
+    }
+  } else if (model %in% c("normal/log", "poisson/log")) {
+    cc <- which(E==0 | O==0)
+    E[cc] <- E[cc]+correction
+    O[cc] <- O[cc]+correction
+    N[cc] <- N[cc]+correction
+    Po <- O/N
+    
+    out <- (1-Po)/(O)
+    
+    if (!t.extrapolate & !is.na(t.ma) & class(t.val)=="numeric") {
+      out[which(t.val!=t.ma)] <- NA
+    }
+  }
+  return(out)
+}
+
+
 
 # See params of geom_smooth for more details
 # Smoothed calibration plot: use  formula = obsy ~ splines::bs(predy, 3)

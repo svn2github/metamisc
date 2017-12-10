@@ -252,6 +252,8 @@ uvmeta.default <- function(r, r.se, method="REML", test="knha", labels, na.actio
 #' Function to create forest plots for objects of class \code{"uvmeta"}.
 #' 
 #' @param x An object of class \code{"uvmeta"}
+#' @param sort By default, studies are ordered by ascending effect size (\code{sort="asc"}). For study ordering by descending
+#' effect size, choose \code{sort="desc"}. For any other value, study ordering is ignored.
 #' @param \dots Additional arguments which are passed to \link{forest}.
 #' 
 #' @details The forest plot shows the performance estimates of each validation with corresponding confidence 
@@ -281,7 +283,7 @@ uvmeta.default <- function(r, r.se, method="REML", test="knha", labels, na.actio
 #' @importFrom graphics par plot axis polygon points lines abline
 #' @import ggplot2
 #' @export
-plot.uvmeta <- function(x, ...) {
+plot.uvmeta <- function(x, sort="asc", ...) {
   level <- x$level
   quantiles <- c((1-level)/2, (1-((1-level)/2)))
   
@@ -295,7 +297,8 @@ plot.uvmeta <- function(x, ...) {
   forest(theta=yi, theta.ci=yi.ci, theta.slab=yi.slab, 
          theta.summary=x$results["estimate"], 
          theta.summary.ci=x$results[c("CIl","CIu")], 
-         theta.summary.pi=x$results[c("PIl","PIu")], ...)
+         theta.summary.pi=x$results[c("PIl","PIu")], 
+         sort=sort, ...)
 }
 
 
@@ -311,7 +314,8 @@ print.uvmeta <- function(x, ...)
   text.pi <- if(x$method=="BAYES") "" else "(approximate)"
   
   if (x$method!="FE") {
-    cat(paste("Summary estimate with ", x$level*100, "% ", text.ci, " and ", text.pi, " ", x$level*100, "% prediction interval:\n\n", sep=""))
+    cat(paste("Summary estimate with ", x$level*100, "% ", text.ci, " and ", text.pi, " ", 
+              x$level*100, "% prediction interval:\n\n", sep=""))
     print((x$results)[c("estimate", "CIl", "CIu", "PIl", "PIu")])
   } else {
     cat(paste("Summary estimate with ", x$level*100, "% ", text.ci, ":\n\n", sep=""))

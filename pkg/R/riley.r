@@ -1,5 +1,3 @@
-#TODO: incoroporate level in meta-analysis, and omit it from plots and summaries
-#TODO: use generic forest method for generating plots
 #TODO: check prediction intervals
 #TODO: Add cholesky decomposition in loglikelihood
 #TODO: Alter design matrix in LogLik to set entries with missing data to zero (in which case #df needs to be altered)
@@ -23,6 +21,7 @@
 #' when considering a meta-analysis of diagnostic test accuracy data, the columns \code{TP}, \code{FN}, \code{FP} and 
 #' \code{TN} may be specified. Corresponding values then represent the number of true positives, the number of false negatives,
 #' the number of false positives and, respectively, the number of true negatives.
+#' @param slab Optional vector specifying the label for each study
 #' @param optimization The optimization method that should be used for minimizing the negative (restricted) 
 #' log-likelihood function. The default method is an implementation of that of Nelder and Mead (1965), 
 #' that uses only function values and is robust but relatively slow. Other methods are described in \link[stats]{optim}.
@@ -120,11 +119,12 @@
 #' @author Thomas Debray <thomas.debray@gmail.com>
 #'
 #' @export
-riley <- function(X, optimization = "Nelder-Mead", control = list(), pars, ...) UseMethod("riley")
+riley <- function(X, slab, optimization = "Nelder-Mead", control = list(), pars, ...) UseMethod("riley")
 
 #' @export
-riley.default <- function(X, optimization = "Nelder-Mead", control = list(), pars, ...)
+riley.default <- function(X, slab, optimization = "Nelder-Mead", control = list(), pars, ...)
 {
+  out <- NA
   
   pars.default <- list(level = 0.95)
   
@@ -141,10 +141,9 @@ riley.default <- function(X, optimization = "Nelder-Mead", control = list(), par
     stop ("Invalid value for significance level!")
   } 
   
-  out <- NA
-
-  
   if(missing(X)) stop("X is missing!")
+  
+  k <- dim(X)[1] # Number of studies
   
   # Assess which type of meta-analysis is needed
   if (sum(c("Y1","vars1","Y2","vars2","TP","FN","FP","TN") %in% colnames(X))==8) {
@@ -161,6 +160,15 @@ riley.default <- function(X, optimization = "Nelder-Mead", control = list(), par
     stop ("Missing column(s) in X!")
   } else {
     stop ("Provided data not supported, please verify column names in X!")
+  }
+  
+  #######################################################################################
+  # Assign study labels
+  #######################################################################################
+  if(missing(slab)) {
+    out$slab <- paste("Study", seq(1, k))
+  } else {
+    out$slab <- make.unique(as.character(slab))
   }
   
   out$call <- match.call()
@@ -313,7 +321,7 @@ rileyDA <-
 	    #Apply ordinary bivariate meta-analysis on transformed data
       output = rileyES(X=NULL, Y1=logit.sens,Y2=logit.fpr,vars1=var.logit.sens,vars2=var.logit.fpr,optimization = optimization, control = control, ...)
       output$type = "test.accuracy"
-      output$data = newdata
+      output$data = cbind(newdata, output$data)
       output$correction = correction 
       output$correction.control = correction.control
       output$level <- pars$level
@@ -431,26 +439,26 @@ predict.riley <- function(object,  ...)
 {
   alpha <- (1-object$level)/2
   
-  predint		<- array(NA,dim=c(2,3))
-  colnames(predint) <- c("Estimate", paste((alpha*100),"%"),paste(((1-alpha)*100),"%"))
+  predint		<- array(NA,dim=c(4,2))
+  colnames(predint) <- c( paste((alpha*100),"%"),paste(((1-alpha)*100),"%"))
   df 			<- object$df
   numstudies 		<- object$numstudies
   
-  if (object$type=="test.accuracy")
-  {
-	rownames(predint) = c("Sens","FPR")
-	if ((numstudies - df) > 0)
-	{
-		predint[1,] = inv.logit(c(coefficients(object)["beta1"],(qt(alpha,df=(numstudies-df))*sqrt((coefficients(object)["psi1"]**2)+diag(vcov(object))[1])+coefficients(object)["beta1"]),(qt((1-alpha),df=(numstudies-df))*sqrt((coefficients(object)["psi1"]**2)+diag(vcov(object))[1])+coefficients(object)["beta1"])))
-		predint[2,] = inv.logit(c(coefficients(object)["beta2"],(qt(alpha,df=(numstudies-df))*sqrt((coefficients(object)["psi2"]**2)+diag(vcov(object))[2])+coefficients(object)["beta2"]),(qt((1-alpha),df=(numstudies-df))*sqrt((coefficients(object)["psi2"]**2)+diag(vcov(object))[2])+coefficients(object)["beta2"])))
-	} else {
-		predint[1,] = c(inv.logit(coefficients(object)["beta1"]),0,1)
-		predint[2,] = c(inv.logit(coefficients(object)["beta2"]),0,1)
-	}
+  rownames(predint) = c("beta1","beta2", "Sens","FPR")
+  predint[1,] = c((qt(alpha,df=(numstudies-df))*sqrt((coefficients(object)["psi1"]**2)+diag(vcov(object))[1])+coefficients(object)["beta1"]),(qt((1-alpha),df=(numstudies-df))*sqrt((coefficients(object)["psi1"]**2)+diag(vcov(object))[1])+coefficients(object)["beta1"]))
+  predint[2,] = c((qt(alpha,df=(numstudies-df))*sqrt((coefficients(object)["psi2"]**2)+diag(vcov(object))[2])+coefficients(object)["beta2"]),(qt((1-alpha),df=(numstudies-df))*sqrt((coefficients(object)["psi2"]**2)+diag(vcov(object))[2])+coefficients(object)["beta2"]))
+  
+  
+  if (object$type=="test.accuracy") {
+    if ((numstudies - df) > 0) {
+      predint[3,] = inv.logit(c((qt(alpha,df=(numstudies-df))*sqrt((coefficients(object)["psi1"]**2)+diag(vcov(object))[1])+coefficients(object)["beta1"]),(qt((1-alpha),df=(numstudies-df))*sqrt((coefficients(object)["psi1"]**2)+diag(vcov(object))[1])+coefficients(object)["beta1"])))
+      predint[4,] = inv.logit(c((qt(alpha,df=(numstudies-df))*sqrt((coefficients(object)["psi2"]**2)+diag(vcov(object))[2])+coefficients(object)["beta2"]),(qt((1-alpha),df=(numstudies-df))*sqrt((coefficients(object)["psi2"]**2)+diag(vcov(object))[2])+coefficients(object)["beta2"])))
+    } else {
+      predint[3,] = c(inv.logit(coefficients(object)["beta1"]),0,1)
+      predint[4,] = c(inv.logit(coefficients(object)["beta2"]),0,1)
+    }
   } else {
-	rownames(predint) = c("beta1","beta2")
-	predint[1,] = c(coefficients(object)["beta1"],(qt(alpha,df=(numstudies-df))*sqrt((coefficients(object)["psi1"]**2)+diag(vcov(object))[1])+coefficients(object)["beta1"]),(qt((1-alpha),df=(numstudies-df))*sqrt((coefficients(object)["psi1"]**2)+diag(vcov(object))[1])+coefficients(object)["beta1"]))
-	predint[2,] = c(coefficients(object)["beta2"],(qt(alpha,df=(numstudies-df))*sqrt((coefficients(object)["psi2"]**2)+diag(vcov(object))[2])+coefficients(object)["beta2"]),(qt((1-alpha),df=(numstudies-df))*sqrt((coefficients(object)["psi2"]**2)+diag(vcov(object))[2])+coefficients(object)["beta2"]))
+    predint <- predint[1:2,]
   }
   predint
 }
@@ -513,57 +521,93 @@ logLik.riley <- function(object, ...) {
 	return(val)
 }
 
-
-plot.riley <- function(x, plotsumm = TRUE, plotnumerics = TRUE, level = 0.95, main="",
-                       ylim = c(0,1), xlim = c(0,1), pch = 1, lty = 1, lwd = 1, cex.numerics=0.45,
-                       add=FALSE, ...)
+#' Plot the summary of the bivariate model from Riley et al. (2008).
+#' 
+#' Generates a forest plot for each outcome of the bivariate meta-analysis.
+#' 
+#' @param x An object of class \code{riley}
+#' @param title Title of the forest plot
+#' @param sort By default, studies are ordered by ascending effect size (\code{sort="asc"}). For study ordering by descending
+#' effect size, choose \code{sort="desc"}. For any other value, study ordering is ignored.
+#' @param xlim The \code{x} limits \code{(x1, x2)} of the forest plot
+#' @param refline Optional numeric specifying a reference line
+#' @param \dots Additional parameters for generating forest plots
+#' 
+#' @references Riley RD, Thompson JR, Abrams KR. An alternative model for bivariate random-effects meta-analysis 
+#' when the within-study correlations are unknown. \emph{Biostatistics} 2008; \bold{9}: 172--186.
+#' 
+#' @examples 
+#' data(Scheidler)
+#' 
+#' #Perform the analysis
+#' fit <- riley(Scheidler[which(Scheidler$modality==1),])
+#' plot(fit)
+#' 
+#' require(ggplot2)
+#' plot(fit, sort="none", theme=theme_gray())
+#' 
+#' @keywords forest
+#' @author Thomas Debray <thomas.debray@gmail.com>
+#' @import grid
+#' 
+#' @method plot riley
+#' @export
+plot.riley <- function(x, title, sort="asc", xlim, refline, ...)
 {
-	alpha = (1-level)/2
+	alpha <- (1-x$level)/2
 	
 	if (x$type=="test.accuracy") {
-		xlab = "1-Specificity"
-		ylab = "Sensitivity"
-		
-		FP <- x$data$FP
-		negatives <- FP + x$data$TN
-		FPR <- FP/negatives
-		mu = x$coefficients[c("beta2","beta1")]
-		Sigma = vcov(x)[c("beta2","beta1"),c("beta2","beta1")] 
-		mu.ellipse <- ellipse(Sigma, centre = mu, level = level) 
-		summary1 = inv.logit(mu[1])
-		summary2 = inv.logit(mu[2])
-		ellipse1 = inv.logit(mu.ellipse[,1])
-		ellipse2 = inv.logit(mu.ellipse[,2])
+	  if (missing(title)) {
+	    title <- c("Sensitivity", "False Positive Rate")
+	  }
+	  if (missing(xlim)) {
+	    xlim <- c(0, 1)
+	  }
+
+	  yi1    <- inv.logit(x$data[,"Y1"])
+	  yi1.ci <- inv.logit(cbind(x$data[,"Y1"]+qnorm(alpha)*sqrt(x$data[,"vars1"]), x$data[,"Y1"]+qnorm(1-alpha)*sqrt(x$data[,"vars1"])))
+	  ma1    <- inv.logit(coef(x)["beta1"])
+	  ma1.ci <- inv.logit(confint(x)["beta1",])
+	  ma1.pi <- inv.logit(predict(x)["beta1",])
+	  
+	  yi2    <- inv.logit(x$data[,"Y2"])
+	  yi2.ci <- inv.logit(cbind(x$data[,"Y2"]+qnorm(alpha)*sqrt(x$data[,"vars2"]), x$data[,"Y2"]+qnorm(1-alpha)*sqrt(x$data[,"vars2"])))
+	  ma2    <- inv.logit(coef(x)["beta2"])
+	  ma2.ci <- inv.logit(confint(x)["beta2",])
+	  ma2.pi <- inv.logit(predict(x)["beta2",])
 	} else {
-		plotnumerics = FALSE
-		xlab = "Y1"
-		ylab = "Y2"
-		mu = x$coefficients[c("beta1","beta2")]
-		Sigma = vcov(x)[c(1,2),c(1,2)] 
-		mu.ellipse <- ellipse(Sigma, centre = mu, level = level) 
-		summary1 = mu[1]
-		summary2 = mu[2]
-		ellipse1 = mu.ellipse[,1]
-		ellipse2 = mu.ellipse[,2]
+	  if (missing(title)) {
+	    title <- c("Outcome 1", "Outcome 2")
+	  }
+	  if (missing(refline)) {
+	    refline <- 0
+	  }
+	  
+	  yi1    <- x$data[,"Y1"]
+	  yi1.ci <- cbind(x$data[,"Y1"]+qnorm(alpha)*sqrt(x$data[,"vars1"]), x$data[,"Y1"]+qnorm(1-alpha)*sqrt(x$data[,"vars1"]))
+	  ma1    <- coef(x)["beta1"]
+	  ma1.ci <- confint(x)["beta1",]
+	  ma1.pi <- predict(x)["beta1",]
+	  
+	  yi2    <- x$data[,"Y2"]
+	  yi2.ci <- cbind(x$data[,"Y2"]+qnorm(alpha)*sqrt(x$data[,"vars2"]), x$data[,"Y2"]+qnorm(1-alpha)*sqrt(x$data[,"vars2"]))
+	  ma2    <- coef(x)["beta2"]
+	  ma2.ci <- confint(x)["beta2",]
+	  ma2.pi <- predict(x)["beta2",]
+	  
 	}
 	
-	if (!add) plot(-500,-500, type = "l", xlim = xlim, ylim = ylim, xlab=xlab,ylab=ylab,main=main, ...)
-	#if (!add) NextMethod("plot")	
-	polygon(ellipse1,ellipse2,lty=lty, lwd=lwd)
-	if(plotsumm) points(summary1,summary2,pch=pch) # add the point estimate of the mean
+	# Generate 2 forest plots
+	p1 <- forest(theta=yi1, theta.ci=yi1.ci, theta.slab=x$slab, 
+	       theta.summary=ma1, 
+	       theta.summary.ci=ma1.ci, 
+	       theta.summary.pi=ma1.pi, 
+	       title = title[1], xlim=xlim, refline=refline, sort=sort, ...)
+	p2 <- forest(theta=yi2, theta.ci=yi2.ci, theta.slab=x$slab, 
+	       theta.summary=ma2, 
+	       theta.summary.ci=ma2.ci, 
+	       theta.summary.pi=ma2.pi, 
+	       title = title[2], xlim=xlim, refline=refline, sort=sort, ...)
 	
-	if(plotnumerics) {
-		ci = summary(x,level=level)[2]$confints
-		text(0.8,0.15,labels="Estimate",pos=2,cex=cex.numerics)
-		text(0.9,0.15,labels=paste((alpha*100),"% CI",sep=""),pos=2,cex=cex.numerics)
-		text(1.0,0.15,labels=paste(((1-alpha)*100),"% CI",sep=""),pos=2,cex=cex.numerics)
-		text(0.5,0.10,labels= "Sensitivity",pos=4, cex=cex.numerics)
-		text(0.8,0.10,labels=paste("",formatC(round( ci["Sens",1],2),2,format="f",flag="0")),pos=2, cex=cex.numerics)
-		text(0.9,0.10,labels=paste("",formatC(round( ci["Sens",2],2),2,format="f",flag="0")),pos=2, cex=cex.numerics)
-		text(1.0,0.10,labels=paste("",formatC(round( ci["Sens",3],2),2,format="f",flag="0")),pos=2, cex=cex.numerics)
-		text(0.5,0.05,labels= "Specificity",pos=4, cex=cex.numerics)
-		text(0.8,0.05,labels=paste("",formatC(round( 1-ci["FPR",1],2),2,format="f",flag="0")),pos=2, cex=cex.numerics)
-		text(0.9,0.05,labels=paste("",formatC(round( 1-ci["FPR",3],2),2,format="f",flag="0")),pos=2, cex=cex.numerics)
-		text(1.0,0.05,labels=paste("",formatC(round( 1-ci["FPR",2],2),2,format="f",flag="0")),pos=2, cex=cex.numerics)
-	}
+	multiplot(p1, p2, cols=2)
 }

@@ -4,10 +4,13 @@
 \alias{plot.valmeta}
 \title{Forest Plots}
 \usage{
-\method{plot}{valmeta}(x, ...)
+\method{plot}{valmeta}(x, sort = "asc", ...)
 }
 \arguments{
 \item{x}{An object of class \code{"valmeta"}}
+
+\item{sort}{By default, studies are ordered by ascending effect size (\code{sort="asc"}). For study ordering by descending
+effect size, choose \code{sort="desc"}. For any other value, study ordering is ignored.}
 
 \item{\ldots}{Additional arguments which are passed to \link{forest}.}
 }

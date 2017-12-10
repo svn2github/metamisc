@@ -54,7 +54,8 @@ of the 95\% confidence interval of the total O:E ratios}
 \item{t.ma}{Optional numeric value, specifying the target time period (of time point) of the meta-analysis}
 
 \item{t.extrapolate}{Optional logical indicating whether calibration performance of the prognostic model 
-should be extrapolated to time \code{t.ma}}
+should be extrapolated to time \code{t.ma}. Otherwise, studies where \code{t.val!=t.ma} will be omitted
+when meta-analysing the total O:E ratio.}
 
 \item{method}{Character string specifying whether a fixed- or a random-effects model should be fitted. 
 A fixed-effects model is fitted when using \code{method="FE"}. Random-effects models are fitted by setting method 
@@ -73,8 +74,7 @@ adjusting test statistics and confidence intervals. Type '\code{?rma}' for more 
 (if \code{method="BAYES"}). More chains will improve the sensitivity of the convergence diagnostic, but will 
 cause the simulation to run more slowly. The default number of chains is 4.}
 
-\item{pars}{A list with additional arguments.  The width of confidence, credibility and prediction intervals is 
-defined by \code{level} (defaults to 0.95). The following parameters configure the MCMC sampling procedure:  
+\item{pars}{A list with additional arguments.  See 'Details' for more information. The following parameters configure the MCMC sampling procedure:
 \code{hp.mu.mean} (mean of the prior distribution of the random effects model, defaults to 0), 
 \code{hp.mu.var} (variance of the prior distribution of the random effects model, defaults to 1E6), 
 \code{hp.tau.min} (minimum value for the between-study standard deviation, defaults to 0), 
@@ -100,7 +100,6 @@ An object of class \code{valmeta} with the following elements:
  \item{"results"}{numeric vector containing the meta-analysis results}
  \item{"rma"}{a fitted object of class \link[metafor]{rma} (if \pkg{metafor} was used for meta-analysis).}
  \item{"runjags"}{a fitted object of class \code{runjags} (if \pkg{runjags} was used for meta-analysis).}
- \item{"se.source"}{character vector specifying the source of the studies' standard errors.}
  \item{"slab"}{vector specifying the label of each study.}
 }
 }
@@ -132,7 +131,8 @@ The total O:E ratio provides a rough indication of the overall model calibration
 entire range of predicted risks). Currently, three methods have been implemented to obtain a summary 
 estimate of the total O:E ratio. By default, the meta-analysis model assumes   Normality for the 
 (natural) logarithm of the O:E ratios (\code{model.oe = "normal/log"}). Continuity corrections are 
-applied when necessary by adding 0.5 to \code{O}, \code{E} and \code{N}. Alternatively, it is possible 
+applied when necessary by adding 0.5 to \code{O}, \code{E} and \code{N}. The correction amount can
+be specified using \code{correction} in the \code{pars} argument. Alternatively, it is possible 
 to model the total number of observed and expected events using a Poisson likelihood (Stijnen 2010). 
 The resulting model does not require continuity corrections for \code{O} and can be implemented by 
 setting \code{model.oe = "poisson/log"} (note that \code{hp.mu.var} is truncated to a maximum 
@@ -160,6 +160,10 @@ standard deviation are sampled from a uniform distribution with aformentioned bo
 distributions are supported for modeling the prior of the between-study standard deviation: 
 Uniform distribution (\code{hp.tau.dist="dunif"}; default), truncated Student-t distribution  
 (\code{hp.tau.dist="dhalft"}).}
+}
+\note{
+The width of calculated confidence, credibility and prediction intervals can be specified 
+using \code{level} in the \code{pars} argument (defaults to 0.95).
 }
 \examples{
 ######### Validation of prediction models with a binary outcome #########

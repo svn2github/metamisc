@@ -4,7 +4,7 @@
 \alias{riley}
 \title{Fit the alternative model for bivariate random-effects meta-analysis}
 \usage{
-riley(X, optimization = "Nelder-Mead", control = list(), pars, ...)
+riley(X, slab, optimization = "Nelder-Mead", control = list(), pars, ...)
 }
 \arguments{
 \item{X}{data frame containing integer variables \code{Y1}, \code{vars1}, \code{Y2} and \code{vars2},
@@ -13,6 +13,8 @@ where the columns \code{Y1} and \code{Y2} represent the effect sizes of outcome 
 when considering a meta-analysis of diagnostic test accuracy data, the columns \code{TP}, \code{FN}, \code{FP} and 
 \code{TN} may be specified. Corresponding values then represent the number of true positives, the number of false negatives,
 the number of false positives and, respectively, the number of true negatives.}
+
+\item{slab}{Optional vector specifying the label for each study}
 
 \item{optimization}{The optimization method that should be used for minimizing the negative (restricted) 
 log-likelihood function. The default method is an implementation of that of Nelder and Mead (1965), 

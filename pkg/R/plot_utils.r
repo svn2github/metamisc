@@ -10,6 +10,9 @@
 #' confidence interval of the summary estimate
 #' @param theta.summary.pi Numeric vector specifying the lower bound (first item) and upper bound (second item) of the 
 #' prediction interval of the summary estimate. 
+#' @param title Title of the forest plot
+#' @param sort By default, studies are sorted by ascending effect size (\code{sort="asc"}). Set to \code{"desc"} for 
+#' sorting in reverse order, or any other value to ignore sorting.
 #' @param theme Theme to generate the forest plot. By default, the classic dark-on-light ggplot2 theme is used. 
 #' See \link[ggplot2]{theme_bw} for more information.
 #' @param predint.linetype The linetype of the prediction interval
@@ -24,11 +27,15 @@
 #' @export
 forest <- function (theta, theta.ci, theta.slab, theta.summary, 
                     theta.summary.ci, 
-                    theta.summary.pi=c(NA, NA),
+                    theta.summary.pi = c(NA, NA),
+                    title,
+                    sort = "asc",
                     theme = theme_bw(),
                     predint.linetype=1,
                     xlim,
-                    xlab="", refline=0, label.summary="Summary Estimate", ...) {
+                    xlab="", 
+                    refline=0,
+                    label.summary="Summary Estimate", ...) {
 
   if (missing(theta)) stop("Study effect sizes are missing!")
   if (missing(theta.ci)) stop("Confidence intervals of effect sizes missing!")
@@ -44,7 +51,14 @@ forest <- function (theta, theta.ci, theta.slab, theta.summary,
   slab <- theta.slab
   
   #Sort data
-  i.index <- order(yi)
+  if (sort=="asc") {
+    i.index <- order(yi)
+  } else if (sort=="desc") {
+    i.index <- order(yi, decreasing=TRUE)
+  } else {
+    i.index <- 1:length(yi)
+  }
+  
   
   # Add meta-analysis results
   if (NA %in% theta.summary.pi) {
@@ -80,9 +94,16 @@ forest <- function (theta, theta.ci, theta.slab, theta.summary,
     p <- p + ylim(xlim)
   }
   
+  # Add title
+  if (!missing(title)) {
+    p <- p + ggtitle(title)
+  }
+  
   # Add refline
-  if (is.numeric(refline)) {
-    p <- p + geom_hline(yintercept = refline,  linetype = "dotted") 
+  if (!missing(refline)) {
+    if (is.numeric(refline)) {
+      p <- p + geom_hline(yintercept = refline,  linetype = "dotted") 
+    }
   }
   
   # Add meta-analysis summary
@@ -110,4 +131,50 @@ forest <- function (theta, theta.ci, theta.slab, theta.summary,
   p <- p + with(g2, geom_point(data=g2, shape=23, size=3, fill="white"))
 
   p
+}
+
+# Multiple plot function
+#
+# ggplot objects can be passed in ..., or to plotlist (as a list of ggplot objects)
+# - cols:   Number of columns in layout
+# - layout: A matrix specifying the layout. If present, 'cols' is ignored.
+#
+# If the layout is something like matrix(c(1,2,3,3), nrow=2, byrow=TRUE),
+# then plot 1 will go in the upper left, 2 will go in the upper right, and
+# 3 will go all the way across the bottom.
+#
+multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
+  #library(grid)
+  
+  # Make a list from the ... arguments and plotlist
+  plots <- c(list(...), plotlist)
+  
+  numPlots = length(plots)
+  
+  # If layout is NULL, then use 'cols' to determine layout
+  if (is.null(layout)) {
+    # Make the panel
+    # ncol: Number of columns of plots
+    # nrow: Number of rows needed, calculated from # of cols
+    layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
+                     ncol = cols, nrow = ceiling(numPlots/cols))
+  }
+  
+  if (numPlots==1) {
+    print(plots[[1]])
+    
+  } else {
+    # Set up the page
+    grid.newpage()
+    pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
+    
+    # Make each plot, in the correct location
+    for (i in 1:numPlots) {
+      # Get the i,j matrix positions of the regions that contain this subplot
+      matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
+      
+      print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
+                                      layout.pos.col = matchidx$col))
+    }
+  }
 }

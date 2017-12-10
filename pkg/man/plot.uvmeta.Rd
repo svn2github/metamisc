@@ -4,10 +4,13 @@
 \alias{plot.uvmeta}
 \title{Forest Plots}
 \usage{
-\method{plot}{uvmeta}(x, ...)
+\method{plot}{uvmeta}(x, sort = "asc", ...)
 }
 \arguments{
 \item{x}{An object of class \code{"uvmeta"}}
+
+\item{sort}{By default, studies are ordered by ascending effect size (\code{sort="asc"}). For study ordering by descending
+effect size, choose \code{sort="desc"}. For any other value, study ordering is ignored.}
 
 \item{\dots}{Additional arguments which are passed to \link{forest}.}
 }
