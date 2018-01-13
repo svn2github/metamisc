@@ -232,7 +232,10 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, OE, OE.se, OE.
   
   if (measure=="OE" & pars.default$model.oe=="poisson/log" & t.extrapolate) {
     t.extrapolate <- FALSE
-    warning("Extrapolation not implemented for poisson/log models!")
+    warning("Extrapolation not implemented yet for poisson/log models!")
+  }else if (measure=="OE" & method=="BAYES" & t.extrapolate) {
+    t.extrapolate <- FALSE
+    warning("Extrapolation not implemented yet for Bayesian models!")
   }
   
   #######################################################################################
@@ -565,7 +568,7 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, OE, OE.se, OE.
     # Calculate O, E and N for meta-analyses using GLMER models
     # Omit studies where t.val != t.ma 
     #####################################################################################
-    if (pars.default$model.oe == "poisson/log") {
+    if (pars.default$model.oe == "poisson/log" | method == "BAYES") {
       O.new <- O
       E.new <- E
       N.new <- N
@@ -633,11 +636,33 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, OE, OE.se, OE.
       out$results <- results
     } else {
       if (pars.default$model.oe=="normal/log") {
-        i.select <- which(!is.na(ds$theta.se)) #omit non-informative studies
+        #i.select <- which(!is.na(ds$theta.se)) #omit non-informative studies
+        #mvmeta_dat <- list(theta=ds$theta[i.select],
+        #theta.var=(ds$theta.se[i.select])**2,
+        #Nstudies = length(i.select))
         
-        mvmeta_dat <- list(theta=ds$theta[i.select],
-                           theta.var=(ds$theta.se[i.select])**2,
-                           Nstudies = length(i.select))
+        # Truncate hyper parameter variance
+        pars.default$hp.mu.var = min(pars.default$hp.mu.var, 100)
+        
+        # Select studies where we have info on O, E and N
+        i.select1 <- which(!is.na(ds$O) & !is.na(ds$E) & !is.na(ds$N))
+        
+        # Select studies where we only have info on O and E
+        i.select2 <- which(!is.na(ds$O) & !is.na(ds$E) & is.na(ds$N))
+        
+        mvmeta_dat <- list(O=ds$O[c(i.select1, i.select2)],
+                           E=ds$E[c(i.select1, i.select2)],
+                           N=ds$N[c(i.select1, i.select2)])
+        
+        if (length(i.select1)>0)
+          mvmeta_dat$s1 <- i.select1
+        if (length(i.select2)>0)
+          mvmeta_dat$s2 <- i.select2
+        
+        # Generate model
+        model <- generateBUGS.OE.lognormal(N.type1=length(i.select1), N.type2=length(i.select2), pars=pars.default, ...)
+        
+        out$numstudies <- length(mvmeta_dat$O)
       } else if (pars.default$model.oe =="poisson/log") {
         
         # Truncate hyper parameter variance
@@ -648,29 +673,32 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, OE, OE.se, OE.
         mvmeta_dat <- list(obs=round(ds$O[i.select]),
                            exc=ds$E[i.select],
                            Nstudies = length(i.select))
+        
+        # Perform a Bayesian meta-analysis
+        model <- generateBugsOE(pars=pars.default, ...)
+        
+        out$numstudies <- mvmeta_dat$Nstudies
       } else {
         stop("Model not implemented yet!")
       }
-      out$numstudies <- mvmeta_dat$Nstudies
       
-      # Perform a Bayesian meta-analysis
-      model <- generateBugsOE(pars=pars.default, ...)
+      
       
       # Generate initial values from the relevant distributions
       model.pars <- list()
-      model.pars[[1]] <- list(param="mu.tobs", param.f=rnorm, param.args=list(n=1, mean=pars.default$hp.mu.mean, sd=sqrt(pars.default$hp.mu.var)))
+      model.pars[[1]] <- list(param="mu.logoe", param.f=rnorm, param.args=list(n=1, mean=pars.default$hp.mu.mean, sd=sqrt(pars.default$hp.mu.var)))
       model.pars[[2]] <- list(param="bsTau", param.f=runif, param.args=list(n=1, min=pars.default$hp.tau.min, max=pars.default$hp.tau.max))
       inits <- generateMCMCinits(n.chains=n.chains, model.pars=model.pars)
       
-      
       jags.model <- runjags::run.jags(model=model, 
-                                      monitor = c("mu.tobs", "mu.obs", "pred.obs", "bsTau", "PED"), 
+                                      monitor = c("mu.logoe", "mu.oe", "pred.oe", "bsTau", "PED"), 
                                       data = mvmeta_dat, 
                                       n.chains = n.chains,
                                       confidence = out$level, # Which credibility intervals do we need?
                                       silent.jags = !verbose,
                                       inits=inits,
                                       ...)
+        
       fit <- jags.model$summaries
       
 
@@ -678,8 +706,8 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, OE, OE.se, OE.
       fit.dev <- runjags::extract(jags.model,"PED")
       txtLevel <- (out$level*100)
       
-      results <- c(fit["mu.obs","Mean"], fit["mu.obs", paste(c("Lower", "Upper"), txtLevel, sep="")], 
-                   fit["pred.obs", paste(c("Lower", "Upper"), txtLevel, sep="")])
+      results <- c(fit["mu.oe","Mean"], fit["mu.oe", paste(c("Lower", "Upper"), txtLevel, sep="")], 
+                   fit["pred.oe", paste(c("Lower", "Upper"), txtLevel, sep="")])
       names(results) <- c("estimate", "CIl", "CIu", "PIl", "PIu")
       
       out$runjags <- jags.model
@@ -823,7 +851,6 @@ print.valmeta <- function(x, ...) {
 #' @return An object of class \code{ggplot}
 #' @export
 plot.valmeta <- function(x, sort="asc", ...) {
-  
   k <- dim(x$data)[1]
   yi.slab <- c(as.character(x$slab))
   yi <- c(x$data[,"theta"])
