@@ -55,81 +55,165 @@ restore.c.var.ci <- function(ci, level=0.95, model="normal/logit") {
   stop("Invalid link function!")
 }
 
+# Calculate OE and its SE from O, E and N
+restore.oe.OE <- function(OE, OE.se, t.extrapolate=F, t.ma=NA, t.val, model="normal/log") {
+  out <- array(NA, dim=c(length(OE),2))
+  
+  if (model == "normal/identity") {
+    out[,1] <- OE
+    out[,2] <- OE.se
+  } else if (model %in% c("normal/log", "poisson/log")) {
+    out[,1] <- log(OE)
+    out[,2] <- OE.se/OE
+  } 
+  
+  # Extrapolation not possible
+  if (!is.na(t.ma) & class(t.val)=="numeric") {
+    out[which(t.val!=t.ma),] <- NA
+  }
+  
+  return (out)
+}
 
-restore.oe.OEN <- function(O, E, N, correction = 0.5, t.extrapolate=F, t.ma=NA, t.val, model="normal/log") {
+restore.oe.OE.95CI <- function(OE, OE.95CI, t.extrapolate=F, t.ma=NA, t.val, model="normal/log") {
+  out <- array(NA, dim=c(length(OE),2))
+  
+  if (model == "normal/identity") {
+    OE.se <- abs((OE.95CI[,2] - OE.95CI[,1])/(2*qnorm(0.975))) #Derive from 95% CI
+    return (restore.oe.OE(OE=OE, OE.se=OE.se, t.extrapolate=t.extrapolate, t.ma=t.ma, t.val=t.val, model=model))
+  } else if (model %in% c("normal/log", "poisson/log")) {
+    out[,1] <- log(OE)
+    out[,2] <- abs((log(OE.95CI[,2]) - log(OE.95CI[,1]))/(2*qnorm(0.975)))
+  }
+  
+  # Extrapolation not possible
+  if (!is.na(t.ma) & class(t.val)=="numeric") {
+    out[which(t.val!=t.ma),] <- NA
+  }
+  return (out)
+}
+
+# Calculate OE and its SE from O, E and N
+restore.oe.O.E.N <- function(O, E, N, correction = 0.5, t.extrapolate=F, t.ma=NA, t.val, model="normal/log") {
+  out <- array(NA, dim=c(length(O),2))
+  
   if (model == "normal/identity") {
     cc <- which(E==0)
     E[cc] <- E[cc]+correction
     O[cc] <- O[cc]+correction
     N[cc] <- N[cc]+correction
-    out <- O/E
+    out[,1] <- O/E 
+    out[,2] <- sqrt((0*(1-O/N))/(E**2))
   } else if (model %in% c("normal/log", "poisson/log")) {
     cc <- which(E==0 | O==0)
     E[cc] <- E[cc]+correction
     O[cc] <- O[cc]+correction
     N[cc] <- N[cc]+correction
-    out <- (log(O)-log(E))
-  } else {
-    out <- rep(NA, length(O)) 
-  }
+    out[,1] <- (log(O)-log(E))
+    out[,2] <- sqrt((1-(O/N))/O)
+  } 
   
   # Apply extrapolation or omit study where t.val != t.ma
   if (!t.extrapolate & !is.na(t.ma) & class(t.val)=="numeric") {
-    out[which(t.val!=t.ma)] <- NA
-  } else if (t.extrapolate) {
-    out[which(t.val!=t.ma)] <- restore.oe.PoPe(Po=O/N, Pe=E/N, t.extrapolate=T, t.ma=t.ma, t.val=t.val, model=model)[which(t.val!=t.ma)]
+    out[which(t.val!=t.ma),] <- NA
+  } else if (t.extrapolate & !is.na(t.ma) & class(t.val)=="numeric") {
+    Po.new <- 1-exp(t.ma*log(1-(O/N))/t.val)
+    Pe.new <- 1-exp(t.ma*log(1-(E/N))/t.val)
+    
+    if (model == "normal/identity") {
+      theta.new <- (Po.new/Pe.new)
+      theta.se.new <- sqrt(((t.ma**2)*exp(2*t.ma*log(1-(O/N))/t.val)*(O/N))/((t.val**2)*N*(1-(O/N))*(1-exp(t.ma*log(1-(E/N))/t.val))**2))
+    } else if (model %in% c("normal/log", "poisson/log")) {
+      theta.new <- log(Po.new/Pe.new)
+      theta.se.new <- sqrt(((t.ma**2)*(O/N)*exp(2*t.ma*log(1-(O/N))/t.val))/((t.val**2)*N*(1-(O/N))*((1-exp(t.ma*log(1-(O/N))/t.val))**2)))
+    } else {
+      stop("Model not supported")
+    }
+    out[which(t.val!=t.ma),1] <- theta.new[which(t.val!=t.ma)]
+    out[which(t.val!=t.ma),2] <- theta.se.new[which(t.val!=t.ma)]
   }
+  
+  #Don't provide O/E for studies where N is missing
+  out[is.na(N),] <- NA
+  
+  return (out)
+}
+
+# Calculate OE and its SE from O and E
+restore.oe.O.E <- function(O, E, correction = 0.5, t.extrapolate=F, t.ma=NA, t.val, model="normal/log") {
+  out <- array(NA, dim=c(length(O),2))
+  
+  if (model == "normal/identity") {
+    cc <- which(E==0)
+    E[cc] <- E[cc]+correction
+    O[cc] <- O[cc]+correction
+    out[,1] <- O/E
+    out[,2] <- sqrt(0/(E**2))
+  } else if (model %in% c("normal/log", "poisson/log")) {
+    cc <- which(E==0 | O==0)
+    E[cc] <- E[cc]+correction
+    O[cc] <- O[cc]+correction
+    out[,1] <- (log(O)-log(E))
+    out[,2] <- sqrt(1/O)
+  } 
+  
+  # Extrapolation not possible
+  if (!is.na(t.ma) & class(t.val)=="numeric") {
+    out[which(t.val!=t.ma),] <- NA
+  } 
   
   return (out)
 }
 
 restore.oe.PoPe <- function (Po, Pe, t.extrapolate=F, t.ma=NA, t.val, model="normal/log") {
+  out <- array(NA, dim=c(length(Po),2))
+  
   if (missing(t.val)) {
     t.val <- rep(NA, length(Po))
   }
   
   if (model == "normal/identity") {
-    out <- Po/Pe
     
-    # Apply extrapolation using Poisson distribution
-    if (t.extrapolate & !is.na(t.ma) & class(t.val)=="numeric") {
-      Po.new <- 1-exp(t.ma*log(1-Po)/t.val)
-      Pe.new <- 1-exp(t.ma*log(1-Pe)/t.val)
-      out[which(t.val!=t.ma)] <- (Po.new/Pe.new)[which(t.val!=t.ma)]
-    } else if (!t.extrapolate & !is.na(t.ma) & class(t.val)=="numeric") {
-      out[which(t.val!=t.ma)] <- NA
+    out[,1] <- Po/Pe
+    # Extrapolation not possible
+    if (!is.na(t.ma) & class(t.val)=="numeric") {
+      out[which(t.val!=t.ma),] <- NA
     }
   } else if (model %in% c("normal/log", "poisson/log")) {
-    out <- log(Po)-log(Pe)
+    out[,1] <- log(Po)-log(Pe)
     
-    if (t.extrapolate & !is.na(t.ma) & class(t.val)=="numeric") {
-      Po.new <- 1-exp(t.ma*log(1-Po)/t.val)
-      Pe.new <- 1-exp(t.ma*log(1-Pe)/t.val)
-      out[which(t.val!=t.ma)] <- log(Po.new/Pe.new)[which(t.val!=t.ma)]
-    } else if (!t.extrapolate & !is.na(t.ma) & class(t.val)=="numeric") {
-      out[which(t.val!=t.ma)] <- NA
+    if (!is.na(t.ma) & class(t.val)=="numeric") {
+      out[which(t.val!=t.ma),] <- NA
     }
-  } else {
-    out <- rep(NA, length(Po)) 
-  }
+  } 
   
   return (out)
 }
 
+restore.oe.OPoE <- function(O, Po, E, correction = 0.5, t.extrapolate=F, t.ma=NA, t.val, model="normal/log") {
+  return(restore.oe.O.E.N(O=O, E=E, N=O/Po, correction=correction, t.extrapolate=t.extrapolate, t.ma=t.ma, t.val=t.val, model=model))
+}
+
+restore.oe.OPeE <- function(O, Pe, E, correction = 0.5, t.extrapolate=F, t.ma=NA, t.val, model="normal/log") {
+  return(restore.oe.O.E.N(O=O, E=E, N=E/Pe, correction=correction, t.extrapolate=t.extrapolate, t.ma=t.ma, t.val=t.val, model=model))
+}
+
 restore.oe.OPeN <- function(O, Pe, N, correction = 0.5, t.extrapolate=F, t.ma=NA, t.val, model="normal/log") {
-  return(restore.oe.OEN(O=O, E=Pe*N, N=N, correction=correction, t.extrapolate=t.extrapolate, t.ma=t.ma, t.val=t.val, model=model))
+  return(restore.oe.O.E.N(O=O, E=Pe*N, N=N, correction=correction, t.extrapolate=t.extrapolate, t.ma=t.ma, t.val=t.val, model=model))
 }
 
 restore.oe.EPoN <- function(E, Po, N, correction = 0.5, t.extrapolate=F, t.ma=NA, t.val, model="normal/log") {
-  return(restore.oe.OEN(O=Po*N, E=E, N=N, correction=correction, t.extrapolate=t.extrapolate, t.ma=t.ma, t.val=t.val, model=model))
+  return(restore.oe.O.E.N(O=Po*N, E=E, N=N, correction=correction, t.extrapolate=t.extrapolate, t.ma=t.ma, t.val=t.val, model=model))
 }
 
 restore.oe.PoPeN <- function (Po, Pe, N, correction = 0.5, t.extrapolate=F, t.ma=NA, t.val, model="normal/log") {
-  return(restore.oe.OEN(O=Po*N, E=Pe*N, N=N, correction=correction, t.extrapolate=t.extrapolate, t.ma=t.ma, t.val=t.val, model=model))
+  return(restore.oe.O.E.N(O=Po*N, E=Pe*N, N=N, correction=correction, t.extrapolate=t.extrapolate, t.ma=t.ma, t.val=t.val, model=model))
 }
 
 # Restore OE ratio from calibration-in-the-large
-restore.oe.citl <- function(citl, O, Po, N, t.extrapolate=F, t.ma=NA, t.val, model="normal/log") {
+restore.oe.citl <- function(citl, citl.se, O, Po, N, t.extrapolate=F, t.ma=NA, t.val, model="normal/log") {
+  out <- array(NA, dim=c(length(citl),2))
+  
   if (missing(t.val)) {
     t.val <- rep(NA, length(citl))
   }
@@ -144,12 +228,14 @@ restore.oe.citl <- function(citl, O, Po, N, t.extrapolate=F, t.ma=NA, t.val, mod
   }
   
   if (model == "normal/identity") {
-    return(-(exp(citl)*(Po)-exp(citl)-(Po)))
+    out[,1] <- -(exp(citl)*(Po)-exp(citl)-(Po))
+
   }
   if (model %in% c("normal/log", "poisson/log")) {
-    return (log(-(exp(citl)*(Po)-exp(citl)-(Po))))
+    out[,1] <- (log(-(exp(citl)*(Po)-exp(citl)-(Po))))
+    out[,2] <- sqrt((((Po-1)**2)*((Po**2)+1)*(exp(Po+citl))**2)*(citl.se**2)/((-Po*exp(citl))+Po+exp(citl))**2)
   }
-  return (NA)
+  return (out)
 }
 
 restore.oe.var.seOE1 <- function(se, OE, t.extrapolate=F, t.ma=NA, t.val, model="normal/log") {
