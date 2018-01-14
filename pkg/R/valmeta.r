@@ -80,40 +80,36 @@
 #' 
 #' \subsection{Meta-analysis of the total observed versus expected ratio}{
 #' A summary estimate for the total observed versus expected (O:E) ratiocan be obtained by specifying
-#' \code{measure="OE"}.
-#' The total O:E ratio provides a rough indication of the overall model calibration (across the 
-#' entire range of predicted risks). Currently, three methods have been implemented to obtain a summary 
-#' estimate of the total O:E ratio. By default, the meta-analysis model assumes   Normality for the 
-#' (natural) logarithm of the O:E ratios (\code{model.oe = "normal/log"}). Continuity corrections are 
-#' applied when necessary by adding 0.5 to \code{O}, \code{E} and \code{N}. The correction amount can
-#' be specified using \code{correction} in the \code{pars} argument. Alternatively, it is possible 
-#' to model the total number of observed and expected events using a Poisson likelihood (Stijnen 2010). 
-#' The resulting model does not require continuity corrections for \code{O} and can be implemented by 
-#' setting \code{model.oe = "poisson/log"} (note that \code{hp.mu.var} is truncated to a maximum 
-#' value of 100 for \code{method="BAYES"}). Finally, it is possible to summarize raw estimates of the 
-#' O:E ratio by setting \code{model.oe = "normal/identity"}. 
+#' \code{measure="OE"}. The total O:E ratio provides a rough indication of the overall model calibration (across the 
+#' entire range of predicted risks). 
 #' 
-#' When unkown, the standard error of the O:E ratio will be approximated in the following order from  
-#' (1) the 95\% confidence interval, (2) the standard error of \code{Po}, (3)  the error variance of the 
-#' binomial distribution, (4) the error variance of the Poisson distribution, or from 
-#' (5) the calibration-in-the-large statistic.    
+#' For frequentist meta-analysis, within-study variation can be modeled using a Normal (\code{model.oe = "normal/log"} 
+#' or \code{model.oe = "normal/identity"}) or Poisson distribution (\code{model.oe = "normal/log"}). Conversely, for 
+#' Bayesian meta-analysis, within-study variation is always modeled using a discrete likelihood. In particular, a 
+#' binomial or Poisson distribution is used, depending on whether \code{N} is known.
 #' 
 #' For meta-analysis of prognostic models, it is recommended to provide information on the time period 
 #' (\code{t.val}) during which calibration was assessed in the validation study. When the time period of 
-#' the validation study does not correspond to the time period of interest (\code{t.ma}), observed and 
-#' expected survival probabilities will be extrapolated using Poisson distributions. Currently, 
-#' extrapolation of event rates is only supported for \code{model.oe = "normal/log"} and 
-#' \code{model.oe = "normal/identity"}. Note that  values for \code{O} and \code{N} should take 
-#' the presence of drop-out into account. This implies that \code{O} is ideally based on Kaplan-Meier 
-#' estimates, or that \code{N} should represent the total number of participants with complete follow-up.}
+#' the validation study does not correspond to the time period of interest (\code{t.ma}), corresponding 
+#' studies are omitted from the meta-analysis. It is possible to extrapolate observed
+#' event rates by setting \code{t.extrapolate=TRUE}. This approach is currently only supported for
+#' frequentist meta-analysis models with \code{model.oe = "normal/log"} or \code{model.oe = "normal/identity"}. 
+#' }
 #' 
 #' \subsection{Bayesian meta-analysis}{
+#' The prior distribution for the summary estimate is always modeled using a Normal distribution, with
+#' mean \code{hp.mu.mean} (defaults to 0) and variance \code{hp.mu.var} (defaults to 1E6). For meta-analysis of the
+#' total O:E ratio, the maximum value for \code{hp.mu.var} is 100.
+#' 
 #' The prior distribution for the between-study standard deviation can be specified by \code{hp.tau.dist}, 
 #' and is always truncated by \code{hp.tau.min} and \code{hp.tau.max}. Initial values for the between-study 
 #' standard deviation are sampled from a uniform distribution with aformentioned boundaries. The following 
 #' distributions are supported for modeling the prior of the between-study standard deviation: 
 #' Uniform distribution (\code{hp.tau.dist="dunif"}; default), truncated Student-t distribution  
-#' (\code{hp.tau.dist="dhalft"}).}
+#' (\code{hp.tau.dist="dhalft"}).
+#' 
+
+#' }
 #' 
 #' @note The width of calculated confidence, credibility and prediction intervals can be specified 
 #' using \code{level} in the \code{pars} argument (defaults to 0.95).
@@ -635,53 +631,29 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, OE, OE.se, OE.
       
       out$results <- results
     } else {
-      if (pars.default$model.oe=="normal/log") {
-        #i.select <- which(!is.na(ds$theta.se)) #omit non-informative studies
-        #mvmeta_dat <- list(theta=ds$theta[i.select],
-        #theta.var=(ds$theta.se[i.select])**2,
-        #Nstudies = length(i.select))
-        
-        # Truncate hyper parameter variance
-        pars.default$hp.mu.var = min(pars.default$hp.mu.var, 100)
-        
-        # Select studies where we have info on O, E and N
-        i.select1 <- which(!is.na(ds$O) & !is.na(ds$E) & !is.na(ds$N))
-        
-        # Select studies where we only have info on O and E
-        i.select2 <- which(!is.na(ds$O) & !is.na(ds$E) & is.na(ds$N))
-        
-        mvmeta_dat <- list(O=ds$O[c(i.select1, i.select2)],
-                           E=ds$E[c(i.select1, i.select2)],
-                           N=ds$N[c(i.select1, i.select2)])
-        
-        if (length(i.select1)>0)
-          mvmeta_dat$s1 <- i.select1
-        if (length(i.select2)>0)
-          mvmeta_dat$s2 <- i.select2
-        
-        # Generate model
-        model <- generateBUGS.OE.lognormal(N.type1=length(i.select1), N.type2=length(i.select2), pars=pars.default, ...)
-        
-        out$numstudies <- length(mvmeta_dat$O)
-      } else if (pars.default$model.oe =="poisson/log") {
-        
-        # Truncate hyper parameter variance
-        pars.default$hp.mu.var = min(pars.default$hp.mu.var, 100)
-        
-        i.select <- which(!is.na(ds$E)) #omit non-informative studies
-        
-        mvmeta_dat <- list(obs=round(ds$O[i.select]),
-                           exc=ds$E[i.select],
-                           Nstudies = length(i.select))
-        
-        # Perform a Bayesian meta-analysis
-        model <- generateBugsOE(pars=pars.default, ...)
-        
-        out$numstudies <- mvmeta_dat$Nstudies
-      } else {
-        stop("Model not implemented yet!")
-      }
+      # Truncate hyper parameter variance
+      pars.default$hp.mu.var = min(pars.default$hp.mu.var, 100)
       
+      # Select studies where we have info on O, E and N
+      i.select1 <- which(!is.na(ds$O) & !is.na(ds$E) & !is.na(ds$N))
+      
+      # Select studies where we only have info on O and E
+      i.select2 <- which(!is.na(ds$O) & !is.na(ds$E) & is.na(ds$N))
+      
+      mvmeta_dat <- list(O=ds$O[c(i.select1, i.select2)],
+                         E=ds$E[c(i.select1, i.select2)],
+                         N=ds$N[c(i.select1, i.select2)])
+      
+      if (length(i.select1)>0)
+        mvmeta_dat$s1 <- i.select1
+      if (length(i.select2)>0)
+        mvmeta_dat$s2 <- i.select2
+      
+      # Generate model
+      model <- generateBUGS.OE.discrete(N.type1=length(i.select1), N.type2=length(i.select2), pars=pars.default, ...)
+      
+      out$numstudies <- length(mvmeta_dat$O)
+     
       
       
       # Generate initial values from the relevant distributions
@@ -713,6 +685,10 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, OE, OE.se, OE.
       out$runjags <- jags.model
       out$PED <- sum(fit.dev$deviance)+sum(fit.dev$penalty)
       out$results <- results
+    }
+    
+    if ("Study" %in% colnames(ds)) {
+      ds <- ds[,-which(colnames(ds)=="Study")]
     }
     
     out$data <- ds

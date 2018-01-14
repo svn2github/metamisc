@@ -1,11 +1,6 @@
-generateBUGS.OE.lognormal <- function(N.type1, N.type2, pars, ...) {
+generateBUGS.OE.discrete <- function(N.type1, N.type2, pars, ...) {
   hp.tau.prec <- 1/(pars$hp.tau.sigma**2)
   hp.mu.prec <- 1/pars$hp.mu.var
-  
-  
-  if (!pars$model.oe =="normal/log") {
-    stop ("This function can only be used for normal/log models")
-  }
   
   out <- "model {\n " 
 
@@ -14,7 +9,7 @@ generateBUGS.OE.lognormal <- function(N.type1, N.type2, pars, ...) {
   out <- paste(out, "    O[s1[i]] ~ dbinom(pobs[i], N[s1[i]])\n")
   out <- paste(out, "    OE[i] <- exp(theta[s1[i]])\n")
   
-  # Make sure that draws for pobs are always between 0 and 1
+  # Make sure that 'pobs' is always between 0 and 1
   out <- paste(out, "    pobs[i] <- min(OE[i], N[s1[i]]/(E[s1[i]]+1)) * E[s1[i]]/N[s1[i]] \n")
   out <- paste(out, " }\n")
   
