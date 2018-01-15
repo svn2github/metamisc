@@ -1,17 +1,19 @@
-generateBUGS.OE.discrete <- function(N.type1, N.type2, pars, ...) {
+generateBUGS.OE.discrete <- function(N.type1, N.type2, N.type3, pars, ...) {
   hp.tau.prec <- 1/(pars$hp.tau.sigma**2)
   hp.mu.prec <- 1/pars$hp.mu.var
   
   out <- "model {\n " 
 
   # Likelihood of studies providing O, E and N
-  out <- paste(out, "for (i in 1:", N.type1, ")\n  {\n", sep="")
-  out <- paste(out, "    O[s1[i]] ~ dbinom(pobs[i], N[s1[i]])\n")
-  out <- paste(out, "    OE[i] <- exp(theta[s1[i]])\n")
-  
-  # Make sure that 'pobs' is always between 0 and 1
-  out <- paste(out, "    pobs[i] <- min(OE[i], N[s1[i]]/(E[s1[i]]+1)) * E[s1[i]]/N[s1[i]] \n")
-  out <- paste(out, " }\n")
+  if (N.type1 > 0) {
+    out <- paste(out, "for (j in 1:", N.type1, ")\n  {\n", sep="")
+    out <- paste(out, "    O[s1[j]] ~ dbinom(pobs[j], N[s1[j]])\n")
+    out <- paste(out, "    OE[j] <- exp(theta[s1[j]])\n")
+    
+    # Make sure that 'pobs' is always between 0 and 1
+    out <- paste(out, "    pobs[j] <- min(OE[j], N[s1[j]]/(E[s1[j]]+1)) * E[s1[j]]/N[s1[j]] \n")
+    out <- paste(out, " }\n")
+  }
   
   # Likelihood of studies providing O and E
   if (N.type2 > 0) {
@@ -21,9 +23,17 @@ generateBUGS.OE.discrete <- function(N.type1, N.type2, pars, ...) {
     out <- paste(out, " }\n")
   }
   
+  # Likelihood for studies providing log OE ratio
+  if (N.type3>0) {
+    out <- paste(out, "for (j in 1:", N.type3, ")\n  {\n", sep="")
+    out <- paste(out, "    logOE[s3[j]] ~ dnorm(theta[s3[j]], wsprec[j])\n")
+    out <- paste(out, "    wsprec[j] <- 1/(logOE.se[s3[j]]*logOE.se[s3[j]])\n")
+    out <- paste(out, " }\n")
+  }
+  
   # Between-study distribution of the logOR
-  out <- paste(out, "for (k in 1:", (N.type1+N.type2), ")\n  {\n", sep="")
-  out <- paste(out, "    theta[k] ~ dnorm(mu.logoe, bsprec.logoe)\n")
+  out <- paste(out, "for (j in 1:", (N.type1+N.type2+N.type3), ")\n  {\n", sep="")
+  out <- paste(out, "    theta[j] ~ dnorm(mu.logoe, bsprec.logoe)\n")
   out <- paste(out, " }\n")
   out <- paste(out, " bsprec.logoe <- 1/(bsTau*bsTau)\n")
   if (pars$hp.tau.dist=="dunif") {

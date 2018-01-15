@@ -83,10 +83,12 @@
 #' \code{measure="OE"}. The total O:E ratio provides a rough indication of the overall model calibration (across the 
 #' entire range of predicted risks). 
 #' 
-#' For frequentist meta-analysis, within-study variation can be modeled using a Normal (\code{model.oe = "normal/log"} 
-#' or \code{model.oe = "normal/identity"}) or Poisson distribution (\code{model.oe = "normal/log"}). Conversely, for 
-#' Bayesian meta-analysis, within-study variation is always modeled using a discrete likelihood. In particular, a 
-#' binomial or Poisson distribution is used, depending on whether \code{N} is known.
+#' For frequentist meta-analysis, within-study variation can either be modeled using a Normal (\code{model.oe = "normal/log"} 
+#' or \code{model.oe = "normal/identity"}) or Poisson distribution (\code{model.oe = "normal/log"}). When performing a
+#' Bayesian meta-analysis, the within-study likelihood is adjusted according to the available data. In particular, a
+#' binomial distribution (if \code{O}, \code{E} and \code{N} is known), a poisson distribution (if only \code{O} and 
+#' \code{E} are known) or a Normal distribution (if \code{OE} and \code{OE.se} or \code{OE.95CI} are known) is selected separately 
+#' for each study.
 #' 
 #' For meta-analysis of prognostic models, it is recommended to provide information on the time period 
 #' (\code{t.val}) during which calibration was assessed in the validation study. When the time period of 
@@ -168,14 +170,21 @@
 #'                                 N=n, O=n.events, method="BAYES", slab=Study))
 #' plot(fit2)
 #' 
-#' # Bayesian meta-analysis of the O:E ratio
-#' pars <- list(model.oe="poisson/log", # Use a Poisson-Normal model
-#'              hp.tau.dist="dhalft",   # Prior for the between-study standard deviation
+#' ######### Bayesian meta-analysis of the O:E ratio #########
+#' # Consider that some (but not all) studies do not provide information on N
+#' # A Poisson distribution will be used for studies 1, 2, 5, 10 and 20
+#' # A Binomial distribution will be used for the remaining studies
+#' EuroSCORE.new <- EuroSCORE
+#' EuroSCORE.new$n[c(1, 2, 5, 10, 20)] <-  NA
+#' pars <- list(hp.tau.dist="dhalft",   # Prior for the between-study standard deviation
 #'              hp.tau.sigma=1.5,       # Standard deviation for 'hp.tau.dist'
 #'              hp.tau.df=3,            # Degrees of freedom for 'hp.tau.dist'
 #'              hp.tau.max=10)          # Maximum value for the between-study standard deviation
-#' with(EuroSCORE, valmeta(measure="OE", O=n.events, E=e.events, N=n, method="BAYES", 
-#'      slab=Study, pars=pars))
+#' fit3 <- with(EuroSCORE.new, valmeta(measure="OE", O=n.events, E=e.events, N=n, 
+#'         method="BAYES", slab=Study, pars=pars))
+#' plot(fit3)
+#' print(fit3$runjags$model) # Inspect the JAGS model
+#' print(fit3$runjags$data)  # Inspect the JAGS data
 #' } 
 #' 
 #' ######### Validation of prediction models with a time-to-event outcome #########
@@ -640,19 +649,30 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, OE, OE.se, OE.
       # Select studies where we only have info on O and E
       i.select2 <- which(!is.na(ds$O) & !is.na(ds$E) & is.na(ds$N))
       
-      mvmeta_dat <- list(O=ds$O[c(i.select1, i.select2)],
-                         E=ds$E[c(i.select1, i.select2)],
-                         N=ds$N[c(i.select1, i.select2)])
+      # Select studies where we have (estimated) information on log(OE) and its standard error
+      i.select3 <- which(!is.na(ds$theta) & !is.na(ds$theta.se) & is.na(ds$O) & is.na(ds$E))
       
-      if (length(i.select1)>0)
+      mvmeta_dat <- list(O=ds$O, E=ds$E)
+      
+      if (length(i.select1)>0) {
         mvmeta_dat$s1 <- i.select1
+        mvmeta_dat$N <- ds$N
+      }
       if (length(i.select2)>0)
         mvmeta_dat$s2 <- i.select2
+      if (length(i.select3)>0) {
+        mvmeta_dat$s3 <- i.select3
+        mvmeta_dat$logOE <- ds$theta
+        mvmeta_dat$logOE.se <- ds$theta.se
+      }
       
       # Generate model
-      model <- generateBUGS.OE.discrete(N.type1=length(i.select1), N.type2=length(i.select2), pars=pars.default, ...)
+      model <- generateBUGS.OE.discrete(N.type1=length(i.select1), 
+                                        N.type2=length(i.select2),
+                                        N.type3=length(i.select3),
+                                        pars=pars.default, ...)
       
-      out$numstudies <- length(mvmeta_dat$O)
+      out$numstudies <- length(c(i.select1, i.select2, i.select3))
      
       
       
