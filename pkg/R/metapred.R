@@ -392,6 +392,13 @@ urma <- function(b, v, method = "REML", ...)
   list(b = meta.b, v = meta.v, se = meta.se)
 }
 
+
+#' Extract the regression coefficients
+#' The \code{coef} function extracts the estimated model coefficients from objects of class \code{"metapred"}.
+#' @param object A fitted \code{metapred} object
+#' @param \ldots Optional arguments (currently not supported).
+#' 
+#' @method coef metapred
 #' @export
 coef.metapred <- function(object, ...)
   object$coefficients

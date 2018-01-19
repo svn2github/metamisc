@@ -149,13 +149,11 @@ The prior distribution for the summary estimate is always modeled using a Normal
 mean \code{hp.mu.mean} (defaults to 0) and variance \code{hp.mu.var} (defaults to 1E6). For meta-analysis of the
 total O:E ratio, the maximum value for \code{hp.mu.var} is 100.
 
-The prior distribution for the between-study standard deviation can be specified by \code{hp.tau.dist}, 
-and is always truncated by \code{hp.tau.min} and \code{hp.tau.max}. Initial values for the between-study 
-standard deviation are sampled from a uniform distribution with aformentioned boundaries. The following 
-distributions are supported for modeling the prior of the between-study standard deviation: 
-Uniform distribution (\code{hp.tau.dist="dunif"}; default), truncated Student-t distribution  
-(\code{hp.tau.dist="dhalft"}).
-
+By default, the prior distribution for the between-study standard deviation is modeled using a uniform distribution 
+(\code{hp.tau.dist="dunif"}), with boundaries \code{hp.tau.min} and \code{hp.tau.max}. Alternatively, it is possible
+to specify a truncated Student-t distribution (\code{hp.tau.dist="dhalft"}) with a mean of \code{hp.tau.mean}, 
+a standard deviation of \code{hp.tau.sigma} and \code{hp.tau.df} degrees of freedom. This distribution is again 
+restricted to the range \code{hp.tau.min} to \code{hp.tau.max}.
 }
 }
 \note{

@@ -355,6 +355,8 @@ print.fat <- function(x, digits = max(3, getOption("digits") - 3), ...) {
 #' 
 #' @importFrom stats qt
 #' @importFrom graphics plot axis polygon points lines box abline
+#' 
+#' @method plot fat
 #' @export
 plot.fat <- function(x, ref, confint=TRUE, confint.level=0.10, confint.col="skyblue", confint.density=NULL,
                      xlab="Effect size", ...) {

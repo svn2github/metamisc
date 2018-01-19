@@ -1,6 +1,3 @@
-#TODO: disable extrapolation for bayesian meta-analysis, use built-in methods
-# TODO: store confidence intervals for OE ratio
-
 #' Meta-analysis of prediction model performance
 #'
 #' This function provides summary estimates for the concordance statistic, the total observed-expected ratio 
@@ -103,14 +100,11 @@
 #' mean \code{hp.mu.mean} (defaults to 0) and variance \code{hp.mu.var} (defaults to 1E6). For meta-analysis of the
 #' total O:E ratio, the maximum value for \code{hp.mu.var} is 100.
 #' 
-#' The prior distribution for the between-study standard deviation can be specified by \code{hp.tau.dist}, 
-#' and is always truncated by \code{hp.tau.min} and \code{hp.tau.max}. Initial values for the between-study 
-#' standard deviation are sampled from a uniform distribution with aformentioned boundaries. The following 
-#' distributions are supported for modeling the prior of the between-study standard deviation: 
-#' Uniform distribution (\code{hp.tau.dist="dunif"}; default), truncated Student-t distribution  
-#' (\code{hp.tau.dist="dhalft"}).
-#' 
-
+#' By default, the prior distribution for the between-study standard deviation is modeled using a uniform distribution 
+#' (\code{hp.tau.dist="dunif"}), with boundaries \code{hp.tau.min} and \code{hp.tau.max}. Alternatively, it is possible
+#' to specify a truncated Student-t distribution (\code{hp.tau.dist="dhalft"}) with a mean of \code{hp.tau.mean}, 
+#' a standard deviation of \code{hp.tau.sigma} and \code{hp.tau.df} degrees of freedom. This distribution is again 
+#' restricted to the range \code{hp.tau.min} to \code{hp.tau.max}.
 #' }
 #' 
 #' @note The width of calculated confidence, credibility and prediction intervals can be specified 
@@ -213,6 +207,7 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, OE, OE.se, OE.
                        hp.mu.var = 1E6,
                        hp.tau.min = 0,
                        hp.tau.max = 2,
+                       hp.tau.mean = 0,
                        hp.tau.sigma = 0.5,
                        hp.tau.dist = "dunif", 
                        hp.tau.df = 3, 
@@ -424,8 +419,24 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, OE, OE.se, OE.
       
       # Generate initial values from the relevant distributions
       model.pars <- list()
-      model.pars[[1]] <- list(param="mu.tobs", param.f=rnorm, param.args=list(n=1, mean=pars.default$hp.mu.mean, sd=sqrt(pars.default$hp.mu.var)))
-      model.pars[[2]] <- list(param="bsTau", param.f=runif, param.args=list(n=1, min=pars.default$hp.tau.min, max=pars.default$hp.tau.max))
+      model.pars[[1]] <- list(param="mu.tobs", param.f=rnorm, 
+                              param.args=list(n=1, mean=pars.default$hp.mu.mean, sd=sqrt(pars.default$hp.mu.var)))
+      
+      if (pars$hp.tau.dist=="dunif") {
+        model.pars[[2]] <- list(param="bsTau", param.f=runif, 
+                                param.args=list(n=1, min=pars.default$hp.tau.min, 
+                                                max=pars.default$hp.tau.max))
+      } else if (pars$hp.tau.dist=="dhalft") {
+        model.pars[[2]] <- list(param="bsTau", param.f=rstudentt, 
+                                param.args=list(n=1, mean=pars.default$hp.tau.mean, 
+                                                sigma=pars.default$hp.tau.sigma, 
+                                                df=pars.default$hp.tau.df,
+                                                lower=pars.default$hp.tau.min, 
+                                                upper=pars.default$hp.tau.max))
+      } else {
+        stop("Invalid distribution for 'hp.tau.dist'!")
+      }
+
       inits <- generateMCMCinits(n.chains=n.chains, model.pars=model.pars)
       
       mvmeta_dat <- list(theta = theta,
@@ -679,7 +690,22 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, OE, OE.se, OE.
       # Generate initial values from the relevant distributions
       model.pars <- list()
       model.pars[[1]] <- list(param="mu.logoe", param.f=rnorm, param.args=list(n=1, mean=pars.default$hp.mu.mean, sd=sqrt(pars.default$hp.mu.var)))
-      model.pars[[2]] <- list(param="bsTau", param.f=runif, param.args=list(n=1, min=pars.default$hp.tau.min, max=pars.default$hp.tau.max))
+      
+      if (pars$hp.tau.dist=="dunif") {
+        model.pars[[2]] <- list(param="bsTau", param.f=runif, 
+                                param.args=list(n=1, min=pars.default$hp.tau.min, 
+                                                max=pars.default$hp.tau.max))
+      } else if (pars$hp.tau.dist=="dhalft") {
+        model.pars[[2]] <- list(param="bsTau", param.f=rstudentt, 
+                                param.args=list(n=1, mean=pars.default$hp.tau.mean, 
+                                                sigma=pars.default$hp.tau.sigma, 
+                                                df=pars.default$hp.tau.df,
+                                                lower=pars.default$hp.tau.min, 
+                                                upper=pars.default$hp.tau.max))
+      } else {
+        stop("Invalid distribution for 'hp.tau.dist'!")
+      }
+      
       inits <- generateMCMCinits(n.chains=n.chains, model.pars=model.pars)
       
       jags.model <- runjags::run.jags(model=model, 
@@ -737,7 +763,7 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, OE, OE.se, OE.
   if (pars$hp.tau.dist=="dunif") {
     out <- paste(out, "  bsTau ~ dunif(", pars$hp.tau.min, ",", pars$hp.tau.max, ")\n", sep="") 
   } else if (pars$hp.tau.dist=="dhalft") {
-    out <- paste(out, "  bsTau ~ dt(0,", hp.tau.prec, ",", pars$hp.tau.df, ")T(", pars$hp.tau.min, ",", pars$hp.tau.max, ")\n", sep="") 
+    out <- paste(out, "  bsTau ~ dt(", pars$hp.tau.mean," ,", hp.tau.prec, ",", pars$hp.tau.df, ")T(", pars$hp.tau.min, ",", pars$hp.tau.max, ")\n", sep="") 
   } else {
     stop("Specified prior not implemented")
   }
@@ -845,6 +871,8 @@ print.valmeta <- function(x, ...) {
 #' @import ggplot2
 #' @importFrom stats reorder
 #' @return An object of class \code{ggplot}
+#' 
+#' @method plot valmeta
 #' @export
 plot.valmeta <- function(x, sort="asc", ...) {
   k <- dim(x$data)[1]

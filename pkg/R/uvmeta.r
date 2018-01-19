@@ -282,6 +282,8 @@ uvmeta.default <- function(r, r.se, method="REML", test="knha", labels, na.actio
 #' 
 #' @importFrom graphics par plot axis polygon points lines abline
 #' @import ggplot2
+#' 
+#' @method plot uvmeta
 #' @export
 plot.uvmeta <- function(x, sort="asc", ...) {
   level <- x$level
