@@ -14,6 +14,7 @@
 #' @param cstat.se Optional vector with the standard error of the estimated c-statistics
 #' @param cstat.95CI Optional 2-dimensional array with the lower (first column) and upper (second column) boundary 
 #' of the 95\% confidence interval of the estimated c-statistics
+#' @param sd.LP Optional vector with the standard deviation of the linear predictor (prognostic index)
 #' @param OE Optional vector with the estimated ratio of total observed versus total expected events
 #' @param OE.se Optional vector with the standard errors of the estimated O:E ratios
 #' @param OE.95CI Optional 2-dimensional array with the lower (first column) and upper (second column) boundary 
@@ -68,12 +69,14 @@
 #' The c-statistic is a measure of discrimination, and indicates the ability of a prediction model to 
 #' distinguish between patients developing and not developing the outcome. The c-statistic typically ranges 
 #' from 0.5 (no discriminative ability) to 1 (perfect discriminative ability). 
-#' A meta-analysis for the c-statistic will be performed if the c-statistics (\code{cstat}) and 
-#' their respective standard errors (\code{cstat.se}) are defined. For studies where the standard error 
-#' is unknown, it can be derived from the 95\% confidence interval, or from \code{cstat}, \code{O} and 
-#' \code{N} (Newcombe 2006). By default, the meta-analysis model assumes Normality for the logit of 
-#' the c-statistic (\code{model.cstat = "normal/logit"}). Alternatively, it is possible to summarize 
-#' raw estimates of the c-statistic by setting \code{model.cstat = "normal/identity"}.} 
+#' 
+#' When missing, the c-statistic can be estimated from the standard deviation of the linear predictor 
+#' (\code{sd.LP}). For studies where the standard error  is unknown, it can be derived from the 95\% confidence 
+#' interval, or from \code{cstat}, \code{O} and \code{N} (Newcombe 2006). 
+#' 
+#' By default, the meta-analysis model assumes Normality for the logit of 
+#' the c-statistic (\code{pars$model.cstat = "normal/logit"}). Alternatively, it is possible to summarize 
+#' raw estimates of the c-statistic by setting \code{pars$model.cstat = "normal/identity"}.} 
 #' 
 #' \subsection{Meta-analysis of the total observed versus expected ratio}{
 #' A summary estimate for the total observed versus expected (O:E) ratiocan be obtained by specifying
@@ -199,7 +202,7 @@
 #' @importFrom stats coef coefficients dnorm glm nobs optim pchisq qnorm qt pt rnorm runif confint poisson
 #' predict vcov as.formula formula model.frame model.frame.default update.formula family
 
-valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI, citl, citl.se,
+valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.se, OE.95CI, citl, citl.se,
                     N, O, E, Po, Po.se, Pe, t.val, t.ma, t.extrapolate=FALSE, method="REML", test="knha", 
                     verbose=FALSE, slab, n.chains = 4, pars, ...) {
   pars.default <- list(level = 0.95,
@@ -264,6 +267,8 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, OE, OE.se, OE.
       k <- length(cstat.se)
     } else if (!missing(cstat.95CI)) {
       k <- dim(cstat.95CI)[2]
+    } else if (!missing(sd.LP)) {
+      k <- length(sd.LP)
     }
   } else if (measure=="OE") {
     if (!missing(OE)) {
@@ -328,6 +333,9 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, OE, OE.se, OE.
     if (missing(cstat.se)) {
       cstat.se <- array(NA, dim=k)
     }
+    if (missing(sd.LP)) {
+      sd.LP <- rep(NA, k)
+    }
 
     out$model <- pars.default$model.cstat
     
@@ -339,15 +347,27 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, OE, OE.se, OE.
     
     theta.cil <- theta.ciu <- rep(NA, length(cstat))
     
+    # Restore c-statistic
+    te.method <- c("c-statistic", "std.dev(LP)")
+    te.orig  <- restore.c.c(cstat, model=pars.default$model.cstat)
+    te.white <- restore.c.sdPI(sd.LP, model=pars.default$model.cstat)
+    
+    te.dat <- cbind(te.orig, te.white)
+    
+    # For each study, find the first colum without missing
+    myfun = function(dat) { which.min(is.na(dat)) }
+    
+    sel.cstat <- apply(te.dat, 1, myfun)
+    theta <- te.dat[cbind(seq_along(sel.cstat), sel.cstat)]                            
+    theta.source <-  te.method[sel.cstat]
+    
     # Define theta
     if (pars.default$model.cstat == "normal/identity") {
-      theta <- cstat
       if (pars.default$level==0.95) {
         theta.cil <- cstat.95CI[,1]
         theta.ciu <- cstat.95CI[,2]
       }
     } else if (pars.default$model.cstat == "normal/logit") {
-      theta <- log(cstat/(1-cstat))
       if (pars.default$level==0.95) {
         theta.cil <- logit(cstat.95CI[,1])
         theta.ciu <- logit(cstat.95CI[,2])
@@ -357,17 +377,18 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, OE, OE.se, OE.
     }
     
     # Calculate all the possible variations of var(theta)
-    tv.method <- c("Standard Error", "Confidence Interval", pars.default$method.restore.c.se)
+    tv.method <- c("Standard Error", "Confidence Interval", pars.default$method.restore.c.se, pars.default$method.restore.c.se)
     tv.se     <- restore.c.var.se(c.se=cstat.se, cstat=cstat, model=pars.default$model.cstat) # Derived from standard error
     tv.ci     <- restore.c.var.ci(ci=cstat.95CI, level=0.95, model=pars.default$model.cstat) # Derived from 95% confidence interval
     tv.hanley <- restore.c.var.hanley(cstat=cstat, N.subjects=N, N.events=O, restore.method=pars.default$method.restore.c.se,
                                       model=pars.default$model.cstat)
+    tv.hanley2 <- restore.c.var.hanley2(sd.LP=sd.LP, N.subjects=N, N.events=O, restore.method=pars.default$method.restore.c.se,
+                                      model=pars.default$model.cstat)
                          
     # Save all estimated variances. The order of the columns indicates the priority             
-    dat <-cbind(tv.se, tv.ci, tv.hanley)  
+    dat <-cbind(tv.se, tv.ci, tv.hanley, tv.hanley2)  
     
-    # For each study, find the first colum without missing
-    myfun = function(dat) { which.min(is.na(dat)) }
+    
     
     sel.var <- apply(dat, 1, myfun)
     theta.var <- dat[cbind(seq_along(sel.var), sel.var)]                            
@@ -380,7 +401,7 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, OE, OE.se, OE.
     
     # Store results, and method for calculating SE
     ds <- data.frame(theta=theta, theta.se=sqrt(theta.var), theta.CIl=theta.cil, theta.CIu=theta.ciu, 
-                     theta.blup=rep(NA,length(theta)), theta.se.source=theta.var.source)
+                     theta.blup=rep(NA,length(theta)), theta.source=theta.source, theta.se.source=theta.var.source)
     
     if (method != "BAYES") { # Use of rma
       

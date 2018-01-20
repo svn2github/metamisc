@@ -22,9 +22,8 @@ generateMCMCinits <- function(n.chains, model.pars)
 rstudentt <- function(n, mean, sigma, df, lower, upper) {
   #non-truncated student t
   #sample <- (rt(n, df=df)*sqrt((sigma**2) * (df-2)/df) + mean)
+  
   sample <- rtmvt(n=n, mean = mean, sigma = sigma, df = df, lower=lower, upper=upper)
-  
-  
   return (as.numeric(sample))
 }
 

@@ -27,6 +27,12 @@ restore.c.var.hanley <- function(cstat, N.subjects, N.events, restore.method="Ne
   return(out)
 }
 
+restore.c.var.hanley2 <- function(sd.LP, N.subjects, N.events, restore.method="Newcombe.4", model="normal/logit") {
+  cstat <- restore.c.sdPI(sd.LP, model=model)
+  
+  return(restore.c.var.hanley(cstat=cstat, N.subjects=N.subjects, N.events=N.events, restore.method=restore.method, model=model))
+}
+
 restore.c.var.se <- function(c.se, cstat, model="normal/logit") {
   if (model=="normal/identity") {
     return (c.se**2)
@@ -53,6 +59,33 @@ restore.c.var.ci <- function(ci, level=0.95, model="normal/logit") {
     return(((logit(upper) - logit(lower))/(2*qnorm((1-level)/2)))**2)
   }
   stop("Invalid link function!")
+}
+
+restore.c.sdPI <- function (sdPI, model="normal/logit") {
+  myfun <- function(x, sd.lp) {
+    inv.logit(sqrt(2)*sd.lp*x)*dnorm(x, mean=0, sd=1)
+  }
+  cstat <- rep(NA, length(sdPI))
+  for (i in 1:length(sdPI)) {
+    cstat[i] <- ifelse(is.na(sdPI[i]), NA, 2*(integrate(myfun, lower=0, upper=+Inf, sd.lp=sdPI[i]))$value)
+  }
+  if (model=="normal/logit") {
+    return (log(cstat/(1-cstat)))
+  }
+  if (model=="normal/log") {
+    return(cstat)
+  }
+  stop("Invalid model!")
+}
+
+restore.c.c <- function(cstat, model="normal/logit") {
+  if (model=="normal/logit") {
+    return (log(cstat/(1-cstat)))
+  }
+  if (model=="normal/log") {
+    return(cstat)
+  }
+  stop("Invalid model!")
 }
 
 # Calculate OE and its SE from O, E and N

@@ -4,10 +4,10 @@
 \alias{valmeta}
 \title{Meta-analysis of prediction model performance}
 \usage{
-valmeta(measure = "cstat", cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI,
-  citl, citl.se, N, O, E, Po, Po.se, Pe, t.val, t.ma, t.extrapolate = FALSE,
-  method = "REML", test = "knha", verbose = FALSE, slab, n.chains = 4,
-  pars, ...)
+valmeta(measure = "cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.se,
+  OE.95CI, citl, citl.se, N, O, E, Po, Po.se, Pe, t.val, t.ma,
+  t.extrapolate = FALSE, method = "REML", test = "knha",
+  verbose = FALSE, slab, n.chains = 4, pars, ...)
 }
 \arguments{
 \item{measure}{A character string indicating which summary performance measure should be calculated. Options are
@@ -20,6 +20,8 @@ valmeta(measure = "cstat", cstat, cstat.se, cstat.95CI, OE, OE.se, OE.95CI,
 
 \item{cstat.95CI}{Optional 2-dimensional array with the lower (first column) and upper (second column) boundary 
 of the 95\% confidence interval of the estimated c-statistics}
+
+\item{sd.LP}{Optional vector with the standard deviation of the linear predictor (prognostic index)}
 
 \item{OE}{Optional vector with the estimated ratio of total observed versus total expected events}
 
@@ -117,12 +119,14 @@ A summary estimate for the concorcance (c-) statistic can be obtained by specify
 The c-statistic is a measure of discrimination, and indicates the ability of a prediction model to 
 distinguish between patients developing and not developing the outcome. The c-statistic typically ranges 
 from 0.5 (no discriminative ability) to 1 (perfect discriminative ability). 
-A meta-analysis for the c-statistic will be performed if the c-statistics (\code{cstat}) and 
-their respective standard errors (\code{cstat.se}) are defined. For studies where the standard error 
-is unknown, it can be derived from the 95\% confidence interval, or from \code{cstat}, \code{O} and 
-\code{N} (Newcombe 2006). By default, the meta-analysis model assumes Normality for the logit of 
-the c-statistic (\code{model.cstat = "normal/logit"}). Alternatively, it is possible to summarize 
-raw estimates of the c-statistic by setting \code{model.cstat = "normal/identity"}.} 
+
+When missing, the c-statistic can be estimated from the standard deviation of the linear predictor 
+(\code{sd.LP}). For studies where the standard error  is unknown, it can be derived from the 95\% confidence 
+interval, or from \code{cstat}, \code{O} and \code{N} (Newcombe 2006). 
+
+By default, the meta-analysis model assumes Normality for the logit of 
+the c-statistic (\code{pars$model.cstat = "normal/logit"}). Alternatively, it is possible to summarize 
+raw estimates of the c-statistic by setting \code{pars$model.cstat = "normal/identity"}.} 
 
 \subsection{Meta-analysis of the total observed versus expected ratio}{
 A summary estimate for the total observed versus expected (O:E) ratiocan be obtained by specifying
