@@ -18,13 +18,30 @@ generateMCMCinits <- function(n.chains, model.pars)
   return(inits)
 }
 
-#' @importFrom tmvtnorm rtmvt
+
 rstudentt <- function(n, mean, sigma, df, lower, upper) {
   #non-truncated student t
-  #sample <- (rt(n, df=df)*sqrt((sigma**2) * (df-2)/df) + mean)
+  sample <- (rt(n, df=df)*sqrt((sigma**2) * (df-2)/df) + mean)
   
-  sample <- rtmvt(n=n, mean = mean, sigma = sigma, df = df, lower=lower, upper=upper)
-  return (as.numeric(sample))
+  # Rejection sampling to ensure the boundaries are met
+  count <- 0
+  maxcount <- 100
+  
+  n.reject <- sum((sample>upper | sample<lower))
+  while(n.reject >0 & count < maxcount ) {
+    sample[(sample>upper | sample<lower)] <- (rt(n.reject, df=df)*sqrt((sigma**2) * (df-2)/df) + mean)
+    n.reject <- sum((sample>upper | sample<lower))
+    count <- count+1
+  }
+  
+  # Use a uniform distribuion for the remaining invalid values
+  sample[(sample>upper | sample<lower)] <- (runif(n.reject, min=lower, max=upper))
+  
+  return(sample)
+  
+  # @importFrom tmvtnorm rtmvt
+  #sample <- rtmvt(n=n, mean = mean, sigma = sigma, df = df, lower=lower, upper=upper)
+  #return (as.numeric(sample))
 }
 
 
@@ -336,5 +353,4 @@ plotForestDeprecated <- function(vmasum, xlab, refline, ...) {
     }
     
   }
-
 }
