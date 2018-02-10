@@ -84,9 +84,8 @@ cause the simulation to run more slowly. The default number of chains is 4.}
 \code{hp.tau.sigma} (standard deviation of the prior distribution for the between-study standard-deviation), 
 \code{hp.tau.dist} (prior distribution for the between-study standard-deviation. Defaults to \code{"dunif"}), 
 \code{hp.tau.df} (degrees of freedom for the prior distribution for the between-study standard-deviation. 
-Defaults to 3), \code{method.restore.c.se} (method for restoring missing estimates for the standard error 
-of the c-statistic. So far, only \code{"Newcombe.2"} and \code{"Newcombe.4"} are supported. 
-These methods have been described by Newcombe in 2006.), \code{model.cstat} (The likelihood/link for modeling 
+Defaults to 3). Other arguments are \code{method.restore.c.se} (method for restoring missing estimates for the standard error 
+of the c-statistic. See \code{\link{ccalc}} for more information), \code{model.cstat} (The likelihood/link for modeling 
 the c-statistic; see "Details"), \code{model.oe} (The likelihood/link for modeling the O:E ratio; see "Details")}
 
 \item{\ldots}{Additional arguments that are passed to \pkg{rma} or \pkg{runjags} (if \code{method="BAYES"}).}
@@ -94,7 +93,7 @@ the c-statistic; see "Details"), \code{model.oe} (The likelihood/link for modeli
 \value{
 An object of class \code{valmeta} with the following elements:
 \describe{
- \item{"data"}{array with (transformed) data used for meta-analysis }
+ \item{"data"}{array with (transformed) data used for meta-analysis, and method(s) used for restoring missing information. }
  \item{"lme4"}{a fitted object of class \code{glmerMod} (if \pkg{lme4} was used for meta-analysis).}
  \item{"measure"}{character string specifying the performance measure that has been meta-analysed.}
  \item{"method"}{character string specifying the meta-analysis method.}
@@ -120,25 +119,24 @@ The c-statistic is a measure of discrimination, and indicates the ability of a p
 distinguish between patients developing and not developing the outcome. The c-statistic typically ranges 
 from 0.5 (no discriminative ability) to 1 (perfect discriminative ability). 
 
-When missing, the c-statistic can be estimated from the standard deviation of the linear predictor 
-(\code{sd.LP}). For studies where the standard error  is unknown, it can be derived from the 95\% confidence 
-interval, or from \code{cstat}, \code{O} and \code{N} (Newcombe 2006). 
+When missing, the c-statistic and/or its standard error are derived from other reported information. 
+See \code{\link{ccalc}} for more information.
 
 By default, the meta-analysis model assumes Normality for the logit of 
 the c-statistic (\code{pars$model.cstat = "normal/logit"}). Alternatively, it is possible to summarize 
 raw estimates of the c-statistic by setting \code{pars$model.cstat = "normal/identity"}.} 
 
 \subsection{Meta-analysis of the total observed versus expected ratio}{
-A summary estimate for the total observed versus expected (O:E) ratiocan be obtained by specifying
+A summary estimate for the total observed versus expected (O:E) ratio can be obtained by specifying
 \code{measure="OE"}. The total O:E ratio provides a rough indication of the overall model calibration (across the 
 entire range of predicted risks). 
 
 For frequentist meta-analysis, within-study variation can either be modeled using a Normal (\code{model.oe = "normal/log"} 
-or \code{model.oe = "normal/identity"}) or Poisson distribution (\code{model.oe = "normal/log"}). When performing a
-Bayesian meta-analysis, the within-study likelihood is adjusted according to the available data. In particular, a
-binomial distribution (if \code{O}, \code{E} and \code{N} is known), a poisson distribution (if only \code{O} and 
-\code{E} are known) or a Normal distribution (if \code{OE} and \code{OE.se} or \code{OE.95CI} are known) is selected separately 
-for each study.
+or \code{model.oe = "normal/identity"}) or a Poisson distribution (\code{model.oe = "normal/log"}). 
+
+When performing a Bayesian meta-analysis, all data are modeled using a one-stage random effects (hierarchical related regression) model.
+In particular, a binomial distribution (if \code{O}, \code{E} and \code{N} is known), a poisson distribution 
+(if only \code{O} and \code{E} are known) or a Normal distribution (if \code{OE} and \code{OE.se} or \code{OE.95CI} are known) is selected separately for each study.
 
 For meta-analysis of prognostic models, it is recommended to provide information on the time period 
 (\code{t.val}) during which calibration was assessed in the validation study. When the time period of 
@@ -149,9 +147,9 @@ frequentist meta-analysis models with \code{model.oe = "normal/log"} or \code{mo
 }
 
 \subsection{Bayesian meta-analysis}{
-The prior distribution for the summary estimate is always modeled using a Normal distribution, with
-mean \code{hp.mu.mean} (defaults to 0) and variance \code{hp.mu.var} (defaults to 1E6). For meta-analysis of the
-total O:E ratio, the maximum value for \code{hp.mu.var} is 100.
+All Bayesian meta-analysis models assume random effects by default. The prior distribution for the (transformed) summary 
+estimate is always modeled using a Normal distribution, with mean \code{hp.mu.mean} (defaults to 0) and variance 
+\code{hp.mu.var} (defaults to 1E6). For meta-analysis of the total O:E ratio, the maximum value for \code{hp.mu.var} is 100.
 
 By default, the prior distribution for the between-study standard deviation is modeled using a uniform distribution 
 (\code{hp.tau.dist="dunif"}), with boundaries \code{hp.tau.min} and \code{hp.tau.max}. Alternatively, it is possible
@@ -219,10 +217,6 @@ with(Framingham, valmeta(measure="OE", Po=Po, Pe=Pe, N=n, t.val=t.val, t.ma=10, 
 \itemize{
 \item Debray TPA, Damen JAAG, Snell KIE, Ensor J, Hooft L, Reitsma JB, et al. A guide to systematic review 
 and meta-analysis of prediction model performance. \emph{BMJ}. 2017; 356:i6460.
-\item Hanley JA, McNeil BJ. The meaning and use of the area under a receiver operating characteristic (ROC) 
-curve. \emph{Radiology}. 1982; 143(1):29--36.
-\item Newcombe RG. Confidence intervals for an effect size measure based on the Mann-Whitney statistic. 
-Part 2: asymptotic methods and evaluation. \emph{Stat Med}. 2006; 25(4):559--73.
 \item Stijnen T, Hamza TH, Ozdemir P. Random effects meta-analysis of event outcome in the framework of 
 the generalized linear mixed model with applications in sparse data. \emph{Stat Med}. 2010; 29(29):3046--67.
 \item Viechtbauer W. Conducting Meta-Analyses in R with the metafor Package. \emph{Journal of Statistical Software}. 
@@ -230,7 +224,8 @@ the generalized linear mixed model with applications in sparse data. \emph{Stat 
 }
 }
 \seealso{
-\code{\link{plot.valmeta}}
+\code{\link{ccalc}} to calculate concordance statistics and corresponding standard errors, 
+\code{\link{plot.valmeta}} to generate forest plots
 }
 \author{
 Thomas Debray <thomas.debray@gmail.com>

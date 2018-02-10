@@ -57,9 +57,8 @@
 #' \code{hp.tau.sigma} (standard deviation of the prior distribution for the between-study standard-deviation), 
 #' \code{hp.tau.dist} (prior distribution for the between-study standard-deviation. Defaults to \code{"dunif"}), 
 #' \code{hp.tau.df} (degrees of freedom for the prior distribution for the between-study standard-deviation. 
-#' Defaults to 3), \code{method.restore.c.se} (method for restoring missing estimates for the standard error 
-#' of the c-statistic. So far, only \code{"Newcombe.2"} and \code{"Newcombe.4"} are supported. 
-#' These methods have been described by Newcombe in 2006.), \code{model.cstat} (The likelihood/link for modeling 
+#' Defaults to 3). Other arguments are \code{method.restore.c.se} (method for restoring missing estimates for the standard error 
+#' of the c-statistic. See \code{\link{ccalc}} for more information), \code{model.cstat} (The likelihood/link for modeling 
 #' the c-statistic; see "Details"), \code{model.oe} (The likelihood/link for modeling the O:E ratio; see "Details")
 #' @param \ldots Additional arguments that are passed to \pkg{rma} or \pkg{runjags} (if \code{method="BAYES"}).
 #' 
@@ -70,25 +69,24 @@
 #' distinguish between patients developing and not developing the outcome. The c-statistic typically ranges 
 #' from 0.5 (no discriminative ability) to 1 (perfect discriminative ability). 
 #' 
-#' When missing, the c-statistic can be estimated from the standard deviation of the linear predictor 
-#' (\code{sd.LP}). For studies where the standard error  is unknown, it can be derived from the 95\% confidence 
-#' interval, or from \code{cstat}, \code{O} and \code{N} (Newcombe 2006). 
+#' When missing, the c-statistic and/or its standard error are derived from other reported information. 
+#' See \code{\link{ccalc}} for more information.
 #' 
 #' By default, the meta-analysis model assumes Normality for the logit of 
 #' the c-statistic (\code{pars$model.cstat = "normal/logit"}). Alternatively, it is possible to summarize 
 #' raw estimates of the c-statistic by setting \code{pars$model.cstat = "normal/identity"}.} 
 #' 
 #' \subsection{Meta-analysis of the total observed versus expected ratio}{
-#' A summary estimate for the total observed versus expected (O:E) ratiocan be obtained by specifying
+#' A summary estimate for the total observed versus expected (O:E) ratio can be obtained by specifying
 #' \code{measure="OE"}. The total O:E ratio provides a rough indication of the overall model calibration (across the 
 #' entire range of predicted risks). 
 #' 
 #' For frequentist meta-analysis, within-study variation can either be modeled using a Normal (\code{model.oe = "normal/log"} 
-#' or \code{model.oe = "normal/identity"}) or Poisson distribution (\code{model.oe = "normal/log"}). When performing a
-#' Bayesian meta-analysis, the within-study likelihood is adjusted according to the available data. In particular, a
-#' binomial distribution (if \code{O}, \code{E} and \code{N} is known), a poisson distribution (if only \code{O} and 
-#' \code{E} are known) or a Normal distribution (if \code{OE} and \code{OE.se} or \code{OE.95CI} are known) is selected separately 
-#' for each study.
+#' or \code{model.oe = "normal/identity"}) or a Poisson distribution (\code{model.oe = "normal/log"}). 
+#' 
+#' When performing a Bayesian meta-analysis, all data are modeled using a one-stage random effects (hierarchical related regression) model.
+#' In particular, a binomial distribution (if \code{O}, \code{E} and \code{N} is known), a poisson distribution 
+#' (if only \code{O} and \code{E} are known) or a Normal distribution (if \code{OE} and \code{OE.se} or \code{OE.95CI} are known) is selected separately for each study.
 #' 
 #' For meta-analysis of prognostic models, it is recommended to provide information on the time period 
 #' (\code{t.val}) during which calibration was assessed in the validation study. When the time period of 
@@ -99,9 +97,9 @@
 #' }
 #' 
 #' \subsection{Bayesian meta-analysis}{
-#' The prior distribution for the summary estimate is always modeled using a Normal distribution, with
-#' mean \code{hp.mu.mean} (defaults to 0) and variance \code{hp.mu.var} (defaults to 1E6). For meta-analysis of the
-#' total O:E ratio, the maximum value for \code{hp.mu.var} is 100.
+#' All Bayesian meta-analysis models assume random effects by default. The prior distribution for the (transformed) summary 
+#' estimate is always modeled using a Normal distribution, with mean \code{hp.mu.mean} (defaults to 0) and variance 
+#' \code{hp.mu.var} (defaults to 1E6). For meta-analysis of the total O:E ratio, the maximum value for \code{hp.mu.var} is 100.
 #' 
 #' By default, the prior distribution for the between-study standard deviation is modeled using a uniform distribution 
 #' (\code{hp.tau.dist="dunif"}), with boundaries \code{hp.tau.min} and \code{hp.tau.max}. Alternatively, it is possible
@@ -115,7 +113,7 @@
 #' 
 #' @return An object of class \code{valmeta} with the following elements:
 #' \describe{
-##'  \item{"data"}{array with (transformed) data used for meta-analysis }
+##'  \item{"data"}{array with (transformed) data used for meta-analysis, and method(s) used for restoring missing information. }
 ##'  \item{"lme4"}{a fitted object of class \code{glmerMod} (if \pkg{lme4} was used for meta-analysis).}
 ##'  \item{"measure"}{character string specifying the performance measure that has been meta-analysed.}
 ##'  \item{"method"}{character string specifying the meta-analysis method.}
@@ -129,17 +127,14 @@
 #' \itemize{
 #' \item Debray TPA, Damen JAAG, Snell KIE, Ensor J, Hooft L, Reitsma JB, et al. A guide to systematic review 
 #' and meta-analysis of prediction model performance. \emph{BMJ}. 2017; 356:i6460.
-#' \item Hanley JA, McNeil BJ. The meaning and use of the area under a receiver operating characteristic (ROC) 
-#' curve. \emph{Radiology}. 1982; 143(1):29--36.
-#' \item Newcombe RG. Confidence intervals for an effect size measure based on the Mann-Whitney statistic. 
-#' Part 2: asymptotic methods and evaluation. \emph{Stat Med}. 2006; 25(4):559--73.
 #' \item Stijnen T, Hamza TH, Ozdemir P. Random effects meta-analysis of event outcome in the framework of 
 #' the generalized linear mixed model with applications in sparse data. \emph{Stat Med}. 2010; 29(29):3046--67.
 #' \item Viechtbauer W. Conducting Meta-Analyses in R with the metafor Package. \emph{Journal of Statistical Software}. 
 #' 2010; 36(3). Available from: \url{http://www.jstatsoft.org/v36/i03/}
 #' }
 #'   
-#' @seealso \code{\link{plot.valmeta}}
+#' @seealso \code{\link{ccalc}} to calculate concordance statistics and corresponding standard errors, 
+#' \code{\link{plot.valmeta}} to generate forest plots
 #' 
 #' @examples 
 #' ######### Validation of prediction models with a binary outcome #########
@@ -319,97 +314,22 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.
   # Meta-analysis of the c-statistic
   #######################################################################################
   if (measure=="cstat") {
-    if (missing(cstat.95CI)) {
-      cstat.95CI <- array(NA, dim=c(k,2))
-    }
-    if (is.null(dim(cstat.95CI))) {
-      warning("Invalid dimension for 'cstat.95CI', argument ignored.")
-      cstat.95CI <- array(NA, dim=c(k,2))
-    }
-    if (dim(cstat.95CI)[2] != 2 | dim(cstat.95CI)[1] != k) {
-      warning("Invalid dimension for 'cstat.95CI', argument ignored.")
-      cstat.95CI <- array(NA, dim=c(k,2))
-    }
-    if (missing(cstat.se)) {
-      cstat.se <- array(NA, dim=k)
-    }
-    if (missing(sd.LP)) {
-      sd.LP <- rep(NA, k)
-    }
-
     out$model <- pars.default$model.cstat
+      
+    pars.cstat <- list(level=pars.default$level, 
+                       method.restore.c.se=pars.default$method.restore.c.se,
+                       model=out$model)
+    ds <- ccalc(cstat=cstat, cstat.se=cstat.se, cstat.95CI=cstat.95CI, sd.LP=sd.LP, 
+                N=N, O=O, E=E, Po=Po, Pe=Pe, slab=out$slab, pars=pars.cstat) 
     
-    if (verbose) message("Extracting/computing estimates of the concordance statistic ...")
-    
-    # Calculate O and N from other information if possible
-    O <- ifelse(is.na(O), Po*N, O)
-    N <- ifelse(is.na(N), O/Po, N)
-    
-    theta.cil <- theta.ciu <- rep(NA, length(cstat))
-    
-    # Restore c-statistic
-    te.method <- c("c-statistic", "std.dev(LP)")
-    te.orig  <- restore.c.c(cstat, model=pars.default$model.cstat)
-    te.white <- restore.c.sdPI(sd.LP, model=pars.default$model.cstat)
-    
-    te.dat <- cbind(te.orig, te.white)
-    
-    # For each study, find the first colum without missing
-    myfun = function(dat) { which.min(is.na(dat)) }
-    
-    sel.cstat <- apply(te.dat, 1, myfun)
-    theta <- te.dat[cbind(seq_along(sel.cstat), sel.cstat)]                            
-    theta.source <-  te.method[sel.cstat]
-    
-    # Define theta
-    if (pars.default$model.cstat == "normal/identity") {
-      if (pars.default$level==0.95) {
-        theta.cil <- cstat.95CI[,1]
-        theta.ciu <- cstat.95CI[,2]
-      }
-    } else if (pars.default$model.cstat == "normal/logit") {
-      if (pars.default$level==0.95) {
-        theta.cil <- logit(cstat.95CI[,1])
-        theta.ciu <- logit(cstat.95CI[,2])
-      }
-    } else {
-      stop("Undefined link function!")
-    }
-    
-    # Calculate all the possible variations of var(theta)
-    tv.method <- c("Standard Error", "Confidence Interval", pars.default$method.restore.c.se, pars.default$method.restore.c.se)
-    tv.se     <- restore.c.var.se(c.se=cstat.se, cstat=cstat, model=pars.default$model.cstat) # Derived from standard error
-    tv.ci     <- restore.c.var.ci(ci=cstat.95CI, level=0.95, model=pars.default$model.cstat) # Derived from 95% confidence interval
-    tv.hanley <- restore.c.var.hanley(cstat=cstat, N.subjects=N, N.events=O, restore.method=pars.default$method.restore.c.se,
-                                      model=pars.default$model.cstat)
-    tv.hanley2 <- restore.c.var.hanley2(sd.LP=sd.LP, N.subjects=N, N.events=O, restore.method=pars.default$method.restore.c.se,
-                                      model=pars.default$model.cstat)
-                         
-    # Save all estimated variances. The order of the columns indicates the priority             
-    dat <-cbind(tv.se, tv.ci, tv.hanley, tv.hanley2)  
-    
-    
-    
-    sel.var <- apply(dat, 1, myfun)
-    theta.var <- dat[cbind(seq_along(sel.var), sel.var)]                            
-    theta.var.source <-  tv.method[sel.var]
-    
-    # Calculate the desired confidence intervals
-    theta.cil[is.na(theta.cil)] <- (theta+qnorm((1-pars.default$level)/2)*sqrt(theta.var))[is.na(theta.cil)]
-    theta.ciu[is.na(theta.ciu)] <- (theta+qnorm((1+pars.default$level)/2)*sqrt(theta.var))[is.na(theta.ciu)]
-    
-    
-    # Store results, and method for calculating SE
-    ds <- data.frame(theta=theta, theta.se=sqrt(theta.var), theta.CIl=theta.cil, theta.CIu=theta.ciu, 
-                     theta.blup=rep(NA,length(theta)), theta.source=theta.source, theta.se.source=theta.var.source)
     
     if (method != "BAYES") { # Use of rma
       
       # Identify which studies can be used for meta-analysis
-      selstudies <- which(!is.na(ds[,"theta"]) & !is.na(theta.var))
+      selstudies <- which(!is.na(ds$theta) & !is.na(ds$theta.se))
       
       # Apply the meta-analysis
-      fit <- rma(yi=theta, vi=theta.var, data=ds, method=method, test=test, slab=out$cstat$slab, ...) 
+      fit <- rma(yi=theta, sei=theta.se, data=ds, method=method, test=test, slab=out$slab, ...) 
       preds <- predict(fit, level=pars.default$level)
       
       ds[selstudies, "theta.blup"] <- blup(fit)$pred
@@ -424,7 +344,7 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.
         cr.ub <- ifelse(method=="FE", NA, preds$cr.ub)
         results <- c(coefficients(fit), c(preds$ci.lb, preds$ci.ub, cr.lb, cr.ub))
       } else {
-        stop ("Meta-analysis model not implemented yet")
+        stop ("There is no implementation for the specified meta-analysis model!")
       }
       names(results) <- c("estimate", "CIl", "CIu", "PIl", "PIu")
       
@@ -443,11 +363,11 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.
       model.pars[[1]] <- list(param="mu.tobs", param.f=rnorm, 
                               param.args=list(n=1, mean=pars.default$hp.mu.mean, sd=sqrt(pars.default$hp.mu.var)))
       
-      if (pars$hp.tau.dist=="dunif") {
+      if (pars.default$hp.tau.dist=="dunif") {
         model.pars[[2]] <- list(param="bsTau", param.f=runif, 
                                 param.args=list(n=1, min=pars.default$hp.tau.min, 
                                                 max=pars.default$hp.tau.max))
-      } else if (pars$hp.tau.dist=="dhalft") {
+      } else if (pars.default$hp.tau.dist=="dhalft") {
         model.pars[[2]] <- list(param="bsTau", param.f=rstudentt, 
                                 param.args=list(n=1, mean=pars.default$hp.tau.mean, 
                                                 sigma=pars.default$hp.tau.sigma, 
@@ -460,9 +380,9 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.
 
       inits <- generateMCMCinits(n.chains=n.chains, model.pars=model.pars)
       
-      mvmeta_dat <- list(theta = theta,
-                         theta.var = theta.var,
-                         Nstudies = length(theta))
+      mvmeta_dat <- list(theta = ds$theta,
+                         theta.var = ds$theta.se**2,
+                         Nstudies = length(ds$theta))
       jags.model <- runjags::run.jags(model=model, 
                                       monitor = c("mu.tobs", "mu.obs", "pred.obs", "bsTau", "PED"), 
                                       data = mvmeta_dat, 
@@ -672,6 +592,8 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.
       
       out$results <- results
     } else {
+      out$model <- "hierarchical related regression"
+        
       # Truncate hyper parameter variance
       pars.default$hp.mu.var = min(pars.default$hp.mu.var, 100)
       
@@ -759,7 +681,6 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.
     }
     
     out$data <- ds
-    #out$se.source <- theta.var.source
     
     return(out)
   }
@@ -915,14 +836,14 @@ plot.valmeta <- function(x, sort="asc", ...) {
   yi.ci <- cbind(ci.lb, ci.ub)
   
   if (x$measure=="cstat") {
-    forest(theta=yi, theta.ci=yi.ci, theta.slab=yi.slab, 
+    metamisc::forest(theta=yi, theta.ci=yi.ci, theta.slab=yi.slab, 
            theta.summary=x$results["estimate"], 
            theta.summary.ci=x$results[c("CIl","CIu")], 
            theta.summary.pi=x$results[c("PIl","PIu")], 
            xlim=c(0,1),
            refline=0.5, xlab="c-statistic", sort=sort, ...)
   } else if (x$measure=="OE") {
-    forest(theta=yi, theta.ci=yi.ci, theta.slab=yi.slab, 
+    metamisc::forest(theta=yi, theta.ci=yi.ci, theta.slab=yi.slab, 
            theta.summary=x$results["estimate"], 
            theta.summary.ci=x$results[c("CIl","CIu")], 
            theta.summary.pi=x$results[c("PIl","PIu")], 

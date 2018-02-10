@@ -72,7 +72,7 @@ restore.c.sdPI <- function (sdPI, model="normal/logit") {
   if (model=="normal/logit") {
     return (log(cstat/(1-cstat)))
   }
-  if (model=="normal/log") {
+  if (model=="normal/identity") {
     return(cstat)
   }
   stop("Invalid model!")
@@ -82,7 +82,7 @@ restore.c.c <- function(cstat, model="normal/logit") {
   if (model=="normal/logit") {
     return (log(cstat/(1-cstat)))
   }
-  if (model=="normal/log") {
+  if (model=="normal/identity") {
     return(cstat)
   }
   stop("Invalid model!")
