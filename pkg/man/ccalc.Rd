@@ -31,8 +31,8 @@ of the 95\% confidence interval of the estimated c-statistics}
 \item{slab}{Optional vector with study names}
 
 \item{pars}{A list with additional arguments: significance level of the confidence intervals (default: \code{level=0.95}), 
-method for restoring missing estimates for the standard error of the c-statistic 
-(default: \code{method.restore.c.se="Newcombe.4"}), and likelihood/link for modeling the c-statistic
+method for calculating the standard error of the c-statistic 
+(default: \code{method.restore.c.se="Newcombe.4"}), and model for meta-analyzing the c-statistic
 (default: \code{model = "normal/logit"}). see "Details" for more information.}
 
 \item{\ldots}{Additional arguments.}
@@ -43,19 +43,23 @@ An array with the following columns:
  \item{"theta"}{The (transformed) c-statistics. }
  \item{"theta.se"}{Standard errors of the (transformed) c-statistics.}
  \item{"theta.CIl"}{Lower confidence interval of the (transformed) c-statistics. The level is specified in
- \code{pars$level}.}
+ \code{pars$level}. Intervals are calculated on the same scale as \code{theta} by assuming a Normal distribution.}
  \item{"theta.CIu"}{Upper confidence interval of the (transformed) c-statistics. The level is specified in
- \code{pars$level}.}
+ \code{pars$level}. Intervals are calculated on the same scale as \code{theta} by assuming a Normal distribution.}
  \item{"theta.source"}{Method used for calculating the (transformed) c-statistic.}
  \item{"theta.se.source"}{Method used for calculating the standard error of the (transformed) c-statistic.}
 }
 }
 \description{
-The function calculates the (transformed) concordance statistic with the corresponding sampling variance
+The function calculates the (transformed) concordance (c-) statistic with the corresponding sampling variance
 from aggregate data.
 }
 \details{
-By default, the logit transformation is applied to the concordance (c-) statistic. If no transformation is needed, 
+The c-statistic is a measure of discrimination, and indicates the ability of a prediction model to 
+distinguish between patients developing and not developing the outcome. The c-statistic typically ranges 
+from 0.5 (no discriminative ability) to 1 (perfect discriminative ability). 
+
+By default, the logit transformation is applied to the c-statistic. If no transformation is needed, 
 simply set \code{pars$model} equal to \code{"normal/identity"}.
 
 \subsection{Restoring the c-statistic}{
@@ -65,12 +69,10 @@ For studies where the c-statistic is missing, it is estimated from the standard 
 
 \subsection{Restoring the standard error of the c-statistic}{
 When missing, the standard error of the c-statistic can be estimated from the confidence interval. Alternatively, 
-the standard error can be approximated from a 
-combination of the reported c-statistic, the total sample size and the total number of events (Debray et al. 2017).
-The latter strategy can be specified with \code{pars$method.restore.c.se}. In particular, it is possible to adopt
-the method of Hanley and McNeil (\code{"Newcombe.2"}), also described as method 2 by Newcombe (2006). 
-Alternatively, it is possible to adopt method 4 (\code{"Newcombe.4"}), a small modification of method 2. 
-As discussed by Newcombe, both methods may produce zero width intervals in extreme cases.
+the standard error can be approximated from a combination of the reported c-statistic, the total sample size and 
+the total number of events (Debray et al. 2017). This can be achieved by adopting (a modification of) the method 
+proposed by Hanley and McNeil, as specified in \code{pars$method.restore.c.se}. Possible options for this argument are
+\code{"Newcombe.2"} and \code{"Newcombe.4"}, which correspond to method 2 and, respectively, method 4 in Newcombe (2006).
 }
 }
 \examples{
@@ -85,7 +87,7 @@ with(EuroSCORE, ccalc(cstat=c.index, cstat.se=se.c.index,
 # Calculate the c-statistic and its standard error
 with(EuroSCORE, ccalc(cstat=c.index, cstat.se=se.c.index, 
                       cstat.95CI=cbind(c.index.95CIl,c.index.95CIu), 
-                     N=n, O=n.events, slab=Study, pars=list(model="normal/identity")))
+                      N=n, O=n.events, slab=Study, pars=list(model="normal/identity")))
                                                             
 }
 \references{

@@ -117,14 +117,14 @@ When conducting a Bayesian meta-analysis, the R packages \pkg{runjags} and \pkg{
 A summary estimate for the concorcance (c-) statistic can be obtained by specifying \code{measure="cstat"}.
 The c-statistic is a measure of discrimination, and indicates the ability of a prediction model to 
 distinguish between patients developing and not developing the outcome. The c-statistic typically ranges 
-from 0.5 (no discriminative ability) to 1 (perfect discriminative ability). 
-
-When missing, the c-statistic and/or its standard error are derived from other reported information. 
+from 0.5 (no discriminative ability) to 1 (perfect discriminative ability). When missing, the c-statistic 
+and/or its standard error are derived from other reported information. 
 See \code{\link{ccalc}} for more information.
 
-By default, the meta-analysis model assumes Normality for the logit of 
-the c-statistic (\code{pars$model.cstat = "normal/logit"}). Alternatively, it is possible to summarize 
-raw estimates of the c-statistic by setting \code{pars$model.cstat = "normal/identity"}.} 
+By default, it is assumed that the logit of the c-statistic is Normally distributed within and across studies
+(\code{pars$model.cstat = "normal/logit"}). Alternatively, it is possible to assume that the raw c-statistic 
+is Normally distributed across studies \code{pars$model.cstat = "normal/identity"}. 
+} 
 
 \subsection{Meta-analysis of the total observed versus expected ratio}{
 A summary estimate for the total observed versus expected (O:E) ratio can be obtained by specifying
@@ -182,13 +182,12 @@ with(EuroSCORE, valmeta(measure="OE", Po=Po, Pe=Pe, N=n))
 with(EuroSCORE, valmeta(measure="OE", O=n.events, E=e.events, pars=list(model.oe="poisson/log")))
 
 \dontrun{
-# Bayesian meta-analysis of the c-statistic (random effects)
+# Bayesian random effects meta-analysis of the c-statistic
 fit2 <- with(EuroSCORE, valmeta(cstat=c.index, cstat.se=se.c.index, 
                                 cstat.95CI=cbind(c.index.95CIl,c.index.95CIu),
                                 N=n, O=n.events, method="BAYES", slab=Study))
-plot(fit2)
 
-######### Bayesian meta-analysis of the O:E ratio #########
+# Bayesian random effects meta-analysis of the total O:E ratio
 # Consider that some (but not all) studies do not provide information on N
 # A Poisson distribution will be used for studies 1, 2, 5, 10 and 20
 # A Binomial distribution will be used for the remaining studies
