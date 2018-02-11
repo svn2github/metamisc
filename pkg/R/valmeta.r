@@ -149,11 +149,14 @@
 #' # Nearly identical results when we need to estimate the SE
 #' with(EuroSCORE, valmeta(cstat=c.index,  N=n, O=n.events, slab=Study))
 #' 
-#' # Meta-analysis of the total O:E ratio (random effects)
+#' # Two-stage meta-analysis of the total O:E ratio (random effects)
 #' with(EuroSCORE, valmeta(measure="OE", O=n.events, E=e.events, N=n))    
 #' with(EuroSCORE, valmeta(measure="OE", O=n.events, E=e.events))        
 #' with(EuroSCORE, valmeta(measure="OE", Po=Po, Pe=Pe, N=n))
-#' with(EuroSCORE, valmeta(measure="OE", O=n.events, E=e.events, pars=list(model.oe="poisson/log")))
+#' 
+#' # One-stage meta-analysis of the total O:E ratio (random effects)
+#' with(EuroSCORE, valmeta(measure="OE", O=n.events, E=e.events, method="ML",
+#'                         pars=list(model.oe="poisson/log")))
 #' 
 #' \dontrun{
 #' # Bayesian random effects meta-analysis of the c-statistic
@@ -161,7 +164,7 @@
 #'                                 cstat.95CI=cbind(c.index.95CIl,c.index.95CIu),
 #'                                 N=n, O=n.events, method="BAYES", slab=Study))
 #' 
-#' # Bayesian random effects meta-analysis of the total O:E ratio
+#' # Bayesian one-stage random effects meta-analysis of the total O:E ratio
 #' # Consider that some (but not all) studies do not provide information on N
 #' # A Poisson distribution will be used for studies 1, 2, 5, 10 and 20
 #' # A Binomial distribution will be used for the remaining studies
@@ -554,6 +557,7 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.
     if (method != "BAYES") { # Use of rma
       
       if (pars.default$model.oe=="normal/identity") {
+        if(verbose) print("Performing two-stage meta-analysis...")
         fit <- rma(yi=ds$theta, sei=ds$theta.se, data=ds, method=method, test=test, slab=out$slab, ...) 
         preds <- predict(fit, level=pars.default$level)
         cr.lb <- ifelse(method=="FE", NA, preds$cr.lb)
@@ -562,6 +566,7 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.
         out$rma <- fit
         out$numstudies <- fit$k
       } else if (pars.default$model.oe=="normal/log") {
+        if(verbose) print("Performing two-stage meta-analysis...")
         fit <- rma(yi=ds$theta, sei=ds$theta.se, data=ds, method=method, test=test, slab=out$slab, ...) 
         preds <- predict(fit, level=pars.default$level)
         cr.lb <- ifelse(method=="FE", NA, preds$cr.lb)
@@ -569,23 +574,26 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.
         results <- c(exp(coefficients(fit)), exp(c(preds$ci.lb, preds$ci.ub, cr.lb, cr.ub)))
         out$rma <- fit
         out$numstudies <- fit$k
-      } else if (pars.default$model.oe=="poisson/log" && method!="FE") {
-        if (method!="ML") warning("The poisson/log model was fitted using ML.")
-        if (test=="knha") warning("The Sidik-Jonkman-Hartung-Knapp correction cannot be applied")
-        
-        fit <- glmer(O~1|Study, offset=log(E), family=poisson(link="log"), data=ds)
-        preds.ci <- confint(fit, level=pars.default$level, quiet=!verbose, ...)
-        preds.cr <- lme4::fixef(fit) + qt(c((1-pars.default$level)/2, (1+pars.default$level)/2), df=(lme4::ngrps(fit)-2))*sqrt(vcov(fit)[1,1]+(as.data.frame(lme4::VarCorr(fit))["vcov"])[1,1])
-        results <- c(exp(lme4::fixef(fit)), exp(c(preds.ci["(Intercept)",], preds.cr)))
-        out$lme4 <- fit
-        out$numstudies <- nobs(fit)
-      } else if (pars.default$model.oe=="poisson/log" && method=="FE") {
-        fit <- glm(O~1, offset=log(E), family=poisson(link="log"), data=ds)
-        preds.ci <- confint(fit, level=pars.default$level, quiet=!verbose, ...)
-        preds.cr <- c(NA, NA)
-        results <- c(exp(coefficients(fit)), exp(c(preds.ci, preds.cr)))
-        out$glm <- fit
-        out$numstudies <- nobs(fit)
+      } else if (pars.default$model.oe=="poisson/log") { 
+        if(verbose) print("Performing one-stage meta-analysis...")
+        if (method=="ML") { 
+          if (test=="knha") warning("The Sidik-Jonkman-Hartung-Knapp correction cannot be applied")
+          fit <- glmer(O~1|Study, offset=log(E), family=poisson(link="log"), data=ds)
+          preds.ci <- confint(fit, level=pars.default$level, quiet=!verbose, ...)
+          preds.cr <- lme4::fixef(fit) + qt(c((1-pars.default$level)/2, (1+pars.default$level)/2), df=(lme4::ngrps(fit)-2))*sqrt(vcov(fit)[1,1]+(as.data.frame(lme4::VarCorr(fit))["vcov"])[1,1])
+          results <- c(exp(lme4::fixef(fit)), exp(c(preds.ci["(Intercept)",], preds.cr)))
+          out$lme4 <- fit
+          out$numstudies <- nobs(fit)
+        } else if (method=="FE") { #one-stage fixed-effects meta-analysis
+          fit <- glm(O~1, offset=log(E), family=poisson(link="log"), data=ds)
+          preds.ci <- confint(fit, level=pars.default$level, quiet=!verbose, ...)
+          preds.cr <- c(NA, NA)
+          results <- c(exp(coefficients(fit)), exp(c(preds.ci, preds.cr)))
+          out$glm <- fit
+          out$numstudies <- nobs(fit)
+        } else {
+          stop(paste("No implementation found for ", method, " estimation (model '", pars.default$model.oe, "')!", sep=""))
+        }
       } else {
         stop("Model not implemented yet!")
       }
@@ -593,6 +601,8 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.
       
       out$results <- results
     } else {
+      if(verbose) print("Performing Bayesian one-stage meta-analysis...")
+      
       out$model <- "hierarchical related regression"
         
       # Truncate hyper parameter variance

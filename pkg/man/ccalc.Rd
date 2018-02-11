@@ -32,8 +32,8 @@ of the 95\% confidence interval of the estimated c-statistics}
 
 \item{pars}{A list with additional arguments: significance level of the confidence intervals (default: \code{level=0.95}), 
 method for calculating the standard error of the c-statistic 
-(default: \code{method.restore.c.se="Newcombe.4"}), and model for meta-analyzing the c-statistic
-(default: \code{model = "normal/logit"}). see "Details" for more information.}
+(default: \code{method.restore.c.se="Newcombe.4"}), and transformation for the c-statistic
+(default: \code{model = "normal/logit"}, which corresponds to the logit transformation). see "Details" for more information.}
 
 \item{\ldots}{Additional arguments.}
 }
@@ -51,8 +51,7 @@ An array with the following columns:
 }
 }
 \description{
-The function calculates the (transformed) concordance (c-) statistic with the corresponding sampling variance
-from aggregate data.
+The function calculates the (logit transformed) concordance (c-) statistic with the corresponding sampling variance.
 }
 \details{
 The c-statistic is a measure of discrimination, and indicates the ability of a prediction model to 

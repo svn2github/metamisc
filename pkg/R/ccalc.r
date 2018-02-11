@@ -1,7 +1,6 @@
 #' Calculate the concordance statistic
 #'
-#' The function calculates the (transformed) concordance (c-) statistic with the corresponding sampling variance
-#' from aggregate data. 
+#' The function calculates the (logit transformed) concordance (c-) statistic with the corresponding sampling variance. 
 #' 
 #' @param cstat Optional vector with the estimated c-statistic for each valiation
 #' @param cstat.se Optional vector with the standard error of the estimated c-statistics
@@ -18,8 +17,8 @@
 #' @param slab Optional vector with study names
 #' @param pars A list with additional arguments: significance level of the confidence intervals (default: \code{level=0.95}), 
 #' method for calculating the standard error of the c-statistic 
-#' (default: \code{method.restore.c.se="Newcombe.4"}), and model for meta-analyzing the c-statistic
-#' (default: \code{model = "normal/logit"}). see "Details" for more information.
+#' (default: \code{method.restore.c.se="Newcombe.4"}), and transformation for the c-statistic
+#' (default: \code{model = "normal/logit"}, which corresponds to the logit transformation). see "Details" for more information.
 #' @param \ldots Additional arguments.
 #' 
 #' @details 
@@ -179,7 +178,7 @@ ccalc <- function(cstat, cstat.se, cstat.95CI, sd.LP, N, O, E, Po, Pe, slab, par
       theta.ciu <- logit(cstat.95CI[,2])
     }
   } else {
-    stop("Undefined link function!")
+    stop("Supplied model for transforming the c-statistic is not supported!")
   }
     
     
@@ -194,8 +193,6 @@ ccalc <- function(cstat, cstat.se, cstat.95CI, sd.LP, N, O, E, Po, Pe, slab, par
     
     # Save all estimated variances. The order of the columns indicates the priority             
     dat <-cbind(tv.se, tv.ci, tv.hanley, tv.hanley2)  
-    
-    
     
     sel.var <- apply(dat, 1, myfun)
     theta.var <- dat[cbind(seq_along(sel.var), sel.var)]                            

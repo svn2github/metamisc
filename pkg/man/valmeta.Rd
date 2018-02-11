@@ -175,11 +175,14 @@ plot(fit)
 # Nearly identical results when we need to estimate the SE
 with(EuroSCORE, valmeta(cstat=c.index,  N=n, O=n.events, slab=Study))
 
-# Meta-analysis of the total O:E ratio (random effects)
+# Two-stage meta-analysis of the total O:E ratio (random effects)
 with(EuroSCORE, valmeta(measure="OE", O=n.events, E=e.events, N=n))    
 with(EuroSCORE, valmeta(measure="OE", O=n.events, E=e.events))        
 with(EuroSCORE, valmeta(measure="OE", Po=Po, Pe=Pe, N=n))
-with(EuroSCORE, valmeta(measure="OE", O=n.events, E=e.events, pars=list(model.oe="poisson/log")))
+
+# One-stage meta-analysis of the total O:E ratio (random effects)
+with(EuroSCORE, valmeta(measure="OE", O=n.events, E=e.events, method="ML",
+                        pars=list(model.oe="poisson/log")))
 
 \dontrun{
 # Bayesian random effects meta-analysis of the c-statistic
@@ -187,7 +190,7 @@ fit2 <- with(EuroSCORE, valmeta(cstat=c.index, cstat.se=se.c.index,
                                 cstat.95CI=cbind(c.index.95CIl,c.index.95CIu),
                                 N=n, O=n.events, method="BAYES", slab=Study))
 
-# Bayesian random effects meta-analysis of the total O:E ratio
+# Bayesian one-stage random effects meta-analysis of the total O:E ratio
 # Consider that some (but not all) studies do not provide information on N
 # A Poisson distribution will be used for studies 1, 2, 5, 10 and 20
 # A Binomial distribution will be used for the remaining studies

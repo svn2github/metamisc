@@ -2,7 +2,7 @@ Package: metamisc
 Type: Package
 Title: Diagnostic and Prognostic Meta-Analysis
 Version: 0.1.8
-Date: 2018-02-10
+Date: 2018-02-11
 Author: Thomas Debray [aut, cre], 
   Valentijn de Jong [aut]
 Maintainer: Thomas Debray <thomas.debray@gmail.com>
