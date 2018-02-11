@@ -147,8 +147,11 @@ frequentist meta-analysis models with \code{model.oe = "normal/log"} or \code{mo
 }
 
 \subsection{Bayesian meta-analysis}{
-All Bayesian meta-analysis models assume random effects by default. The prior distribution for the (transformed) summary 
-estimate is always modeled using a Normal distribution, with mean \code{hp.mu.mean} (defaults to 0) and variance 
+All Bayesian meta-analysis models assume random effects by default. Results are based on the posterior median. 
+Credibility and prediction intervals are directly obtained from the corresponding posterior quantiles.
+
+The prior distribution for the (transformed) summary estimate is always modeled using a Normal distribution, 
+with mean \code{hp.mu.mean} (defaults to 0) and variance 
 \code{hp.mu.var} (defaults to 1E6). For meta-analysis of the total O:E ratio, the maximum value for \code{hp.mu.var} is 100.
 
 By default, the prior distribution for the between-study standard deviation is modeled using a uniform distribution 

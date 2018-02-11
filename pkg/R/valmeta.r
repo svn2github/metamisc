@@ -97,8 +97,11 @@
 #' }
 #' 
 #' \subsection{Bayesian meta-analysis}{
-#' All Bayesian meta-analysis models assume random effects by default. The prior distribution for the (transformed) summary 
-#' estimate is always modeled using a Normal distribution, with mean \code{hp.mu.mean} (defaults to 0) and variance 
+#' All Bayesian meta-analysis models assume random effects by default. Results are based on the posterior median. 
+#' Credibility and prediction intervals are directly obtained from the corresponding posterior quantiles.
+#' 
+#' The prior distribution for the (transformed) summary estimate is always modeled using a Normal distribution, 
+#' with mean \code{hp.mu.mean} (defaults to 0) and variance 
 #' \code{hp.mu.var} (defaults to 1E6). For meta-analysis of the total O:E ratio, the maximum value for \code{hp.mu.var} is 100.
 #' 
 #' By default, the prior distribution for the between-study standard deviation is modeled using a uniform distribution 
@@ -293,6 +296,11 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.
   }
   
   #######################################################################################
+  # Prepare results
+  #######################################################################################
+  results <- data.frame(estimate=NA, CIl=NA, CIu=NA, PIl=NA, PIu=NA)
+  
+  #######################################################################################
   # Prepare object
   #######################################################################################
   out <- list()
@@ -336,19 +344,21 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.
       
       ds[selstudies, "theta.blup"] <- blup(fit)$pred
       
-      results <- as.data.frame(array(NA, dim=c(1,5)))
       if (pars.default$model.cstat == "normal/logit") {
-        cr.lb <- ifelse(method=="FE", NA, preds$cr.lb)
-        cr.ub <- ifelse(method=="FE", NA, preds$cr.ub)
-        results <- c(inv.logit(coefficients(fit)), inv.logit(c(preds$ci.lb, preds$ci.ub, cr.lb, cr.ub)))
+        results$estimate <- inv.logit(coefficients(fit))
+        results$CIl <- inv.logit(preds$ci.lb)
+        results$CIu <- inv.logit(preds$ci.ub)
+        results$PIl <- ifelse(method=="FE", NA, inv.logit(preds$cr.lb))
+        results$PIu <- ifelse(method=="FE", NA, inv.logit(preds$cr.ub))
       } else if (pars.default$model.cstat == "normal/identity") {
-        cr.lb <- ifelse(method=="FE", NA, preds$cr.lb)
-        cr.ub <- ifelse(method=="FE", NA, preds$cr.ub)
-        results <- c(coefficients(fit), c(preds$ci.lb, preds$ci.ub, cr.lb, cr.ub))
+        results$estimate <- coefficients(fit)
+        results$CIl <- preds$ci.lb
+        results$CIu <- preds$ci.ub
+        results$PIl <- ifelse(method=="FE", NA, preds$cr.lb)
+        results$PIu <- ifelse(method=="FE", NA, preds$cr.ub)
       } else {
         stop ("There is no implementation for the specified meta-analysis model!")
       }
-      names(results) <- c("estimate", "CIl", "CIu", "PIl", "PIu")
       
       out$rma <- fit
       out$numstudies <- fit$k
@@ -400,10 +410,11 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.
       fit.dev <- runjags::extract(jags.model,"PED")
       txtLevel <- (out$level*100)
       
-      results <- c(fit["mu.obs","Mean"], 
-                   fit["mu.obs", paste(c("Lower", "Upper"), txtLevel, sep="")], 
-                   fit["pred.obs", paste(c("Lower", "Upper"), txtLevel, sep="")])
-      names(results) <- c("estimate", "CIl", "CIu", "PIl", "PIu")
+      results$estimate  <- fit["mu.obs", "Median"]
+      results$CIl       <- fit["mu.obs", paste("Lower", txtLevel, sep="")]
+      results$CIu       <- fit["mu.obs", paste("Upper", txtLevel, sep="")]
+      results$PIl       <- fit["pred.obs", paste("Lower", txtLevel, sep="")]
+      results$PIu       <- fit["pred.obs", paste("Upper", txtLevel, sep="")]
       
       out$runjags <- jags.model
       out$PED <- sum(fit.dev$deviance)+sum(fit.dev$penalty)
@@ -560,18 +571,26 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.
         if(verbose) print("Performing two-stage meta-analysis...")
         fit <- rma(yi=ds$theta, sei=ds$theta.se, data=ds, method=method, test=test, slab=out$slab, ...) 
         preds <- predict(fit, level=pars.default$level)
-        cr.lb <- ifelse(method=="FE", NA, preds$cr.lb)
-        cr.ub <- ifelse(method=="FE", NA, preds$cr.ub)
-        results <- c(coefficients(fit), c(preds$ci.lb, preds$ci.ub, cr.lb, cr.ub))
+        
+        results$estimate <- coefficients(fit)
+        results$CIl      <- preds$ci.lb
+        results$CIu      <- preds$ci.ub
+        results$PIl      <- ifelse(method=="FE", NA, preds$cr.lb)
+        results$PIu      <- ifelse(method=="FE", NA, preds$cr.ub)
+        
         out$rma <- fit
         out$numstudies <- fit$k
       } else if (pars.default$model.oe=="normal/log") {
         if(verbose) print("Performing two-stage meta-analysis...")
         fit <- rma(yi=ds$theta, sei=ds$theta.se, data=ds, method=method, test=test, slab=out$slab, ...) 
         preds <- predict(fit, level=pars.default$level)
-        cr.lb <- ifelse(method=="FE", NA, preds$cr.lb)
-        cr.ub <- ifelse(method=="FE", NA, preds$cr.ub)
-        results <- c(exp(coefficients(fit)), exp(c(preds$ci.lb, preds$ci.ub, cr.lb, cr.ub)))
+        
+        results$estimate <- exp(coefficients(fit))
+        results$CIl      <- exp(preds$ci.lb)
+        results$CIu      <- exp(preds$ci.ub)
+        results$PIl      <- ifelse(method=="FE", NA, exp(preds$cr.lb))
+        results$PIu      <- ifelse(method=="FE", NA, exp(preds$cr.ub))
+        
         out$rma <- fit
         out$numstudies <- fit$k
       } else if (pars.default$model.oe=="poisson/log") { 
@@ -580,15 +599,24 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.
           if (test=="knha") warning("The Sidik-Jonkman-Hartung-Knapp correction cannot be applied")
           fit <- glmer(O~1|Study, offset=log(E), family=poisson(link="log"), data=ds)
           preds.ci <- confint(fit, level=pars.default$level, quiet=!verbose, ...)
-          preds.cr <- lme4::fixef(fit) + qt(c((1-pars.default$level)/2, (1+pars.default$level)/2), df=(lme4::ngrps(fit)-2))*sqrt(vcov(fit)[1,1]+(as.data.frame(lme4::VarCorr(fit))["vcov"])[1,1])
-          results <- c(exp(lme4::fixef(fit)), exp(c(preds.ci["(Intercept)",], preds.cr)))
+          
+          results$estimate <- exp(lme4::fixef(fit))
+          results$CIl      <- exp(preds.ci["(Intercept)",1])
+          results$CIu      <- exp(preds.ci["(Intercept)",2])
+          results$PIl      <- exp(lme4::fixef(fit) + qt((1-pars.default$level)/2, df=(lme4::ngrps(fit)-2))*sqrt(vcov(fit)[1,1]+(as.data.frame(lme4::VarCorr(fit))["vcov"])[1,1]))
+          results$PIu      <- exp(lme4::fixef(fit) + qt((1+pars.default$level)/2, df=(lme4::ngrps(fit)-2))*sqrt(vcov(fit)[1,1]+(as.data.frame(lme4::VarCorr(fit))["vcov"])[1,1]))
+          
           out$lme4 <- fit
           out$numstudies <- nobs(fit)
         } else if (method=="FE") { #one-stage fixed-effects meta-analysis
           fit <- glm(O~1, offset=log(E), family=poisson(link="log"), data=ds)
           preds.ci <- confint(fit, level=pars.default$level, quiet=!verbose, ...)
-          preds.cr <- c(NA, NA)
-          results <- c(exp(coefficients(fit)), exp(c(preds.ci, preds.cr)))
+          
+          results$estimate <- exp(coefficients(fit))
+          results$CIl      <- exp(preds.ci[1])
+          results$CIu      <- exp(preds.ci[2])
+          results$PIl      <- results$PIu <- NA
+          
           out$glm <- fit
           out$numstudies <- nobs(fit)
         } else {
@@ -645,11 +673,11 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.
       model.pars <- list()
       model.pars[[1]] <- list(param="mu.logoe", param.f=rnorm, param.args=list(n=1, mean=pars.default$hp.mu.mean, sd=sqrt(pars.default$hp.mu.var)))
       
-      if (pars$hp.tau.dist=="dunif") {
+      if (pars.default$hp.tau.dist=="dunif") {
         model.pars[[2]] <- list(param="bsTau", param.f=runif, 
                                 param.args=list(n=1, min=pars.default$hp.tau.min, 
                                                 max=pars.default$hp.tau.max))
-      } else if (pars$hp.tau.dist=="dhalft") {
+      } else if (pars.default$hp.tau.dist=="dhalft") {
         model.pars[[2]] <- list(param="bsTau", param.f=rstudentt, 
                                 param.args=list(n=1, mean=pars.default$hp.tau.mean, 
                                                 sigma=pars.default$hp.tau.sigma, 
@@ -678,9 +706,11 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.
       fit.dev <- runjags::extract(jags.model,"PED")
       txtLevel <- (out$level*100)
       
-      results <- c(fit["mu.oe","Mean"], fit["mu.oe", paste(c("Lower", "Upper"), txtLevel, sep="")], 
-                   fit["pred.oe", paste(c("Lower", "Upper"), txtLevel, sep="")])
-      names(results) <- c("estimate", "CIl", "CIu", "PIl", "PIu")
+      results$estimate <- fit["mu.oe", "Median"]
+      results$CIl      <- fit["mu.oe", paste("Lower", txtLevel, sep="")]
+      results$CIu      <- fit["mu.oe", paste("Upper", txtLevel, sep="")]
+      results$PIl      <- fit["pred.oe", paste("Lower", txtLevel, sep="")]
+      results$PIu      <- fit["pred.oe", paste("Upper", txtLevel, sep="")]
       
       out$runjags <- jags.model
       out$PED <- sum(fit.dev$deviance)+sum(fit.dev$penalty)
@@ -848,16 +878,16 @@ plot.valmeta <- function(x, sort="asc", ...) {
   
   if (x$measure=="cstat") {
     metamisc::forest(theta=yi, theta.ci=yi.ci, theta.slab=yi.slab, 
-           theta.summary=x$results["estimate"], 
-           theta.summary.ci=x$results[c("CIl","CIu")], 
-           theta.summary.pi=x$results[c("PIl","PIu")], 
+           theta.summary=as.numeric(x$results["estimate"]), 
+           theta.summary.ci=as.numeric(x$results[c("CIl","CIu")]), 
+           theta.summary.pi=as.numeric(x$results[c("PIl","PIu")]), 
            xlim=c(0,1),
            refline=0.5, xlab="c-statistic", sort=sort, ...)
   } else if (x$measure=="OE") {
     metamisc::forest(theta=yi, theta.ci=yi.ci, theta.slab=yi.slab, 
-           theta.summary=x$results["estimate"], 
-           theta.summary.ci=x$results[c("CIl","CIu")], 
-           theta.summary.pi=x$results[c("PIl","PIu")], 
+           theta.summary=as.numeric(x$results["estimate"]), 
+           theta.summary.ci=as.numeric(x$results[c("CIl","CIu")]), 
+           theta.summary.pi=as.numeric(x$results[c("PIl","PIu")]), 
            xlim=c(0,NA),
            refline=1, xlab="Total O:E ratio", sort=sort, ...)
   }
