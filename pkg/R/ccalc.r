@@ -2,23 +2,21 @@
 #'
 #' The function calculates the (logit transformed) concordance (c-) statistic with the corresponding sampling variance. 
 #' 
-#' @param cstat Optional vector with the estimated c-statistic for each valiation
-#' @param cstat.se Optional vector with the standard error of the estimated c-statistics
-#' @param cstat.95CI Optional 2-dimensional array with the lower (first column) and upper (second column) boundary 
-#' of the 95\% confidence interval of the estimated c-statistics
-#' @param sd.LP Optional vector with the standard deviation of the linear predictor (prognostic index) for each validation
-#' @param N Optional vector with the total number of participants for each valiation
-#' @param O Optional vector with the total number of observed events for each valiation
-#' (if specified, during time \code{t.val})
-#' @param E Optional vector with the total number of expected events for each valiation 
-#' (if specified, during time \code{t.val})
-#' @param Po Optional vector with the (cumulative) observed event probability for each valiation
-#' @param Pe Optional vector with the (cumulative) expected event probability for each validation
-#' @param slab Optional vector with study names
-#' @param pars A list with additional arguments: significance level of the confidence intervals (default: \code{level=0.95}), 
+#' @param cstat vector to specify the estimated c-statistics.
+#' @param cstat.se vector to specify the corresponding standard errors
+#' @param cstat.cilb vector to specify the lower limit of the 95\% confidence interval.
+#' @param cstat.ciub vector to specify the upper limit of the 95\% confidence interval.
+#' @param sd.LP vector to specify the standard deviations of the linear predictor (prognostic index)
+#' @param N vector to specify the validation study sizes.
+#' @param O vector to specify the total number of observed events.
+#' @param Po vector to specify the observed event probabilities.
+#' @param data optional data frame containing the variables given to the arguments above.
+#' @param slab optional vector with labels for the studies.
+#' @param pars optional list to specify additional arguments: 
+#' significance level of the confidence interval (default: \code{level=0.95}), 
 #' method for calculating the standard error of the c-statistic 
-#' (default: \code{method.restore.c.se="Newcombe.4"}), and transformation for the c-statistic
-#' (default: \code{model = "normal/logit"}, which corresponds to the logit transformation). see "Details" for more information.
+#' (default: \code{method.restore.c.se="Newcombe.4"}). It is possible to apply the logit transformation to 
+#' the c-statistics by setting \code{model = "normal/logit"}.
 #' @param \ldots Additional arguments.
 #' 
 #' @details 
@@ -26,8 +24,9 @@
 #' distinguish between patients developing and not developing the outcome. The c-statistic typically ranges 
 #' from 0.5 (no discriminative ability) to 1 (perfect discriminative ability). 
 #' 
-#' By default, the logit transformation is applied to the c-statistic. If no transformation is needed, 
-#' simply set \code{pars$model} equal to \code{"normal/identity"}.
+#' When performing a meta-analysis of the c-statistic, it is generally recommended to apply the logit transformation 
+#' (Debray et al., 2017; Snell et al., 2017). This can be achieved by specifying \code{model} in the additional arguments. 
+#' An example is given below.
 #' 
 #' \subsection{Restoring the c-statistic}{
 #' For studies where the c-statistic is missing, it is estimated from the standard deviation of the linear predictor 
@@ -50,6 +49,9 @@
 #' curve. \emph{Radiology}. 1982; 143(1):29--36.
 #' \item Newcombe RG. Confidence intervals for an effect size measure based on the Mann-Whitney statistic. 
 #' Part 2: asymptotic methods and evaluation. \emph{Stat Med}. 2006; 25(4):559--73.
+#' \item Snell KI, Ensor J, Debray TP, Moons KG, Riley RD. Meta-analysis of prediction model performance across 
+#' multiple studies: Which scale helps ensure between-study normality for the C -statistic and calibration measures? 
+#' \emph{Statistical Methods in Medical Research}. 2017. 
 #' \item White IR, Rapsomaniki E, the Emerging Risk Factors Collaboration. Covariate-adjusted measures of discrimination 
 #' for survival data. \emph{Biom J}. 2015;57(4):592--613. 
 #' }
@@ -71,78 +73,115 @@
 #' ######### Validation of prediction models with a binary outcome #########
 #' data(EuroSCORE)
 #' 
-#' # Calculate the logit c-statistic and its standard error
-#' with(EuroSCORE, ccalc(cstat=c.index, cstat.se=se.c.index, 
-#'                       cstat.95CI=cbind(c.index.95CIl,c.index.95CIu), 
-#'                       N=n, O=n.events, slab=Study))
-#'   
 #' # Calculate the c-statistic and its standard error
-#' with(EuroSCORE, ccalc(cstat=c.index, cstat.se=se.c.index, 
-#'                       cstat.95CI=cbind(c.index.95CIl,c.index.95CIu), 
-#'                       N=n, O=n.events, slab=Study, pars=list(model="normal/identity")))
+#' ccalc(cstat=c.index, cstat.se=se.c.index, cstat.cilb=c.index.95CIl, cstat.ciub=c.index.95CIu, 
+#'       N=n, O=n.events, data=EuroSCORE, slab=Study)
+#'   
+#' # Calculate the logit c-statistic and its standard error
+#' ccalc(cstat=c.index, cstat.se=se.c.index, cstat.cilb=c.index.95CIl, cstat.ciub=c.index.95CIu, 
+#'       N=n, O=n.events, data=EuroSCORE, slab=Study, pars=list(model="normal/logit"))
 #'                                                             
-#' @keywords meta-analysis discrimination  calibration extraction
+#' @keywords meta-analysis discrimination concordance statistic performance
 #' 
 #' @author Thomas Debray <thomas.debray@gmail.com>
 #' 
 #' @export
 #' 
-ccalc <- function(cstat, cstat.se, cstat.95CI, sd.LP, N, O, E, Po, Pe, slab, pars, ...) {
+ccalc <- function(cstat, cstat.se, cstat.cilb, cstat.ciub, sd.LP, N, O, Po, data, slab, pars, ...) {
   pars.default <- list(level = 0.95,
                        method.restore.c.se="Newcombe.4",
-                       model = "normal/logit") #Alternative: "normal/identity"
+                       model = "normal/identity") #Alternative: "normal/logit"
   
+  #######################################################################################
+  # Set default parameters
+  #######################################################################################
   if (!missing(pars)) {
     for (i in 1:length(pars)) {
       element <- ls(pars)[i]
       pars.default[[element]] <- pars[[element]]
     }
   }
-
+  
+  ### check if data argument has been specified
+  if (missing(data))
+    data <- NULL
+  
+  ### need this at the end to check if append=TRUE can actually be done
+  no.data <- is.null(data)
+  
+  ### check if data argument has been specified
+  if (is.null(data)) {
+    data <- sys.frame(sys.parent())
+  } else {
+    if (!is.data.frame(data))
+      data <- data.frame(data)
+  }
+  
+  #######################################################################################
+  # Retrieve all data
+  #######################################################################################
+  mf <- match.call()
+  
+  mf.slab       <- mf[[match("slab",   names(mf))]]
+  slab          <- eval(mf.slab,   data, enclos=sys.frame(sys.parent()))
+  mf.cstat      <- mf[[match("cstat", names(mf))]]
+  cstat         <- eval(mf.cstat, data, enclos=sys.frame(sys.parent()))
+  mf.cstat.se   <- mf[[match("cstat.se", names(mf))]]
+  cstat.se      <- eval(mf.cstat.se, data, enclos=sys.frame(sys.parent()))
+  mf.cstat.cilb <- mf[[match("cstat.cilb", names(mf))]]
+  cstat.cilb    <- eval(mf.cstat.cilb, data, enclos=sys.frame(sys.parent()))
+  mf.cstat.ciub <- mf[[match("cstat.ciub", names(mf))]]
+  cstat.ciub    <- eval(mf.cstat.ciub, data, enclos=sys.frame(sys.parent()))
+  mf.sd.LP      <- mf[[match("sd.LP", names(mf))]]
+  sd.LP         <- eval(mf.sd.LP, data, enclos=sys.frame(sys.parent()))
+  mf.N          <- mf[[match("N", names(mf))]]
+  N             <- eval(mf.N, data, enclos=sys.frame(sys.parent()))
+  mf.O          <- mf[[match("O", names(mf))]]
+  O             <- eval(mf.O, data, enclos=sys.frame(sys.parent()))
+  mf.Po         <- mf[[match("Po", names(mf))]]
+  Po           <- eval(mf.Po, data, enclos=sys.frame(sys.parent()))
   
   #######################################################################################
   # Count number of studies
   #######################################################################################
   k <- 0
   
-  if (!missing(cstat)) {
+  if (!no.data) {
+    k <- dim(data)[1]
+  } else if (!is.null(cstat)) {
     k <- length(cstat)
-  } else if (!missing(cstat.se)) {
+  } else if (!is.null(cstat.se)) {
     k <- length(cstat.se)
-  } else if (!missing(cstat.95CI)) {
-    k <- dim(cstat.95CI)[2]
-  } else if (!missing(sd.LP)) {
+  } else if (!is.null(cstat.cilb)) {
+    k <- length(cstat.cilb)
+  } else if (!is.null(cstat.ciub)) {
+    k <- length(cstat.ciub)
+  } else if (!is.null(sd.LP)) {
     k <- length(sd.LP)
   }
   
   #######################################################################################
   # Prepare data
   #######################################################################################
-  if (missing(O)) {
+  if (is.null(O)) {
     O <- rep(NA, length=k)
   }
-  if (missing(Po)) {
+  if (is.null(Po)) {
     Po <- rep(NA, length=k)
   }
-  if (missing(N)) {
+  if (is.null(N)) {
     N <- rep(NA, length=k)
   }
-  
-  if (missing(cstat.95CI)) {
-    cstat.95CI <- array(NA, dim=c(k,2))
+  if (is.null(cstat.cilb)) {
+    cstat.cilb <- rep(NA, length=k)
   }
-  if (is.null(dim(cstat.95CI))) {
-    warning("Invalid dimension for 'cstat.95CI', argument ignored.")
-    cstat.95CI <- array(NA, dim=c(k,2))
+  if (is.null(cstat.ciub)) {
+    cstat.ciub <- rep(NA, length=k)
   }
-  if (dim(cstat.95CI)[2] != 2 | dim(cstat.95CI)[1] != k) {
-    warning("Invalid dimension for 'cstat.95CI', argument ignored.")
-    cstat.95CI <- array(NA, dim=c(k,2))
-  }
-  if (missing(cstat.se)) {
+  if (is.null(cstat.se)) {
     cstat.se <- array(NA, dim=k)
   }
-  if (missing(sd.LP)) {
+  if (is.null(sd.LP)) {
     sd.LP <- rep(NA, k)
   }
     
@@ -169,18 +208,20 @@ ccalc <- function(cstat, cstat.se, cstat.95CI, sd.LP, N, O, E, Po, Pe, slab, par
   # Define theta
   if (pars.default$model == "normal/identity") {
     if (pars.default$level==0.95) {
-      theta.cil <- cstat.95CI[,1]
-      theta.ciu <- cstat.95CI[,2]
+      theta.cil <- cstat.cilb
+      theta.ciu <- cstat.ciub
     }
   } else if (pars.default$model == "normal/logit") {
     if (pars.default$level==0.95) {
-      theta.cil <- logit(cstat.95CI[,1])
-      theta.ciu <- logit(cstat.95CI[,2])
+      theta.cil <- logit(cstat.cilb)
+      theta.ciu <- logit(cstat.ciub)
     }
   } else {
     stop("Supplied model for transforming the c-statistic is not supported!")
   }
-    
+  
+  cstat.95CI <- cbind(cstat.cilb, cstat.ciub)
+  
     
     # Calculate all the possible variations of var(theta)
     tv.method <- c("Standard Error", "Confidence Interval", pars.default$method.restore.c.se, pars.default$method.restore.c.se)

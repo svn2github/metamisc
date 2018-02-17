@@ -285,6 +285,9 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.
   #######################################################################################
   # Prepare data
   #######################################################################################
+  if (missing(cstat.se)) {
+    cstat.se <- rep(NA, length=k)
+  }
   if (missing(O)) {
     O <- rep(NA, length=k)
   }
@@ -293,6 +296,9 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.
   }
   if (missing(N)) {
     N <- rep(NA, length=k)
+  }
+  if (missing(sd.LP)) {
+    sd.LP <- rep(NA, length=k)
   }
   
   #######################################################################################
@@ -329,8 +335,9 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.
     pars.cstat <- list(level=pars.default$level, 
                        method.restore.c.se=pars.default$method.restore.c.se,
                        model=out$model)
-    ds <- ccalc(cstat=cstat, cstat.se=cstat.se, cstat.95CI=cstat.95CI, sd.LP=sd.LP, 
-                N=N, O=O, E=E, Po=Po, Pe=Pe, slab=out$slab, pars=pars.cstat) 
+    ds <- ccalc(cstat=cstat, cstat.se=cstat.se, cstat.CI.lower=cstat.95CI[,1],
+                cstat.CI.upper=cstat.95CI[,2], sd.LP=sd.LP, 
+                N=N, O=O, Po=Po, slab=out$slab, pars=pars.cstat) 
     
     
     if (method != "BAYES") { # Use of rma

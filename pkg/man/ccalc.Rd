@@ -4,36 +4,35 @@
 \alias{ccalc}
 \title{Calculate the concordance statistic}
 \usage{
-ccalc(cstat, cstat.se, cstat.95CI, sd.LP, N, O, E, Po, Pe, slab, pars, ...)
+ccalc(cstat, cstat.se, cstat.cilb, cstat.ciub, sd.LP, N, O, Po, data, slab,
+  pars, ...)
 }
 \arguments{
-\item{cstat}{Optional vector with the estimated c-statistic for each valiation}
+\item{cstat}{vector to specify the estimated c-statistics.}
 
-\item{cstat.se}{Optional vector with the standard error of the estimated c-statistics}
+\item{cstat.se}{vector to specify the corresponding standard errors}
 
-\item{cstat.95CI}{Optional 2-dimensional array with the lower (first column) and upper (second column) boundary 
-of the 95\% confidence interval of the estimated c-statistics}
+\item{cstat.cilb}{vector to specify the lower limit of the 95\% confidence interval.}
 
-\item{sd.LP}{Optional vector with the standard deviation of the linear predictor (prognostic index) for each validation}
+\item{cstat.ciub}{vector to specify the upper limit of the 95\% confidence interval.}
 
-\item{N}{Optional vector with the total number of participants for each valiation}
+\item{sd.LP}{vector to specify the standard deviations of the linear predictor (prognostic index)}
 
-\item{O}{Optional vector with the total number of observed events for each valiation
-(if specified, during time \code{t.val})}
+\item{N}{vector to specify the validation study sizes.}
 
-\item{E}{Optional vector with the total number of expected events for each valiation 
-(if specified, during time \code{t.val})}
+\item{O}{vector to specify the total number of observed events.}
 
-\item{Po}{Optional vector with the (cumulative) observed event probability for each valiation}
+\item{Po}{vector to specify the observed event probabilities.}
 
-\item{Pe}{Optional vector with the (cumulative) expected event probability for each validation}
+\item{data}{optional data frame containing the variables given to the arguments above.}
 
-\item{slab}{Optional vector with study names}
+\item{slab}{optional vector with labels for the studies.}
 
-\item{pars}{A list with additional arguments: significance level of the confidence intervals (default: \code{level=0.95}), 
+\item{pars}{optional list to specify additional arguments: 
+significance level of the confidence interval (default: \code{level=0.95}), 
 method for calculating the standard error of the c-statistic 
-(default: \code{method.restore.c.se="Newcombe.4"}), and transformation for the c-statistic
-(default: \code{model = "normal/logit"}, which corresponds to the logit transformation). see "Details" for more information.}
+(default: \code{method.restore.c.se="Newcombe.4"}). It is possible to apply the logit transformation to 
+the c-statistics by setting \code{model = "normal/logit"}.}
 
 \item{\ldots}{Additional arguments.}
 }
@@ -58,8 +57,9 @@ The c-statistic is a measure of discrimination, and indicates the ability of a p
 distinguish between patients developing and not developing the outcome. The c-statistic typically ranges 
 from 0.5 (no discriminative ability) to 1 (perfect discriminative ability). 
 
-By default, the logit transformation is applied to the c-statistic. If no transformation is needed, 
-simply set \code{pars$model} equal to \code{"normal/identity"}.
+When performing a meta-analysis of the c-statistic, it is generally recommended to apply the logit transformation 
+(Debray et al., 2017; Snell et al., 2017). This can be achieved by specifying \code{model} in the additional arguments. 
+An example is given below.
 
 \subsection{Restoring the c-statistic}{
 For studies where the c-statistic is missing, it is estimated from the standard deviation of the linear predictor 
@@ -78,15 +78,13 @@ proposed by Hanley and McNeil, as specified in \code{pars$method.restore.c.se}. 
 ######### Validation of prediction models with a binary outcome #########
 data(EuroSCORE)
 
-# Calculate the logit c-statistic and its standard error
-with(EuroSCORE, ccalc(cstat=c.index, cstat.se=se.c.index, 
-                      cstat.95CI=cbind(c.index.95CIl,c.index.95CIu), 
-                      N=n, O=n.events, slab=Study))
-  
 # Calculate the c-statistic and its standard error
-with(EuroSCORE, ccalc(cstat=c.index, cstat.se=se.c.index, 
-                      cstat.95CI=cbind(c.index.95CIl,c.index.95CIu), 
-                      N=n, O=n.events, slab=Study, pars=list(model="normal/identity")))
+ccalc(cstat=c.index, cstat.se=se.c.index, cstat.cilb=c.index.95CIl, cstat.ciub=c.index.95CIu, 
+      N=n, O=n.events, data=EuroSCORE, slab=Study)
+  
+# Calculate the logit c-statistic and its standard error
+ccalc(cstat=c.index, cstat.se=se.c.index, cstat.cilb=c.index.95CIl, cstat.ciub=c.index.95CIu, 
+      N=n, O=n.events, data=EuroSCORE, slab=Study, pars=list(model="normal/logit"))
                                                             
 }
 \references{
@@ -97,6 +95,9 @@ and meta-analysis of prediction model performance. \emph{BMJ}. 2017; 356:i6460.
 curve. \emph{Radiology}. 1982; 143(1):29--36.
 \item Newcombe RG. Confidence intervals for an effect size measure based on the Mann-Whitney statistic. 
 Part 2: asymptotic methods and evaluation. \emph{Stat Med}. 2006; 25(4):559--73.
+\item Snell KI, Ensor J, Debray TP, Moons KG, Riley RD. Meta-analysis of prediction model performance across 
+multiple studies: Which scale helps ensure between-study normality for the C -statistic and calibration measures? 
+\emph{Statistical Methods in Medical Research}. 2017. 
 \item White IR, Rapsomaniki E, the Emerging Risk Factors Collaboration. Covariate-adjusted measures of discrimination 
 for survival data. \emph{Biom J}. 2015;57(4):592--613. 
 }
