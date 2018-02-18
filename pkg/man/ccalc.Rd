@@ -5,7 +5,7 @@
 \title{Calculate the concordance statistic}
 \usage{
 ccalc(cstat, cstat.se, cstat.cilb, cstat.ciub, sd.LP, N, O, Po, data, slab,
-  pars, ...)
+  g = NULL, pars, ...)
 }
 \arguments{
 \item{cstat}{vector to specify the estimated c-statistics.}
@@ -28,11 +28,12 @@ ccalc(cstat, cstat.se, cstat.cilb, cstat.ciub, sd.LP, N, O, Po, data, slab,
 
 \item{slab}{optional vector with labels for the studies.}
 
+\item{g}{a quoted string that is the function to transform estimates of the c-statistic; see the details below.}
+
 \item{pars}{optional list to specify additional arguments: 
 significance level of the confidence interval (default: \code{level=0.95}), 
 method for calculating the standard error of the c-statistic 
-(default: \code{method.restore.c.se="Newcombe.4"}). It is possible to apply the logit transformation to 
-the c-statistics by setting \code{model = "normal/logit"}.}
+(default: \code{method.restore.c.se="Newcombe.4"}).}
 
 \item{\ldots}{Additional arguments.}
 }
@@ -58,8 +59,8 @@ distinguish between patients developing and not developing the outcome. The c-st
 from 0.5 (no discriminative ability) to 1 (perfect discriminative ability). 
 
 When performing a meta-analysis of the c-statistic, it is generally recommended to apply the logit transformation 
-(Debray et al., 2017; Snell et al., 2017). This can be achieved by specifying \code{model} in the additional arguments. 
-An example is given below.
+(Debray et al., 2017; Snell et al., 2017). This can be achieved by specifying \code{g="log(cstat/(1-cstat))"}. Other
+transformations can be specified in a similar manner. 
 
 \subsection{Restoring the c-statistic}{
 For studies where the c-statistic is missing, it is estimated from the standard deviation of the linear predictor 
@@ -84,7 +85,7 @@ ccalc(cstat=c.index, cstat.se=se.c.index, cstat.cilb=c.index.95CIl, cstat.ciub=c
   
 # Calculate the logit c-statistic and its standard error
 ccalc(cstat=c.index, cstat.se=se.c.index, cstat.cilb=c.index.95CIl, cstat.ciub=c.index.95CIu, 
-      N=n, O=n.events, data=EuroSCORE, slab=Study, pars=list(model="normal/logit"))
+      N=n, O=n.events, data=EuroSCORE, slab=Study, g="log(cstat/(1-cstat))")
                                                             
 }
 \references{
@@ -105,7 +106,8 @@ for survival data. \emph{Biom J}. 2015;57(4):592--613.
 \author{
 Thomas Debray <thomas.debray@gmail.com>
 }
-\keyword{calibration}
+\keyword{concordance}
 \keyword{discrimination}
-\keyword{extraction}
 \keyword{meta-analysis}
+\keyword{performance}
+\keyword{statistic}

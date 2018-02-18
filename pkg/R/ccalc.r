@@ -12,11 +12,11 @@
 #' @param Po vector to specify the observed event probabilities.
 #' @param data optional data frame containing the variables given to the arguments above.
 #' @param slab optional vector with labels for the studies.
+#' @param g a quoted string that is the function to transform estimates of the c-statistic; see the details below.
 #' @param pars optional list to specify additional arguments: 
 #' significance level of the confidence interval (default: \code{level=0.95}), 
 #' method for calculating the standard error of the c-statistic 
-#' (default: \code{method.restore.c.se="Newcombe.4"}). It is possible to apply the logit transformation to 
-#' the c-statistics by setting \code{model = "normal/logit"}.
+#' (default: \code{method.restore.c.se="Newcombe.4"}). 
 #' @param \ldots Additional arguments.
 #' 
 #' @details 
@@ -25,8 +25,8 @@
 #' from 0.5 (no discriminative ability) to 1 (perfect discriminative ability). 
 #' 
 #' When performing a meta-analysis of the c-statistic, it is generally recommended to apply the logit transformation 
-#' (Debray et al., 2017; Snell et al., 2017). This can be achieved by specifying \code{model} in the additional arguments. 
-#' An example is given below.
+#' (Debray et al., 2017; Snell et al., 2017). This can be achieved by specifying \code{g="log(cstat/(1-cstat))"}. Other
+#' transformations can be specified in a similar manner. 
 #' 
 #' \subsection{Restoring the c-statistic}{
 #' For studies where the c-statistic is missing, it is estimated from the standard deviation of the linear predictor 
@@ -79,18 +79,18 @@
 #'   
 #' # Calculate the logit c-statistic and its standard error
 #' ccalc(cstat=c.index, cstat.se=se.c.index, cstat.cilb=c.index.95CIl, cstat.ciub=c.index.95CIu, 
-#'       N=n, O=n.events, data=EuroSCORE, slab=Study, pars=list(model="normal/logit"))
+#'       N=n, O=n.events, data=EuroSCORE, slab=Study, g="log(cstat/(1-cstat))")
 #'                                                             
 #' @keywords meta-analysis discrimination concordance statistic performance
 #' 
 #' @author Thomas Debray <thomas.debray@gmail.com>
 #' 
+#' @importFrom car deltaMethod
 #' @export
 #' 
-ccalc <- function(cstat, cstat.se, cstat.cilb, cstat.ciub, sd.LP, N, O, Po, data, slab, pars, ...) {
+ccalc <- function(cstat, cstat.se, cstat.cilb, cstat.ciub, sd.LP, N, O, Po, data, slab, g=NULL, pars, ...) {
   pars.default <- list(level = 0.95,
-                       method.restore.c.se="Newcombe.4",
-                       model = "normal/identity") #Alternative: "normal/logit"
+                       method.restore.c.se="Newcombe.4") 
   
   #######################################################################################
   # Set default parameters
@@ -139,7 +139,7 @@ ccalc <- function(cstat, cstat.se, cstat.cilb, cstat.ciub, sd.LP, N, O, Po, data
   mf.O          <- mf[[match("O", names(mf))]]
   O             <- eval(mf.O, data, enclos=sys.frame(sys.parent()))
   mf.Po         <- mf[[match("Po", names(mf))]]
-  Po           <- eval(mf.Po, data, enclos=sys.frame(sys.parent()))
+  Po            <- eval(mf.Po, data, enclos=sys.frame(sys.parent()))
   
   #######################################################################################
   # Count number of studies
@@ -163,27 +163,13 @@ ccalc <- function(cstat, cstat.se, cstat.cilb, cstat.ciub, sd.LP, N, O, Po, data
   #######################################################################################
   # Prepare data
   #######################################################################################
-  if (is.null(O)) {
-    O <- rep(NA, length=k)
-  }
-  if (is.null(Po)) {
-    Po <- rep(NA, length=k)
-  }
-  if (is.null(N)) {
-    N <- rep(NA, length=k)
-  }
-  if (is.null(cstat.cilb)) {
-    cstat.cilb <- rep(NA, length=k)
-  }
-  if (is.null(cstat.ciub)) {
-    cstat.ciub <- rep(NA, length=k)
-  }
-  if (is.null(cstat.se)) {
-    cstat.se <- array(NA, dim=k)
-  }
-  if (is.null(sd.LP)) {
-    sd.LP <- rep(NA, k)
-  }
+  if (is.null(O))  O <- rep(NA, length=k)
+  if (is.null(Po)) Po <- rep(NA, length=k)
+  if (is.null(N))  N <- rep(NA, length=k)
+  if (is.null(cstat.cilb)) cstat.cilb <- rep(NA, length=k)
+  if (is.null(cstat.ciub)) cstat.ciub <- rep(NA, length=k)
+  if (is.null(cstat.se)) cstat.se <- array(NA, dim=k)
+  if (is.null(sd.LP)) sd.LP <- rep(NA, k)
     
   # Calculate O and N from other information if possible
   O <- ifelse(is.na(O), Po*N, O)
@@ -193,8 +179,10 @@ ccalc <- function(cstat, cstat.se, cstat.cilb, cstat.ciub, sd.LP, N, O, Po, data
   
   # Restore c-statistic
   te.method <- c("c-statistic", "std.dev(LP)")
-  te.orig  <- restore.c.c(cstat, model=pars.default$model)
-  te.white <- restore.c.sdPI(sd.LP, model=pars.default$model)
+  te.orig   <- calculate.cstat.theta(cstat=cstat, g=g)
+  te.white  <- calculate.cstat.sdPI(sdPI=sd.LP, g=g)
+  #te.orig  <- restore.c.c(cstat, model=pars.default$model)
+  #te.white <- restore.c.sdPI(sd.LP, model=pars.default$model)
   
   te.dat <- cbind(te.orig, te.white)
     
@@ -206,31 +194,30 @@ ccalc <- function(cstat, cstat.se, cstat.cilb, cstat.ciub, sd.LP, N, O, Po, data
   theta.source <-  te.method[sel.cstat]
   
   # Define theta
-  if (pars.default$model == "normal/identity") {
+  if (is.null(g)) {
     if (pars.default$level==0.95) {
       theta.cil <- cstat.cilb
       theta.ciu <- cstat.ciub
     }
-  } else if (pars.default$model == "normal/logit") {
-    if (pars.default$level==0.95) {
-      theta.cil <- logit(cstat.cilb)
-      theta.ciu <- logit(cstat.ciub)
-    }
   } else {
-    stop("Supplied model for transforming the c-statistic is not supported!")
-  }
-  
-  cstat.95CI <- cbind(cstat.cilb, cstat.ciub)
+    if (pars.default$level==0.95) {
+      theta.cil <- eval(parse(text=g), list(cstat = cstat.cilb))
+      theta.ciu <- eval(parse(text=g), list(cstat = cstat.ciub))
+    }
+  } 
   
     
     # Calculate all the possible variations of var(theta)
     tv.method <- c("Standard Error", "Confidence Interval", pars.default$method.restore.c.se, pars.default$method.restore.c.se)
-    tv.se     <- restore.c.var.se(c.se=cstat.se, cstat=cstat, model=pars.default$model) # Derived from standard error
-    tv.ci     <- restore.c.var.ci(ci=cstat.95CI, level=0.95, model=pars.default$model) # Derived from 95% confidence interval
-    tv.hanley <- restore.c.var.hanley(cstat=cstat, N.subjects=N, N.events=O, restore.method=pars.default$method.restore.c.se,
-                                      model=pars.default$model)
+    tv.se     <- restore.c.var.se(cstat=cstat, c.se=cstat.se, g=g) # Derived from standard error
+    #tv.se     <- restore.c.var.se.depr(c.se=cstat.se, cstat=cstat, model=pars.default$model) # Derived from standard error
+    tv.ci     <- restore.c.var.ci(cil=cstat.cilb, ciu=cstat.ciub, level=0.95, g=g) # Derived from 95% confidence interval
+    #tv.ci     <- restore.c.var.ci.depr(ci=cstat.95CI, level=0.95, model=pars.default$model) # Derived from 95% confidence interval
+    tv.hanley <- restore.c.var.hanley(cstat=cstat, N.subjects=N, N.events=O, restore.method=pars.default$method.restore.c.se, g=g)
+    #tv.hanley <- restore.c.var.hanley.depr(cstat=cstat, N.subjects=N, N.events=O, restore.method=pars.default$method.restore.c.se,
+    #                                  model=pars.default$model)
     tv.hanley2 <- restore.c.var.hanley2(sd.LP=sd.LP, N.subjects=N, N.events=O, restore.method=pars.default$method.restore.c.se,
-                                        model=pars.default$model)
+                                        g=g)
     
     # Save all estimated variances. The order of the columns indicates the priority             
     dat <-cbind(tv.se, tv.ci, tv.hanley, tv.hanley2)  

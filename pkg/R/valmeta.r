@@ -331,13 +331,19 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.
   #######################################################################################
   if (measure=="cstat") {
     out$model <- pars.default$model.cstat
+    
+    if (out$model == "normal/identity") {
+      g <- NULL
+    } else if (out$model=="normal/logit") {
+      g <- "log(cstat/(1-cstat))"
+    }
       
     pars.cstat <- list(level=pars.default$level, 
-                       method.restore.c.se=pars.default$method.restore.c.se,
-                       model=out$model)
+                       method.restore.c.se=pars.default$method.restore.c.se)
+    
     ds <- ccalc(cstat=cstat, cstat.se=cstat.se, cstat.CI.lower=cstat.95CI[,1],
                 cstat.CI.upper=cstat.95CI[,2], sd.LP=sd.LP, 
-                N=N, O=O, Po=Po, slab=out$slab, pars=pars.cstat) 
+                N=N, O=O, Po=Po, slab=out$slab, g=g, pars=pars.cstat) 
     
     
     if (method != "BAYES") { # Use of rma

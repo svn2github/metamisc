@@ -1,11 +1,11 @@
-#Update SE(c.index) using Method 4 of Newcombe
-restore.c.var.hanley <- function(cstat, N.subjects, N.events, restore.method="Newcombe.4", model="normal/logit") {
+restore.c.var.hanley <- function(cstat, N.subjects, N.events, restore.method="Newcombe.4", g=NULL) {
+  
+  fHanley <- function(cstat, nstar, mstar, m, n) {
+    ((cstat*(1-cstat)*(1+nstar*(1-cstat)/(2-cstat) + mstar*cstat/(1+cstat)))/(m*n))
+  }
+  
   n <- N.events #Number of events
   m <- N.subjects-N.events #Number of non-events
-  
-  if (missing(restore.method)) {
-    restore.method <- "Newcombe.4"
-  }
   
   if (restore.method=="Hanley" | restore.method=="Newcombe.2") {
     mstar <- m-1
@@ -16,52 +16,81 @@ restore.c.var.hanley <- function(cstat, N.subjects, N.events, restore.method="Ne
     stop ("Method not implemented yet!")
   }
   
-  if (model=="normal/logit") {
-    out <- (((1+nstar*(1-cstat)/(2-cstat) + mstar*cstat/(1+cstat)))/(m*n*cstat*(1-cstat)))
-  } else if (model=="normal/identity") {
-    out <- ((cstat*(1-cstat)*(1+nstar*(1-cstat)/(2-cstat) + mstar*cstat/(1+cstat)))/(m*n))
-  } else {
-    stop ("Meta-analysis model not implemented!")
+  # Crude estimate
+  cstat.var <- fHanley(cstat=cstat, m=m, n=n, mstar=mstar, nstar=nstar)
+  if (is.null(g)) {
+    return(cstat.var)
   }
   
-  return(out)
+  # Apply delta method if a transformation for c is defined
+  ti <- rep(NA, length(cstat))
+  for (i in 1:length(cstat)) {
+    ci <- cstat[i]
+    vi <- cstat.var[i]
+    names(ci) <- names(vi) <- "cstat"
+    ti[i] <- as.numeric((deltaMethod(object=ci, g=g, vcov.=vi))["SE"])**2
+  }
+  return(ti)
 }
 
-restore.c.var.hanley2 <- function(sd.LP, N.subjects, N.events, restore.method="Newcombe.4", model="normal/logit") {
-  cstat <- restore.c.sdPI(sd.LP, model=model)
-  
-  return(restore.c.var.hanley(cstat=cstat, N.subjects=N.subjects, N.events=N.events, restore.method=restore.method, model=model))
-}
 
-restore.c.var.se <- function(c.se, cstat, model="normal/logit") {
-  if (model=="normal/identity") {
+restore.c.var.se <- function(cstat, c.se, g=NULL) {
+  if(is.null(g)) {
     return (c.se**2)
   }
-  if (model=="normal/logit") {
-    return((c.se/(cstat*(1-cstat)))**2)
+  
+  ti <- rep(NA, length(cstat))
+  
+  for (i in 1:length(cstat)) {
+    ci <- cstat[i]
+    vi <- c.se[i]**2
+    names(ci) <- names(vi) <- "cstat"
+    ti[i] <- as.numeric((deltaMethod(object=ci, g=g, vcov.=vi))["SE"])**2
   }
-  stop("Invalid link function!")
+  return(ti)
 }
 
-restore.c.var.ci <- function(ci, level=0.95, model="normal/logit") {
-  if (length(dim(ci))>=2) {
-    upper <- ci[,2]
-    lower <- ci[,1]
-  } else {
-    upper <- ci[2]
-    lower <- ci[1]
+restore.c.var.hanley2<- function(sd.LP, N.subjects, N.events, restore.method="Newcombe.4", g=NULL) {
+  cstat <- calculate.cstat.sdPI(sd.LP, g=g)
+  return(restore.c.var.hanley(cstat=cstat, N.subjects=N.subjects, N.events=N.events, restore.method=restore.method, g=g))
+}
+
+restore.c.var.se <- function(cstat, c.se, g=NULL) {
+  if(is.null(g)) {
+    return (c.se**2)
   }
   
-  if (model=="normal/identity") {
-    return(((upper - lower)/(2*qnorm((1-level)/2)))**2)
+  ti <- rep(NA, length(cstat))
+  
+  for (i in 1:length(cstat)) {
+    ci <- cstat[i]
+    vi <- c.se[i]**2
+    names(ci) <- names(vi) <- "cstat"
+    ti[i] <- as.numeric((deltaMethod(object=ci, g=g, vcov.=vi))["SE"])**2
   }
-  if (model=="normal/logit") {
-    return(((logit(upper) - logit(lower))/(2*qnorm((1-level)/2)))**2)
-  }
-  stop("Invalid link function!")
+  return(ti)
 }
 
-restore.c.sdPI <- function (sdPI, model="normal/logit") {
+restore.c.var.ci <- function(cil, ciu, level=0.95, g=NULL) {
+  if(!is.null(g)) {
+    lower <- eval(parse(text=g), list(cstat = cil))
+    upper <- eval(parse(text=g), list(cstat = ciu))
+  } else {
+    lower <- cil
+    upper <- ciu
+  }
+  
+  return(((upper - lower)/(2*qnorm((1-level)/2)))**2)
+}
+
+calculate.cstat.theta <- function(cstat, g=NULL) {
+  if(is.null(g)) {
+    return(cstat)
+  }
+  return(eval(parse(text=g), list(cstat = cstat)))
+}
+
+calculate.cstat.sdPI <- function (sdPI, g=NULL) {
   myfun <- function(x, sd.lp) {
     inv.logit(sqrt(2)*sd.lp*x)*dnorm(x, mean=0, sd=1)
   }
@@ -69,23 +98,10 @@ restore.c.sdPI <- function (sdPI, model="normal/logit") {
   for (i in 1:length(sdPI)) {
     cstat[i] <- ifelse(is.na(sdPI[i]), NA, 2*(integrate(myfun, lower=0, upper=+Inf, sd.lp=sdPI[i]))$value)
   }
-  if (model=="normal/logit") {
-    return (log(cstat/(1-cstat)))
-  }
-  if (model=="normal/identity") {
+  if(is.null(g)) {
     return(cstat)
   }
-  stop("Invalid model!")
-}
-
-restore.c.c <- function(cstat, model="normal/logit") {
-  if (model=="normal/logit") {
-    return (log(cstat/(1-cstat)))
-  }
-  if (model=="normal/identity") {
-    return(cstat)
-  }
-  stop("Invalid model!")
+  return(eval(parse(text=g), list(cstat = cstat)))
 }
 
 # Calculate OE and its SE from O, E and N
