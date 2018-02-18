@@ -215,7 +215,7 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.
                        hp.tau.dist = "dunif", 
                        hp.tau.df = 3, 
                        correction = 0.5,
-                       method.restore.c.se="Newcombe.4",
+                       method.restore.c.se=4,
                        model.cstat = "normal/logit", #Alternative: "normal/identity"
                        model.oe = "normal/log") #Alternative: "poisson/log" or "normal/identity"
   
@@ -338,12 +338,10 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.
       g <- "log(cstat/(1-cstat))"
     }
       
-    pars.cstat <- list(level=pars.default$level, 
-                       method.restore.c.se=pars.default$method.restore.c.se)
-    
     ds <- ccalc(cstat=cstat, cstat.se=cstat.se, cstat.CI.lower=cstat.95CI[,1],
                 cstat.CI.upper=cstat.95CI[,2], sd.LP=sd.LP, 
-                N=N, O=O, Po=Po, slab=out$slab, g=g, pars=pars.cstat) 
+                N=N, O=O, Po=Po, slab=out$slab, g=g, level=pars.default$level, 
+                approx.se.method=pars.default$method.restore.c.se) 
     
     
     if (method != "BAYES") { # Use of rma
@@ -819,14 +817,6 @@ print.valmeta <- function(x, ...) {
   
   cat("\n")
   cat(paste("Number of studies included: ", x$numstudies))
-  if (x$measure=="cstat") {
-    se.sources <- c("Hanley","Newcombe.2","Newcombe.4") 
-    num.estimated.var.c <- sum(x$data$theta.se.source %in% se.sources)
-    if (num.estimated.var.c > 0) {
-      restore.method <- (se.sources[se.sources %in% x$data$theta.se.source])[1]
-      cat(paste("\nNote: For ", num.estimated.var.c, " validation(s), the standard error of the concordance statistic was estimated using method '", restore.method, "'.\n", sep=""))
-    }
-  }
 }
 
 #' Forest Plots

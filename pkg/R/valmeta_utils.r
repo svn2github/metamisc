@@ -1,4 +1,4 @@
-restore.c.var.hanley <- function(cstat, N.subjects, N.events, restore.method="Newcombe.4", g=NULL) {
+restore.c.var.hanley <- function(cstat, N.subjects, N.events, restore.method=4, g=NULL) {
   
   fHanley <- function(cstat, nstar, mstar, m, n) {
     ((cstat*(1-cstat)*(1+nstar*(1-cstat)/(2-cstat) + mstar*cstat/(1+cstat)))/(m*n))
@@ -7,10 +7,10 @@ restore.c.var.hanley <- function(cstat, N.subjects, N.events, restore.method="Ne
   n <- N.events #Number of events
   m <- N.subjects-N.events #Number of non-events
   
-  if (restore.method=="Hanley" | restore.method=="Newcombe.2") {
+  if (restore.method==2) {
     mstar <- m-1
     nstar <- n-1
-  } else if (restore.method=="Newcombe.4") {
+  } else if (restore.method==4) {
     mstar <- nstar <- N.subjects/2-1
   } else {
     stop ("Method not implemented yet!")
@@ -50,7 +50,7 @@ restore.c.var.se <- function(cstat, c.se, g=NULL) {
   return(ti)
 }
 
-restore.c.var.hanley2<- function(sd.LP, N.subjects, N.events, restore.method="Newcombe.4", g=NULL) {
+restore.c.var.hanley2<- function(sd.LP, N.subjects, N.events, restore.method=4, g=NULL) {
   cstat <- calculate.cstat.sdPI(sd.LP, g=g)
   return(restore.c.var.hanley(cstat=cstat, N.subjects=N.subjects, N.events=N.events, restore.method=restore.method, g=g))
 }

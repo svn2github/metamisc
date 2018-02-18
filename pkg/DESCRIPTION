@@ -9,6 +9,6 @@ Description: Meta-analysis of diagnostic and prognostic modeling studies. Summar
 Imports: metafor (>= 2.0.0), mvtnorm, ellipse, lme4, plyr, ggplot2, car
 Depends: R (>= 3.2.0), stats, graphics
 Suggests: runjags, rjags, testthat (>= 1.0.2)
-License: GPL-2
+License: GPL-3
 URL: http://r-forge.r-project.org/projects/metamisc/
 RoxygenNote: 6.0.1

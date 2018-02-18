@@ -3,22 +3,21 @@
 #' The function calculates the (logit transformed) concordance (c-) statistic with the corresponding sampling variance. 
 #' 
 #' @param cstat vector to specify the estimated c-statistics.
-#' @param cstat.se vector to specify the corresponding standard errors
+#' @param cstat.se vector to specify the corresponding standard errors.
 #' @param cstat.cilb vector to specify the lower limits of the confidence interval.
 #' @param cstat.ciub vector to specify the upper limits of the confidence interval.
 #' @param cstat.cilv vector to specify the levels of aformentioned confidence interval limits. 
 #' (default: 0.95, which corresponds to the 95\% confidence interval).
-#' @param sd.LP vector to specify the standard deviations of the linear predictor (prognostic index)
+#' @param sd.LP vector to specify the standard deviations of the linear predictor (prognostic index).
 #' @param N vector to specify the validation study sizes.
 #' @param O vector to specify the total number of observed events.
 #' @param Po vector to specify the observed event probabilities.
 #' @param data optional data frame containing the variables given to the arguments above.
 #' @param slab optional vector with labels for the studies.
 #' @param g a quoted string that is the function to transform estimates of the c-statistic; see the details below.
-#' @param pars optional list to specify additional arguments: 
-#' significance level of the confidence interval (default: \code{level=0.95}), 
-#' method for calculating the standard error of the c-statistic 
-#' (default: \code{method.restore.c.se="Newcombe.4"}). 
+#' @param level level for confidence interval, default \code{0.95}.
+#' @param approx.se.method integer specifying which method should be used for estimating the standard error of the
+#' c-statistic (Newcombe, 2006). So far, only method \code{2} and method \code{4} (default) have been implemented.
 #' @param \ldots Additional arguments.
 #' 
 #' @details 
@@ -38,9 +37,8 @@
 #' \subsection{Restoring the standard error of the c-statistic}{
 #' When missing, the standard error of the c-statistic can be estimated from the confidence interval. Alternatively, 
 #' the standard error can be approximated from a combination of the reported c-statistic, the total sample size and 
-#' the total number of events (Debray et al. 2017). This can be achieved by adopting (a modification of) the method 
-#' proposed by Hanley and McNeil, as specified in \code{pars$method.restore.c.se}. Possible options for this argument are
-#' \code{"Newcombe.2"} and \code{"Newcombe.4"}, which correspond to method 2 and, respectively, method 4 in Newcombe (2006).
+#' the total number of events (Newcombe, 2006). This can be achieved by adopting (a modification of) the method 
+#' proposed by Hanley and McNeil, as specified in \code{approx.se.method}.
 #' }
 #' 
 #' @references 
@@ -64,9 +62,9 @@
 ##'  \item{"theta"}{The (transformed) c-statistics. }
 ##'  \item{"theta.se"}{Standard errors of the (transformed) c-statistics.}
 ##'  \item{"theta.CIl"}{Lower confidence interval of the (transformed) c-statistics. The level is specified in
-##'  \code{pars$level}. Intervals are calculated on the same scale as \code{theta} by assuming a Normal distribution.}
+##'  \code{level}. Intervals are calculated on the same scale as \code{theta} by assuming a Normal distribution.}
 ##'  \item{"theta.CIu"}{Upper confidence interval of the (transformed) c-statistics. The level is specified in
-##'  \code{pars$level}. Intervals are calculated on the same scale as \code{theta} by assuming a Normal distribution.}
+##'  \code{level}. Intervals are calculated on the same scale as \code{theta} by assuming a Normal distribution.}
 ##'  \item{"theta.source"}{Method used for calculating the (transformed) c-statistic.}
 ##'  \item{"theta.se.source"}{Method used for calculating the standard error of the (transformed) c-statistic.}
 ##' }
@@ -90,19 +88,8 @@
 #' @importFrom car deltaMethod
 #' @export
 #' 
-ccalc <- function(cstat, cstat.se, cstat.cilb, cstat.ciub, cstat.cilv, sd.LP, N, O, Po, data, slab, g=NULL, pars, ...) {
-  pars.default <- list(level = 0.95,
-                       method.restore.c.se="Newcombe.4") 
-  
-  #######################################################################################
-  # Set default parameters
-  #######################################################################################
-  if (!missing(pars)) {
-    for (i in 1:length(pars)) {
-      element <- ls(pars)[i]
-      pars.default[[element]] <- pars[[element]]
-    }
-  }
+ccalc <- function(cstat, cstat.se, cstat.cilb, cstat.ciub, cstat.cilv, sd.LP, N, O, Po, data, slab, 
+                  g=NULL, level=0.95, approx.se.method=4, ...) {
   
   ### check if data argument has been specified
   if (missing(data))
@@ -187,6 +174,12 @@ ccalc <- function(cstat, cstat.se, cstat.cilb, cstat.ciub, cstat.cilv, sd.LP, N,
   if (sum(cstat.cilv>1 | cstat.cilv<0) > 0) {
     stop("Invalid level(s) specified for 'cstat.cilv'!")
   }
+  if (is.na(level) | level<0 | level>1) {
+    stop("Invalid value for 'level'!")
+  }
+  if (!approx.se.method %in% c(2,4)) {
+    stop("Invalid method for restoring the SE of the c-statistic!")
+  }
     
   # Calculate O and N from other information if possible
   O <- ifelse(is.na(O), Po*N, O)
@@ -210,19 +203,19 @@ ccalc <- function(cstat, cstat.se, cstat.cilb, cstat.ciub, cstat.cilv, sd.LP, N,
   
   # Directly transform the provided confidence limits for studies where the reported level is equal to the requested level
   if (is.null(g)) {
-    theta.cil[cstat.cilv==pars.default$level] <- cstat.cilb[cstat.cilv==pars.default$level]
-    theta.ciu[cstat.cilv==pars.default$level] <- cstat.ciub[cstat.cilv==pars.default$level]
+    theta.cil[cstat.cilv==level] <- cstat.cilb[cstat.cilv==level]
+    theta.ciu[cstat.cilv==level] <- cstat.ciub[cstat.cilv==level]
   } else {
-    theta.cil[cstat.cilv==pars.default$level] <- eval(parse(text=g), list(cstat = cstat.cilb[cstat.cilv==pars.default$level]))
-    theta.ciu[cstat.cilv==pars.default$level] <- eval(parse(text=g), list(cstat = cstat.ciub[cstat.cilv==pars.default$level]))
+    theta.cil[cstat.cilv==level] <- eval(parse(text=g), list(cstat = cstat.cilb[cstat.cilv==level]))
+    theta.ciu[cstat.cilv==level] <- eval(parse(text=g), list(cstat = cstat.ciub[cstat.cilv==level]))
   } 
   
   # Calculate all the possible variations of var(theta)
-  tv.method  <- c("Standard Error", "Confidence Interval", pars.default$method.restore.c.se, pars.default$method.restore.c.se)
+  tv.method  <- c("Standard Error", "Confidence Interval", paste("Newcombe (Method ", approx.se.method, ")", sep=""), paste("Newcombe (Method ", approx.se.method, ")", sep=""))
   tv.se      <- restore.c.var.se(cstat=cstat, c.se=cstat.se, g=g) # Derived from standard error
   tv.ci      <- restore.c.var.ci(cil=cstat.cilb, ciu=cstat.ciub, level=cstat.cilv, g=g) # Derived from 95% confidence interval
-  tv.hanley  <- restore.c.var.hanley(cstat=cstat, N.subjects=N, N.events=O, restore.method=pars.default$method.restore.c.se, g=g)
-  tv.hanley2 <- restore.c.var.hanley2(sd.LP=sd.LP, N.subjects=N, N.events=O, restore.method=pars.default$method.restore.c.se, g=g)
+  tv.hanley  <- restore.c.var.hanley(cstat=cstat, N.subjects=N, N.events=O, restore.method=approx.se.method, g=g)
+  tv.hanley2 <- restore.c.var.hanley2(sd.LP=sd.LP, N.subjects=N, N.events=O, restore.method=approx.se.method, g=g)
     
     # Save all estimated variances. The order of the columns indicates the priority             
     dat <-cbind(tv.se, tv.ci, tv.hanley, tv.hanley2)  
@@ -232,8 +225,8 @@ ccalc <- function(cstat, cstat.se, cstat.cilb, cstat.ciub, cstat.cilv, sd.LP, N,
     theta.var.source <-  tv.method[sel.var]
     
     # Calculate the desired confidence intervals
-    theta.cil[is.na(theta.cil)] <- (theta+qnorm((1-pars.default$level)/2)*sqrt(theta.var))[is.na(theta.cil)]
-    theta.ciu[is.na(theta.ciu)] <- (theta+qnorm((1+pars.default$level)/2)*sqrt(theta.var))[is.na(theta.ciu)]
+    theta.cil[is.na(theta.cil)] <- (theta+qnorm((1-level)/2)*sqrt(theta.var))[is.na(theta.cil)]
+    theta.ciu[is.na(theta.ciu)] <- (theta+qnorm((1+level)/2)*sqrt(theta.var))[is.na(theta.ciu)]
     
     
     # Store results, and method for calculating SE

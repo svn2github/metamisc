@@ -5,12 +5,12 @@
 \title{Calculate the concordance statistic}
 \usage{
 ccalc(cstat, cstat.se, cstat.cilb, cstat.ciub, cstat.cilv, sd.LP, N, O, Po,
-  data, slab, g = NULL, pars, ...)
+  data, slab, g = NULL, level = 0.95, approx.se.method = 4, ...)
 }
 \arguments{
 \item{cstat}{vector to specify the estimated c-statistics.}
 
-\item{cstat.se}{vector to specify the corresponding standard errors}
+\item{cstat.se}{vector to specify the corresponding standard errors.}
 
 \item{cstat.cilb}{vector to specify the lower limits of the confidence interval.}
 
@@ -19,7 +19,7 @@ ccalc(cstat, cstat.se, cstat.cilb, cstat.ciub, cstat.cilv, sd.LP, N, O, Po,
 \item{cstat.cilv}{vector to specify the levels of aformentioned confidence interval limits. 
 (default: 0.95, which corresponds to the 95\% confidence interval).}
 
-\item{sd.LP}{vector to specify the standard deviations of the linear predictor (prognostic index)}
+\item{sd.LP}{vector to specify the standard deviations of the linear predictor (prognostic index).}
 
 \item{N}{vector to specify the validation study sizes.}
 
@@ -33,10 +33,10 @@ ccalc(cstat, cstat.se, cstat.cilb, cstat.ciub, cstat.cilv, sd.LP, N, O, Po,
 
 \item{g}{a quoted string that is the function to transform estimates of the c-statistic; see the details below.}
 
-\item{pars}{optional list to specify additional arguments: 
-significance level of the confidence interval (default: \code{level=0.95}), 
-method for calculating the standard error of the c-statistic 
-(default: \code{method.restore.c.se="Newcombe.4"}).}
+\item{level}{level for confidence interval, default \code{0.95}.}
+
+\item{approx.se.method}{integer specifying which method should be used for estimating the standard error of the
+c-statistic (Newcombe, 2006). So far, only method \code{2} and method \code{4} (default) have been implemented.}
 
 \item{\ldots}{Additional arguments.}
 }
@@ -46,9 +46,9 @@ An array with the following columns:
  \item{"theta"}{The (transformed) c-statistics. }
  \item{"theta.se"}{Standard errors of the (transformed) c-statistics.}
  \item{"theta.CIl"}{Lower confidence interval of the (transformed) c-statistics. The level is specified in
- \code{pars$level}. Intervals are calculated on the same scale as \code{theta} by assuming a Normal distribution.}
+ \code{level}. Intervals are calculated on the same scale as \code{theta} by assuming a Normal distribution.}
  \item{"theta.CIu"}{Upper confidence interval of the (transformed) c-statistics. The level is specified in
- \code{pars$level}. Intervals are calculated on the same scale as \code{theta} by assuming a Normal distribution.}
+ \code{level}. Intervals are calculated on the same scale as \code{theta} by assuming a Normal distribution.}
  \item{"theta.source"}{Method used for calculating the (transformed) c-statistic.}
  \item{"theta.se.source"}{Method used for calculating the standard error of the (transformed) c-statistic.}
 }
@@ -73,9 +73,8 @@ For studies where the c-statistic is missing, it is estimated from the standard 
 \subsection{Restoring the standard error of the c-statistic}{
 When missing, the standard error of the c-statistic can be estimated from the confidence interval. Alternatively, 
 the standard error can be approximated from a combination of the reported c-statistic, the total sample size and 
-the total number of events (Debray et al. 2017). This can be achieved by adopting (a modification of) the method 
-proposed by Hanley and McNeil, as specified in \code{pars$method.restore.c.se}. Possible options for this argument are
-\code{"Newcombe.2"} and \code{"Newcombe.4"}, which correspond to method 2 and, respectively, method 4 in Newcombe (2006).
+the total number of events (Newcombe, 2006). This can be achieved by adopting (a modification of) the method 
+proposed by Hanley and McNeil, as specified in \code{approx.se.method}.
 }
 }
 \examples{
