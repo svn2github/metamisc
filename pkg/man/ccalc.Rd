@@ -61,9 +61,10 @@ The c-statistic is a measure of discrimination, and indicates the ability of a p
 distinguish between patients developing and not developing the outcome. The c-statistic typically ranges 
 from 0.5 (no discriminative ability) to 1 (perfect discriminative ability). 
 
-When performing a meta-analysis of the c-statistic, it is generally recommended to apply the logit transformation 
-(Debray et al., 2017; Snell et al., 2017). This can be achieved by specifying \code{g="log(cstat/(1-cstat))"}. Other
-transformations can be specified in a similar manner. 
+By default, the function \code{ccalc} will derive the c-statistic of each study, together with 
+the corresponding standard error and 95\% confidence interval. However, it is also possible to calculate transformed 
+versions of the c-statistic. Appropriate standard errors are then derived using the Delta method. 
+For instance, the logit transformation can be applied by specifying \code{g="log(cstat/(1-cstat))"}. 
 
 \subsection{Restoring the c-statistic}{
 For studies where the c-statistic is missing, it is estimated from the standard deviation of the linear predictor 
