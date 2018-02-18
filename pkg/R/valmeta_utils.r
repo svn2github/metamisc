@@ -1,3 +1,30 @@
+# Adapted from R package 'car'
+deltaMethod <- function (object, g, vcov., func = g, constants, level=0.95, ...) {
+  if (!is.character(g)) 
+    stop("The argument 'g' must be a character string")
+  
+  para <- object         
+  para.names <- names(para)
+  g <- parse(text = g)
+  q <- length(para)
+  for (i in 1:q) {
+    assign(names(para)[i], para[i])
+  }
+  if(!missing(constants)){
+    for (i in seq_along(constants)) assign(names(constants[i]), constants[[i]])}
+  est <- eval(g)
+  names(est) <- NULL
+  gd <- rep(0, q)
+  for (i in 1:q) {
+    gd[i] <- eval(D(g, names(para)[i]))
+  }
+  se.est <- as.vector(sqrt(t(gd) %*% vcov. %*% gd))
+  result <- data.frame(Estimate = est, SE = se.est, row.names = c(func))
+  result
+}
+
+
+
 restore.c.var.hanley <- function(cstat, N.subjects, N.events, restore.method=4, g=NULL) {
   
   fHanley <- function(cstat, nstar, mstar, m, n) {

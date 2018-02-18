@@ -85,7 +85,6 @@
 #' 
 #' @author Thomas Debray <thomas.debray@gmail.com>
 #' 
-#' @importFrom car deltaMethod
 #' @export
 #' 
 ccalc <- function(cstat, cstat.se, cstat.cilb, cstat.ciub, cstat.cilv, sd.LP, N, O, Po, data, slab, 

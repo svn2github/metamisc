@@ -336,6 +336,8 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.
       g <- NULL
     } else if (out$model=="normal/logit") {
       g <- "log(cstat/(1-cstat))"
+    } else {
+      stop (paste("Meta-analysis model currently not supported: '", out$model, '"', sep=""))
     }
       
     ds <- ccalc(cstat=cstat, cstat.se=cstat.se, cstat.CI.lower=cstat.95CI[,1],
