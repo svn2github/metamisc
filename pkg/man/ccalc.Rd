@@ -4,17 +4,20 @@
 \alias{ccalc}
 \title{Calculate the concordance statistic}
 \usage{
-ccalc(cstat, cstat.se, cstat.cilb, cstat.ciub, sd.LP, N, O, Po, data, slab,
-  g = NULL, pars, ...)
+ccalc(cstat, cstat.se, cstat.cilb, cstat.ciub, cstat.cilv, sd.LP, N, O, Po,
+  data, slab, g = NULL, pars, ...)
 }
 \arguments{
 \item{cstat}{vector to specify the estimated c-statistics.}
 
 \item{cstat.se}{vector to specify the corresponding standard errors}
 
-\item{cstat.cilb}{vector to specify the lower limit of the 95\% confidence interval.}
+\item{cstat.cilb}{vector to specify the lower limits of the confidence interval.}
 
-\item{cstat.ciub}{vector to specify the upper limit of the 95\% confidence interval.}
+\item{cstat.ciub}{vector to specify the upper limits of the confidence interval.}
+
+\item{cstat.cilv}{vector to specify the levels of aformentioned confidence interval limits. 
+(default: 0.95, which corresponds to the 95\% confidence interval).}
 
 \item{sd.LP}{vector to specify the standard deviations of the linear predictor (prognostic index)}
 

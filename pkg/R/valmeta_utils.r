@@ -71,7 +71,7 @@ restore.c.var.se <- function(cstat, c.se, g=NULL) {
   return(ti)
 }
 
-restore.c.var.ci <- function(cil, ciu, level=0.95, g=NULL) {
+restore.c.var.ci <- function(cil, ciu, level, g=NULL) {
   if(!is.null(g)) {
     lower <- eval(parse(text=g), list(cstat = cil))
     upper <- eval(parse(text=g), list(cstat = ciu))
@@ -79,6 +79,7 @@ restore.c.var.ci <- function(cil, ciu, level=0.95, g=NULL) {
     lower <- cil
     upper <- ciu
   }
+  if(missing(level)) level <- rep(0.95, length(cil))
   
   return(((upper - lower)/(2*qnorm((1-level)/2)))**2)
 }

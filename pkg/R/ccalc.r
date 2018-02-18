@@ -4,8 +4,10 @@
 #' 
 #' @param cstat vector to specify the estimated c-statistics.
 #' @param cstat.se vector to specify the corresponding standard errors
-#' @param cstat.cilb vector to specify the lower limit of the 95\% confidence interval.
-#' @param cstat.ciub vector to specify the upper limit of the 95\% confidence interval.
+#' @param cstat.cilb vector to specify the lower limits of the confidence interval.
+#' @param cstat.ciub vector to specify the upper limits of the confidence interval.
+#' @param cstat.cilv vector to specify the levels of aformentioned confidence interval limits. 
+#' (default: 0.95, which corresponds to the 95\% confidence interval).
 #' @param sd.LP vector to specify the standard deviations of the linear predictor (prognostic index)
 #' @param N vector to specify the validation study sizes.
 #' @param O vector to specify the total number of observed events.
@@ -88,7 +90,7 @@
 #' @importFrom car deltaMethod
 #' @export
 #' 
-ccalc <- function(cstat, cstat.se, cstat.cilb, cstat.ciub, sd.LP, N, O, Po, data, slab, g=NULL, pars, ...) {
+ccalc <- function(cstat, cstat.se, cstat.cilb, cstat.ciub, cstat.cilv, sd.LP, N, O, Po, data, slab, g=NULL, pars, ...) {
   pars.default <- list(level = 0.95,
                        method.restore.c.se="Newcombe.4") 
   
@@ -132,6 +134,8 @@ ccalc <- function(cstat, cstat.se, cstat.cilb, cstat.ciub, sd.LP, N, O, Po, data
   cstat.cilb    <- eval(mf.cstat.cilb, data, enclos=sys.frame(sys.parent()))
   mf.cstat.ciub <- mf[[match("cstat.ciub", names(mf))]]
   cstat.ciub    <- eval(mf.cstat.ciub, data, enclos=sys.frame(sys.parent()))
+  mf.cstat.cilv <- mf[[match("cstat.cilv", names(mf))]]
+  cstat.cilv    <- eval(mf.cstat.cilv, data, enclos=sys.frame(sys.parent()))
   mf.sd.LP      <- mf[[match("sd.LP", names(mf))]]
   sd.LP         <- eval(mf.sd.LP, data, enclos=sys.frame(sys.parent()))
   mf.N          <- mf[[match("N", names(mf))]]
@@ -158,7 +162,15 @@ ccalc <- function(cstat, cstat.se, cstat.cilb, cstat.ciub, sd.LP, N, O, Po, data
     k <- length(cstat.ciub)
   } else if (!is.null(sd.LP)) {
     k <- length(sd.LP)
+  } else if (!is.null(N)) {
+    k <- length(N)
+  } else if (!is.null(O)) {
+    k <- length(O)
+  } else if (!is.null(Po)) {
+    k <- length(Po)
   }
+  
+  if (k<1) stop("No data provided!")
   
   #######################################################################################
   # Prepare data
@@ -168,8 +180,13 @@ ccalc <- function(cstat, cstat.se, cstat.cilb, cstat.ciub, sd.LP, N, O, Po, data
   if (is.null(N))  N <- rep(NA, length=k)
   if (is.null(cstat.cilb)) cstat.cilb <- rep(NA, length=k)
   if (is.null(cstat.ciub)) cstat.ciub <- rep(NA, length=k)
+  if (is.null(cstat.cilv)) cstat.cilv <- rep(0.95, length=k)
   if (is.null(cstat.se)) cstat.se <- array(NA, dim=k)
   if (is.null(sd.LP)) sd.LP <- rep(NA, k)
+  
+  if (sum(cstat.cilv>1 | cstat.cilv<0) > 0) {
+    stop("Invalid level(s) specified for 'cstat.cilv'!")
+  }
     
   # Calculate O and N from other information if possible
   O <- ifelse(is.na(O), Po*N, O)
@@ -181,9 +198,7 @@ ccalc <- function(cstat, cstat.se, cstat.cilb, cstat.ciub, sd.LP, N, O, Po, data
   te.method <- c("c-statistic", "std.dev(LP)")
   te.orig   <- calculate.cstat.theta(cstat=cstat, g=g)
   te.white  <- calculate.cstat.sdPI(sdPI=sd.LP, g=g)
-  #te.orig  <- restore.c.c(cstat, model=pars.default$model)
-  #te.white <- restore.c.sdPI(sd.LP, model=pars.default$model)
-  
+
   te.dat <- cbind(te.orig, te.white)
     
   # For each study, find the first colum without missing
@@ -193,31 +208,21 @@ ccalc <- function(cstat, cstat.se, cstat.cilb, cstat.ciub, sd.LP, N, O, Po, data
   theta <- te.dat[cbind(seq_along(sel.cstat), sel.cstat)]                            
   theta.source <-  te.method[sel.cstat]
   
-  # Define theta
+  # Directly transform the provided confidence limits for studies where the reported level is equal to the requested level
   if (is.null(g)) {
-    if (pars.default$level==0.95) {
-      theta.cil <- cstat.cilb
-      theta.ciu <- cstat.ciub
-    }
+    theta.cil[cstat.cilv==pars.default$level] <- cstat.cilb[cstat.cilv==pars.default$level]
+    theta.ciu[cstat.cilv==pars.default$level] <- cstat.ciub[cstat.cilv==pars.default$level]
   } else {
-    if (pars.default$level==0.95) {
-      theta.cil <- eval(parse(text=g), list(cstat = cstat.cilb))
-      theta.ciu <- eval(parse(text=g), list(cstat = cstat.ciub))
-    }
+    theta.cil[cstat.cilv==pars.default$level] <- eval(parse(text=g), list(cstat = cstat.cilb[cstat.cilv==pars.default$level]))
+    theta.ciu[cstat.cilv==pars.default$level] <- eval(parse(text=g), list(cstat = cstat.ciub[cstat.cilv==pars.default$level]))
   } 
   
-    
-    # Calculate all the possible variations of var(theta)
-    tv.method <- c("Standard Error", "Confidence Interval", pars.default$method.restore.c.se, pars.default$method.restore.c.se)
-    tv.se     <- restore.c.var.se(cstat=cstat, c.se=cstat.se, g=g) # Derived from standard error
-    #tv.se     <- restore.c.var.se.depr(c.se=cstat.se, cstat=cstat, model=pars.default$model) # Derived from standard error
-    tv.ci     <- restore.c.var.ci(cil=cstat.cilb, ciu=cstat.ciub, level=0.95, g=g) # Derived from 95% confidence interval
-    #tv.ci     <- restore.c.var.ci.depr(ci=cstat.95CI, level=0.95, model=pars.default$model) # Derived from 95% confidence interval
-    tv.hanley <- restore.c.var.hanley(cstat=cstat, N.subjects=N, N.events=O, restore.method=pars.default$method.restore.c.se, g=g)
-    #tv.hanley <- restore.c.var.hanley.depr(cstat=cstat, N.subjects=N, N.events=O, restore.method=pars.default$method.restore.c.se,
-    #                                  model=pars.default$model)
-    tv.hanley2 <- restore.c.var.hanley2(sd.LP=sd.LP, N.subjects=N, N.events=O, restore.method=pars.default$method.restore.c.se,
-                                        g=g)
+  # Calculate all the possible variations of var(theta)
+  tv.method  <- c("Standard Error", "Confidence Interval", pars.default$method.restore.c.se, pars.default$method.restore.c.se)
+  tv.se      <- restore.c.var.se(cstat=cstat, c.se=cstat.se, g=g) # Derived from standard error
+  tv.ci      <- restore.c.var.ci(cil=cstat.cilb, ciu=cstat.ciub, level=cstat.cilv, g=g) # Derived from 95% confidence interval
+  tv.hanley  <- restore.c.var.hanley(cstat=cstat, N.subjects=N, N.events=O, restore.method=pars.default$method.restore.c.se, g=g)
+  tv.hanley2 <- restore.c.var.hanley2(sd.LP=sd.LP, N.subjects=N, N.events=O, restore.method=pars.default$method.restore.c.se, g=g)
     
     # Save all estimated variances. The order of the columns indicates the priority             
     dat <-cbind(tv.se, tv.ci, tv.hanley, tv.hanley2)  
