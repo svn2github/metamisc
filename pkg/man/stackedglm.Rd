@@ -9,8 +9,8 @@ stackedglm(models, family = binomial, data)
 \arguments{
 \item{models}{a list containing the historical prediction models, which can be defined in several ways. For instance, 
 historical regression models can be specified using a named vector containing the regression coefficients of the 
-individual predictors. List items may also represent an object for which the function \code{predict()} 
-exists.}
+individual predictors (no need to include the intercept term). List items may also represent an object for 
+which the function \code{predict()} exists.}
 
 \item{family}{a description of the error distribution and link function to be used in the meta-model. This can be a character 
 string naming a family function, a family function or the result of a call to a family function. (See \link[stats]{family} for 
