@@ -131,6 +131,10 @@ ccalc <- function(cstat, cstat.se, cstat.cilb, cstat.ciub, cstat.cilv, sd.LP, N,
   O             <- eval(mf.O, data, enclos=sys.frame(sys.parent()))
   mf.Po         <- mf[[match("Po", names(mf))]]
   Po            <- eval(mf.Po, data, enclos=sys.frame(sys.parent()))
+
+  if(is.null(slab) & !missing(data)) {
+    slab <- rownames(data)
+  }
   
   #######################################################################################
   # Count number of studies
