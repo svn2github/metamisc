@@ -133,14 +133,6 @@ ccalc <- function(cstat, cstat.se, cstat.cilb, cstat.ciub, cstat.cilv, sd.LP, N,
   Po            <- eval(mf.Po, data, enclos=sys.frame(sys.parent()))
 
   
-  k <- length(cstat)
-  
-  if(is.null(slab) & !no.data) {
-    slab <- rownames(data)
-  } else if (is.null(slab) & no.data) {
-    slab <- paste("Study", seq(1, k))
-  } 
-
   #######################################################################################
   # Count number of studies
   #######################################################################################
@@ -167,6 +159,18 @@ ccalc <- function(cstat, cstat.se, cstat.cilb, cstat.ciub, cstat.cilv, sd.LP, N,
   }
   
   if (k<1) stop("No data provided!")
+  
+  
+  #######################################################################################
+  # Assign study labels
+  #######################################################################################
+  if(is.null(slab) & !no.data) {
+    slab <- rownames(data)
+  } else if (is.null(slab) & no.data) {
+    slab <- paste("Study", seq(1, k))
+  } 
+
+  
   
   #######################################################################################
   # Prepare data
