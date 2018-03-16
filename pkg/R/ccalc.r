@@ -88,7 +88,7 @@
 #' 
 #' @export
 #' 
-ccalc <- function(cstat, cstat.se, cstat.cilb, cstat.ciub, cstat.cilv, sd.LP, N, O, Po, data, slab, 
+ccalc <- function(cstat, cstat.se, cstat.cilb, cstat.ciub, cstat.cilv, sd.LP, N, O, Po, data, slab=NULL, 
                   g=NULL, level=0.95, approx.se.method=4, ...) {
   
   ### check if data argument has been specified
@@ -132,10 +132,15 @@ ccalc <- function(cstat, cstat.se, cstat.cilb, cstat.ciub, cstat.cilv, sd.LP, N,
   mf.Po         <- mf[[match("Po", names(mf))]]
   Po            <- eval(mf.Po, data, enclos=sys.frame(sys.parent()))
 
-  if(is.null(slab) & !missing(data)) {
-    slab <- rownames(data)
-  }
   
+  k <- length(cstat)
+  
+  if(is.null(slab) & !no.data) {
+    slab <- rownames(data)
+  } else if (is.null(slab) & no.data) {
+    slab <- paste("Study", seq(1, k))
+  } 
+
   #######################################################################################
   # Count number of studies
   #######################################################################################
