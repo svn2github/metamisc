@@ -225,7 +225,7 @@ restore.oe.O.E <- function(O, E, correction = 0.5, t.extrapolate=F, t.ma=NA, t.v
     E[cc] <- E[cc]+correction
     O[cc] <- O[cc]+correction
     out[,1] <- O/E
-    out[,2] <- sqrt(0/(E**2))
+    out[,2] <- sqrt(O/(E**2))
   } else if (model %in% c("normal/log", "poisson/log")) {
     cc <- which(E==0 | O==0)
     E[cc] <- E[cc]+correction

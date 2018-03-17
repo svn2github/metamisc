@@ -56,6 +56,9 @@ corresponding sampling variance.
 ######### Validation of prediction models with a binary outcome #########
 data(EuroSCORE)
 
+# Calculate the total O:E ratio and its standard error
+oecalc(O=n.events, E=e.events, N=n, data=EuroSCORE, slab=Study)
+
 # Calculate the log of the total O:E ratio and its standard error
 oecalc(O=n.events, E=e.events, N=n, data=EuroSCORE, slab=Study, g="log(OE)")
 

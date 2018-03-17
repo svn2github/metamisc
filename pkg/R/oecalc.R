@@ -29,6 +29,9 @@
 #' ######### Validation of prediction models with a binary outcome #########
 #' data(EuroSCORE)
 #' 
+#' # Calculate the total O:E ratio and its standard error
+#' oecalc(O=n.events, E=e.events, N=n, data=EuroSCORE, slab=Study)
+#' 
 #' # Calculate the log of the total O:E ratio and its standard error
 #' oecalc(O=n.events, E=e.events, N=n, data=EuroSCORE, slab=Study, g="log(OE)")
 #' 
@@ -127,6 +130,10 @@ oecalc <- function(OE, OE.se, OE.cilb, OE.ciub, OE.cilv, citl, citl.se, N, O, E,
   if (k<1) stop("No data provided!")
   
   if(is.null(OE))  OE <- rep(NA, times=k)
+  if(is.null(OE.se)) OE.se <- rep(NA, times=k)
+  if(is.null(OE.cilb)) OE.cilb <- rep(NA, times=k)
+  if(is.null(OE.ciub)) OE.ciub <- rep(NA, times=k)
+  if(is.null(OE.cilv)) OE.cilv <- rep(0.95, times=k) # Assume 95% CI by default 
   if(is.null(O)) O <- rep(NA, times=k)
   if(is.null(E)) E <- rep(NA, times=k)
   if(is.null(N)) N <- rep(NA, times=k)
@@ -161,22 +168,17 @@ oecalc <- function(OE, OE.se, OE.cilb, OE.ciub, OE.cilv, citl, citl.se, N, O, E,
   # The order defines the preference for the final result
   #######################################################################################
   results <- list()
-  results[[1]]   <- data.frame(est=resoe.O.E.N(O=O, E=E, N=N, correction = add, g=g), method="O, E and N")
-  results[[2]]  <- data.frame(est=resoe.O.Pe.N(O=O, Pe=Pe, N=N, correction = add, g=g), method="O, Pe and N")
-  results[[3]]  <- data.frame(est=resoe.E.Po.N(E=E, Po=Po, N=N, correction = add, g=g), method="E, Po and N")
-  results[[4]] <- data.frame(est=resoe.Po.Pe.N(Po=Po, Pe=Pe, N=N, correction = add, g=g), method="Po, Pe and N")
-   
+  results[[1]] <- data.frame(est=resoe.OE.se(OE=OE, OE.se=OE.se, g=g), method="OE and SE(OE)")
+  results[[2]] <- data.frame(est=resoe.OE.ci(OE=OE, OE.cilb=OE.cilb, OE.ciub=OE.ciub, OE.cilv=OE.cilv, g=g), method="OE and CI(OE)")                                   #                                model=pars.default$model.oe)
+  results[[3]] <- data.frame(est=resoe.O.E.N(O=O, E=E, N=N, correction = add, g=g), method="O, E and N")
+  results[[4]] <- data.frame(est=resoe.O.Pe.N(O=O, Pe=Pe, N=N, correction = add, g=g), method="O, Pe and N")
+  results[[5]] <- data.frame(est=resoe.E.Po.N(E=E, Po=Po, N=N, correction = add, g=g), method="E, Po and N")
+  results[[6]] <- data.frame(est=resoe.Po.Pe.N(Po=Po, Pe=Pe, N=N, correction = add, g=g), method="Po, Pe and N")
+  results[[7]] <- data.frame(est=resoe.O.Po.E(O=O, Po=Po, E=E, correction = add, g=g), method="O, E and Po") 
+  results[[8]] <- data.frame(est=resoe.O.Pe.E(O=O, Pe=Pe, E=E, correction = add, g=g), method="O, E and Pe") 
+  results[[9]] <- data.frame(est=resoe.O.E(O=O, E=E, correction = add, g=g), method="O and E") 
 
-  #t.O.Po.E  <- restore.oe.OPoE(O=O, Po=Po, E=E, correction = pars.default$correction, 
-  #                             t.extrapolate=t.extrapolate, t.ma=t.ma, t.val=t.val, model=pars.default$model.oe) 
-  #t.O.Pe.E  <- restore.oe.OPeE(O=O, Pe=Pe, E=E, correction = pars.default$correction, 
-  #                             t.extrapolate=t.extrapolate, t.ma=t.ma, t.val=t.val, model=pars.default$model.oe) 
-  #t.OE.SE   <- restore.oe.OE(OE=OE, OE.se=OE.se, t.extrapolate=t.extrapolate, t.ma=t.ma, t.val=t.val, 
-  #                           model=pars.default$model.oe)
-  #t.OE.CI   <- restore.oe.OE.95CI(OE=OE, OE.95CI=OE.95CI, t.extrapolate=t.extrapolate, t.ma=t.ma, t.val=t.val, 
-  #                                model=pars.default$model.oe)
-  #t.O.E     <- restore.oe.O.E(O=O, E=E, correction = pars.default$correction, 
-  #                            t.extrapolate=t.extrapolate, t.ma=t.ma, t.val=t.val, model=pars.default$model.oe) 
+
   #t.pope   <- restore.oe.PoPe(Po=Po, Pe=Pe, t.extrapolate=t.extrapolate, t.ma=t.ma, t.val=t.val, model=pars.default$model.oe) 
   #t.citl   <- restore.oe.citl(citl=citl, citl.se=citl.se, O=O, Po=Po, N=N, t.extrapolate=t.extrapolate, t.ma=t.ma, t.val=t.val, 
   #                            model=pars.default$model.oe) 
@@ -184,15 +186,15 @@ oecalc <- function(OE, OE.se, OE.cilb, OE.ciub, OE.cilv, citl, citl.se, N, O, E,
   # Select appropriate estimate for 'theta' and record its source
   dat.est <- dat.se <- dat.method <-NULL
   for (i in 1:length(results)) {
-    dat.est <- cbind(dat.est, (results[[i]])[,1])
+    dat.est <- cbind(dat.est, (results[[i]])[,1]) 
     dat.se <- cbind(dat.se, sqrt(results[[i]][,2])) #take square root of error variance
     dat.method <- cbind(dat.method, as.character(results[[i]][,3]))
   }
   myfun = function(dat) { which.min(is.na(dat)) }
   sel.theta <- apply(dat.est, 1, myfun)
-  theta <- dat.est[cbind(seq_along(sel.theta), sel.theta)] 
-  theta.se <- dat.se[cbind(seq_along(sel.theta), sel.theta)] 
-  theta.source <-  dat.method[cbind(seq_along(sel.theta), sel.theta)] 
+  theta <- dat.est[cbind(seq_along(sel.theta), sel.theta)] # Preferred estimate for theta 
+  theta.se <- dat.se[cbind(seq_along(sel.theta), sel.theta)]# Preferred estimate for SE(theta)
+  theta.source <-  dat.method[cbind(seq_along(sel.theta), sel.theta)] # Method used for estimating theta and its SE
   
   ds <- data.frame(theta=theta, theta.se=theta.se, theta.source=theta.source)
   return(ds)
@@ -200,7 +202,7 @@ oecalc <- function(OE, OE.se, OE.cilb, OE.ciub, OE.cilv, citl, citl.se, N, O, E,
 }
 
 # Calculate OE and its error variance from O, E and N
-resoe.O.E.N <- function(O, E, N, correction = 0.5, g=NULL) {
+resoe.O.E.N <- function(O, E, N, correction, g=NULL) {
   
   k <- length(O)
   out <- array(NA, dim=c(k,2))
@@ -209,36 +211,144 @@ resoe.O.E.N <- function(O, E, N, correction = 0.5, g=NULL) {
   O[cc] <- O[cc]+correction
   N[cc] <- N[cc]+correction
   out[,1] <- O/E 
-  out[,2] <- sqrt((O*(1-O/N))/(E**2))
+  out[,2] <- ((O*(1-O/N))/(E**2)) # Error variance
   
   if(is.null(g)) {
     return (out)
   }
 
-  logoe <- logoe.var <- rep(NA, k)
+  toe <- toe.var <- rep(NA, k) # Transformed OE and its error variance
   
   for (i in 1:k) {
     oei <- out[i,1]
-    logoe[i] <- eval(parse(text=g), list(OE = oei))
-    vi  <- out[i,2]**2
+    toe[i] <- eval(parse(text=g), list(OE = oei))
+    vi  <- out[i,2]
     names(oei) <- names(vi) <- "OE"
-    logoe.var[i] <- as.numeric((deltaMethod(object=oei, g=g, vcov.=vi))["SE"])**2
+    toe.var[i] <- as.numeric((deltaMethod(object=oei, g=g, vcov.=vi))["SE"])**2
   }
   
-  out <- cbind(logoe, logoe.var)
-  
+  out <- cbind(toe, toe.var)
   return (out)
 }
 
-resoe.O.Pe.N <- function(O, Pe, N, correction = 0.5, g=NULL) {
+resoe.O.Pe.N <- function(O, Pe, N, correction, g=NULL) {
   return(resoe.O.E.N(O=O, E=Pe*N, N=N, correction=correction, g=g))
 }
 
-resoe.E.Po.N <- function(E, Po, N, correction = 0.5, g=NULL) {
+resoe.E.Po.N <- function(E, Po, N, correction, g=NULL) {
   return(resoe.O.E.N(O=Po*N, E=E, N=N, correction=correction, g=g))
 }
 
-resoe.Po.Pe.N <- function(Po, Pe, N, correction = 0.5, g=NULL) {
+resoe.Po.Pe.N <- function(Po, Pe, N, correction, g=NULL) {
   return(resoe.O.E.N(O=Po*N, E=Pe*N, N=N, correction=correction, g=g))
 }
+
+resoe.O.Po.E <- function(O, Po, E, correction, g=NULL) {
+  return(resoe.O.E.N(O=O, E=E, N=O/Po, correction=correction, g=g))
+}
+
+resoe.O.Pe.E <- function(O, Pe, E, correction, g=NULL) {
+  return(resoe.O.E.N(O=O, E=E, N=E/Pe, correction=correction, g=g))
+}
   
+resoe.OE.se <- function(OE, OE.se, g=NULL) {
+  k <- length(OE)
+  out <- array(NA, dim=c(k,2))
+  out[,1] <- OE
+  out[,2] <- OE.se**2
+  
+  if(is.null(g)) {
+    return (out)
+  }
+  
+  toe <- toe.var <- rep(NA, k) #Transformed OE and its error variance
+  
+  for (i in 1:k) {
+    oei <- out[i,1]
+    toe[i] <- eval(parse(text=g), list(OE = oei))
+    vi  <- out[i,2]
+    names(oei) <- names(vi) <- "OE"
+    toe.var[i] <- as.numeric((deltaMethod(object=oei, g=g, vcov.=vi))["SE"])**2
+  }
+  
+  out <- cbind(toe, toe.var)
+  return (out)
+}
+
+resoe.OE.ci <- function(OE, OE.cilb, OE.ciub, OE.cilv, g=NULL) {
+  k <- length(OE)
+  out <- array(NA, dim=c(k,2))
+  out[,1] <- OE
+  out[,2] <- ((OE.ciub - OE.cilb)/(2*qnorm(0.5+OE.cilv/2)))**2 #Derive from 95% CI
+  
+  if(is.null(g)) {
+    return (out)
+  }
+  
+  toe <- toe.var <- rep(NA, k) # Transformed OE and its error variance
+  
+  for (i in 1:k) {
+    toe[i] <- eval(parse(text=g), list(OE = out[i,1]))
+    toe.cilb <- eval(parse(text=g), list(OE = OE.cilb[i]))
+    toe.ciub <- eval(parse(text=g), list(OE = OE.ciub[i]))
+    toe.var[i] <- ((toe.ciub - toe.cilb)/(2*qnorm(0.5+OE.cilv/2)))**2 #Derive from 95% CI
+  }
+  
+  out <- cbind(toe, toe.var)
+  return (out)
+}
+
+resoe.O.E <- function(O, E, correction, g=NULL) {
+  k <- length(O)
+  out <- array(NA, dim=c(k,2))
+  
+  cc <- which(E==0)
+  E[cc] <- E[cc]+correction
+  O[cc] <- O[cc]+correction
+  out[,1] <- O/E
+  out[,2] <- (O/(E**2))
+  
+  if(is.null(g)) {
+    return (out)
+  }
+  
+  toe <- toe.var <- rep(NA, k) #Transformed OE and its error variance
+  
+  for (i in 1:k) {
+    oei <- out[i,1]
+    vi  <- out[i,2]
+    names(oei) <- names(vi) <- "OE"
+    toe[i] <- eval(parse(text=g), list(OE = oei))
+    toe.var[i] <- as.numeric((deltaMethod(object=oei, g=g, vcov.=vi))["SE"])**2
+  }
+  
+  out <- cbind(toe, toe.var)
+  return (out)
+}
+
+resoe.citl <- function(citl, citl.se, Po, O, N, correction, g=NULL) {
+  k <- length(citl)
+  out <- array(NA, dim=c(k,2))
+  
+  cc <- which(O==0)
+  O[cc] <- O[cc]+correction
+  N[cc] <- N[cc]+correction
+  Po[is.na(Po)] <- (O/N)[is.na(Po)]
+  
+  out[,1] <- -(exp(citl)*Po-exp(citl)-Po)
+  
+  for (i in 1:k) {
+    citli = citl[i]
+    names(citli) = "citl"
+    expr = paste("-(exp(citl)*",Po[i], "-exp(citl)-", Po[i],")")
+    out[i,2] <- as.numeric((deltaMethod(object=citli, g=expr, vcov.=(citl.se**2))["SE"]))**2
+  }
+  
+  warning("Implementation not finalized!")
+  
+  if(is.null(g)) {
+    return (out)
+  }
+  
+  warning("Implementation still needed")
+}
