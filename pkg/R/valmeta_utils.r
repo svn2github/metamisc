@@ -171,7 +171,7 @@ restore.oe.OE.95CI <- function(OE, OE.95CI, t.extrapolate=F, t.ma=NA, t.val, mod
 }
 
 # Calculate OE and its SE from O, E and N
-restore.oe.O.E.N <- function(O, E, N, correction = 0.5, t.extrapolate=F, t.ma=NA, t.val, model="normal/log") {
+restore.oe.O.E.N.depr <- function(O, E, N, correction = 0.5, t.extrapolate=F, t.ma=NA, t.val, model="normal/log") {
   out <- array(NA, dim=c(length(O),2))
   
   if (model == "normal/identity") {
@@ -180,7 +180,7 @@ restore.oe.O.E.N <- function(O, E, N, correction = 0.5, t.extrapolate=F, t.ma=NA
     O[cc] <- O[cc]+correction
     N[cc] <- N[cc]+correction
     out[,1] <- O/E 
-    out[,2] <- sqrt((0*(1-O/N))/(E**2))
+    out[,2] <- sqrt((O*(1-O/N))/(E**2))
   } else if (model %in% c("normal/log", "poisson/log")) {
     cc <- which(E==0 | O==0)
     E[cc] <- E[cc]+correction
@@ -268,23 +268,23 @@ restore.oe.PoPe <- function (Po, Pe, t.extrapolate=F, t.ma=NA, t.val, model="nor
 }
 
 restore.oe.OPoE <- function(O, Po, E, correction = 0.5, t.extrapolate=F, t.ma=NA, t.val, model="normal/log") {
-  return(restore.oe.O.E.N(O=O, E=E, N=O/Po, correction=correction, t.extrapolate=t.extrapolate, t.ma=t.ma, t.val=t.val, model=model))
+  return(restore.oe.O.E.N.depr(O=O, E=E, N=O/Po, correction=correction, t.extrapolate=t.extrapolate, t.ma=t.ma, t.val=t.val, model=model))
 }
 
 restore.oe.OPeE <- function(O, Pe, E, correction = 0.5, t.extrapolate=F, t.ma=NA, t.val, model="normal/log") {
-  return(restore.oe.O.E.N(O=O, E=E, N=E/Pe, correction=correction, t.extrapolate=t.extrapolate, t.ma=t.ma, t.val=t.val, model=model))
+  return(restore.oe.O.E.N.depr(O=O, E=E, N=E/Pe, correction=correction, t.extrapolate=t.extrapolate, t.ma=t.ma, t.val=t.val, model=model))
 }
 
 restore.oe.OPeN <- function(O, Pe, N, correction = 0.5, t.extrapolate=F, t.ma=NA, t.val, model="normal/log") {
-  return(restore.oe.O.E.N(O=O, E=Pe*N, N=N, correction=correction, t.extrapolate=t.extrapolate, t.ma=t.ma, t.val=t.val, model=model))
+  return(restore.oe.O.E.N.depr(O=O, E=Pe*N, N=N, correction=correction, t.extrapolate=t.extrapolate, t.ma=t.ma, t.val=t.val, model=model))
 }
 
 restore.oe.EPoN <- function(E, Po, N, correction = 0.5, t.extrapolate=F, t.ma=NA, t.val, model="normal/log") {
-  return(restore.oe.O.E.N(O=Po*N, E=E, N=N, correction=correction, t.extrapolate=t.extrapolate, t.ma=t.ma, t.val=t.val, model=model))
+  return(restore.oe.O.E.N.depr(O=Po*N, E=E, N=N, correction=correction, t.extrapolate=t.extrapolate, t.ma=t.ma, t.val=t.val, model=model))
 }
 
 restore.oe.PoPeN <- function (Po, Pe, N, correction = 0.5, t.extrapolate=F, t.ma=NA, t.val, model="normal/log") {
-  return(restore.oe.O.E.N(O=Po*N, E=Pe*N, N=N, correction=correction, t.extrapolate=t.extrapolate, t.ma=t.ma, t.val=t.val, model=model))
+  return(restore.oe.O.E.N.depr(O=Po*N, E=Pe*N, N=N, correction=correction, t.extrapolate=t.extrapolate, t.ma=t.ma, t.val=t.val, model=model))
 }
 
 # Restore OE ratio from calibration-in-the-large

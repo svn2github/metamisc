@@ -219,14 +219,14 @@ with(Framingham, valmeta(measure="OE", Po=Po, Pe=Pe, N=n, t.val=t.val, t.ma=10, 
 
 }
 \references{
-\itemize{
-\item Debray TPA, Damen JAAG, Snell KIE, Ensor J, Hooft L, Reitsma JB, et al. A guide to systematic review 
+Debray TPA, Damen JAAG, Snell KIE, Ensor J, Hooft L, Reitsma JB, et al. A guide to systematic review 
 and meta-analysis of prediction model performance. \emph{BMJ}. 2017; 356:i6460.
-\item Stijnen T, Hamza TH, Ozdemir P. Random effects meta-analysis of event outcome in the framework of 
+
+Stijnen T, Hamza TH, Ozdemir P. Random effects meta-analysis of event outcome in the framework of 
 the generalized linear mixed model with applications in sparse data. \emph{Stat Med}. 2010; 29(29):3046--67.
-\item Viechtbauer W. Conducting Meta-Analyses in R with the metafor Package. \emph{Journal of Statistical Software}. 
+
+Viechtbauer W. Conducting Meta-Analyses in R with the metafor Package. \emph{Journal of Statistical Software}. 
 2010; 36(3). Available from: \url{http://www.jstatsoft.org/v36/i03/}
-}
 }
 \seealso{
 \code{\link{ccalc}} to calculate concordance statistics and corresponding standard errors, 

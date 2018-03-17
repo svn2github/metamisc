@@ -127,14 +127,14 @@
 ##'  \item{"slab"}{vector specifying the label of each study.}
 ##' }
 #' @references 
-#' \itemize{
-#' \item Debray TPA, Damen JAAG, Snell KIE, Ensor J, Hooft L, Reitsma JB, et al. A guide to systematic review 
+#' Debray TPA, Damen JAAG, Snell KIE, Ensor J, Hooft L, Reitsma JB, et al. A guide to systematic review 
 #' and meta-analysis of prediction model performance. \emph{BMJ}. 2017; 356:i6460.
-#' \item Stijnen T, Hamza TH, Ozdemir P. Random effects meta-analysis of event outcome in the framework of 
+#' 
+#' Stijnen T, Hamza TH, Ozdemir P. Random effects meta-analysis of event outcome in the framework of 
 #' the generalized linear mixed model with applications in sparse data. \emph{Stat Med}. 2010; 29(29):3046--67.
-#' \item Viechtbauer W. Conducting Meta-Analyses in R with the metafor Package. \emph{Journal of Statistical Software}. 
+#' 
+#' Viechtbauer W. Conducting Meta-Analyses in R with the metafor Package. \emph{Journal of Statistical Software}. 
 #' 2010; 36(3). Available from: \url{http://www.jstatsoft.org/v36/i03/}
-#' }
 #'   
 #' @seealso \code{\link{ccalc}} to calculate concordance statistics and corresponding standard errors, 
 #' \code{\link{plot.valmeta}} to generate forest plots
@@ -495,7 +495,7 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.
     # Calculate the OE ratio when model!=poisson/log
     # Omit studies where t.val != t.ma (unless extrapolation is required)
     #####################################################################################
-    t.O.E.N   <- restore.oe.O.E.N(O=O, E=E, N=N, correction = pars.default$correction, 
+    t.O.E.N   <- restore.oe.O.E.N.depr(O=O, E=E, N=N, correction = pars.default$correction, 
                                t.extrapolate=t.extrapolate, t.ma=t.ma, t.val=t.val, model=pars.default$model.oe) 
     t.O.Pe.N  <- restore.oe.OPeN(O=O, Pe=Pe, N=N, correction = pars.default$correction, 
                                 t.extrapolate=t.extrapolate, t.ma=t.ma, t.val=t.val, model=pars.default$model.oe)

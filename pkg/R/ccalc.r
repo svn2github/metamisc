@@ -1,6 +1,6 @@
 #' Calculate the concordance statistic
 #'
-#' The function calculates the (logit transformed) concordance (c-) statistic with the corresponding sampling variance. 
+#' The function calculates (transformed versions of) the concordance (c-) statistic with the corresponding sampling variance. 
 #' 
 #' @param cstat vector to specify the estimated c-statistics.
 #' @param cstat.se vector to specify the corresponding standard errors.
@@ -44,19 +44,21 @@
 #' }
 #' 
 #' @references 
-#' \itemize{
-#' \item Debray TPA, Damen JAAG, Snell KIE, Ensor J, Hooft L, Reitsma JB, et al. A guide to systematic review 
+#' Debray TPA, Damen JAAG, Snell KIE, Ensor J, Hooft L, Reitsma JB, et al. A guide to systematic review 
 #' and meta-analysis of prediction model performance. \emph{BMJ}. 2017; 356:i6460.
-#' \item Hanley JA, McNeil BJ. The meaning and use of the area under a receiver operating characteristic (ROC) 
+#' 
+#' Hanley JA, McNeil BJ. The meaning and use of the area under a receiver operating characteristic (ROC) 
 #' curve. \emph{Radiology}. 1982; 143(1):29--36.
-#' \item Newcombe RG. Confidence intervals for an effect size measure based on the Mann-Whitney statistic. 
+#' 
+#' Newcombe RG. Confidence intervals for an effect size measure based on the Mann-Whitney statistic. 
 #' Part 2: asymptotic methods and evaluation. \emph{Stat Med}. 2006; 25(4):559--73.
-#' \item Snell KI, Ensor J, Debray TP, Moons KG, Riley RD. Meta-analysis of prediction model performance across 
+#' 
+#' Snell KI, Ensor J, Debray TP, Moons KG, Riley RD. Meta-analysis of prediction model performance across 
 #' multiple studies: Which scale helps ensure between-study normality for the C -statistic and calibration measures? 
 #' \emph{Statistical Methods in Medical Research}. 2017. 
-#' \item White IR, Rapsomaniki E, the Emerging Risk Factors Collaboration. Covariate-adjusted measures of discrimination 
+#' 
+#' White IR, Rapsomaniki E, the Emerging Risk Factors Collaboration. Covariate-adjusted measures of discrimination 
 #' for survival data. \emph{Biom J}. 2015;57(4):592--613. 
-#' }
 #' 
 #' 
 #' @return An array with the following columns:
@@ -114,8 +116,8 @@ ccalc <- function(cstat, cstat.se, cstat.cilb, cstat.ciub, cstat.cilv, sd.LP, N,
   
   mf.slab       <- mf[[match("slab",   names(mf))]]
   slab          <- eval(mf.slab,   data, enclos=sys.frame(sys.parent()))
-  mf.subset <- mf[[match("subset", names(mf))]]
-  subset    <- eval(mf.subset, data, enclos=sys.frame(sys.parent()))
+  mf.subset     <- mf[[match("subset", names(mf))]]
+  subset        <- eval(mf.subset, data, enclos=sys.frame(sys.parent()))
   mf.cstat      <- mf[[match("cstat", names(mf))]]
   cstat         <- eval(mf.cstat, data, enclos=sys.frame(sys.parent()))
   mf.cstat.se   <- mf[[match("cstat.se", names(mf))]]
@@ -135,6 +137,7 @@ ccalc <- function(cstat, cstat.se, cstat.cilb, cstat.ciub, cstat.cilv, sd.LP, N,
   mf.Po         <- mf[[match("Po", names(mf))]]
   Po            <- eval(mf.Po, data, enclos=sys.frame(sys.parent()))
 
+  
   
   #######################################################################################
   # Count number of studies
@@ -179,6 +182,10 @@ ccalc <- function(cstat, cstat.se, cstat.cilb, cstat.ciub, cstat.cilv, sd.LP, N,
     if (anyNA(slab))
       stop("NAs in study labels.")
     
+    if (class(slab)=="factor") {
+      slab <- as.character(slab)
+    }
+    
     ### check if study labels are unique; if not, make them unique
     
     if (anyDuplicated(slab))
@@ -196,9 +203,6 @@ ccalc <- function(cstat, cstat.se, cstat.cilb, cstat.ciub, cstat.cilv, sd.LP, N,
     if (!no.data)
       data <- data[subset,,drop=FALSE]
   }
-  
-  
-  
   
   #######################################################################################
   # Prepare data

@@ -419,6 +419,7 @@ estSErho <- function(rhoT, var.rhoT) {
 }
 
 #' Prediction Interval
+#' 
 #' Calculates a prediction interval for the summary parameters of Riley's alternative model for bivariate random-effects 
 #' meta-analysis. This interval predicts in what range future observations will fall given what has already been observed.
 #' 
