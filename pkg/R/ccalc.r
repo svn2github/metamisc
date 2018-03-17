@@ -9,7 +9,7 @@
 #' @param cstat.cilv vector to specify the levels of aformentioned confidence interval limits. 
 #' (default: 0.95, which corresponds to the 95\% confidence interval).
 #' @param sd.LP vector to specify the standard deviations of the linear predictor (prognostic index).
-#' @param N vector to specify the validation study sizes.
+#' @param N vector to specify the sample/group sizes.
 #' @param O vector to specify the total number of observed events.
 #' @param Po vector to specify the observed event probabilities.
 #' @param data optional data frame containing the variables given to the arguments above.

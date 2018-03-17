@@ -11,7 +11,7 @@
 #' (default: 0.95, which corresponds to the 95\% confidence interval).
 #' @param citl vector with the estimated calibration-in-the-large statistics
 #' @param citl.se vector with the standard error of the calibration-in-the-large statistics
-#' @param N vector to specify the validation study sizes.
+#' @param N vector to specify the sample/group sizes.
 #' @param O vector to specify the total number of observed events.
 #' @param E vector to specify the total number of expected events
 #' @param Po vector to specify the (cumulative) observed event probabilities.
@@ -126,9 +126,13 @@ oecalc <- function(OE, OE.se, OE.cilb, OE.ciub, OE.cilv, citl, citl.se, N, O, E,
 
   if (k<1) stop("No data provided!")
   
-  if(is.null(OE)) {
-    OE <- rep(NA, times=k)
-  }
+  if(is.null(OE))  OE <- rep(NA, times=k)
+  if(is.null(O)) O <- rep(NA, times=k)
+  if(is.null(E)) E <- rep(NA, times=k)
+  if(is.null(N)) N <- rep(NA, times=k)
+  if(is.null(Po)) Po <- rep(NA, times=k)
+  if(is.null(Pe)) Pe <- rep(NA, times=k)
+
   
   #######################################################################################
   # Assign study labels
@@ -144,7 +148,6 @@ oecalc <- function(OE, OE.se, OE.cilb, OE.ciub, OE.cilv, citl, citl.se, N, O, E,
     }
     
     ### check if study labels are unique; if not, make them unique
-    
     if (anyDuplicated(slab))
       slab <- make.unique(slab)
     
@@ -153,21 +156,17 @@ oecalc <- function(OE, OE.se, OE.cilb, OE.ciub, OE.cilv, citl, citl.se, N, O, E,
   }
   
 
-  
-  
   #######################################################################################
-  # Restore OE ratio
+  # Derive the OE ratio and its error variance
+  # The order defines the preference for the final result
   #######################################################################################
-  t.O.E.N   <- restore.oe.O.E.N(O=O, E=E, N=N, correction = add, g=g) 
-  
-  
-  
-  #t.O.Pe.N  <- restore.oe.OPeN(O=O, Pe=Pe, N=N, correction = pars.default$correction, 
-  #                             t.extrapolate=t.extrapolate, t.ma=t.ma, t.val=t.val, model=pars.default$model.oe)
-  #t.E.Po.N  <- restore.oe.EPoN(E=E, Po=Po, N=N, correction = pars.default$correction, 
-  #                             t.extrapolate=t.extrapolate, t.ma=t.ma, t.val=t.val, model=pars.default$model.oe)
-  #T.Po.Pe.N <- restore.oe.PoPeN(Po=Po, Pe=Pe, N=N, correction = pars.default$correction, 
-  #                              t.extrapolate=t.extrapolate, t.ma=t.ma, t.val=t.val, model=pars.default$model.oe) 
+  results <- list()
+  results[[1]]   <- data.frame(est=resoe.O.E.N(O=O, E=E, N=N, correction = add, g=g), method="O, E and N")
+  results[[2]]  <- data.frame(est=resoe.O.Pe.N(O=O, Pe=Pe, N=N, correction = add, g=g), method="O, Pe and N")
+  results[[3]]  <- data.frame(est=resoe.E.Po.N(E=E, Po=Po, N=N, correction = add, g=g), method="E, Po and N")
+  results[[4]] <- data.frame(est=resoe.Po.Pe.N(Po=Po, Pe=Pe, N=N, correction = add, g=g), method="Po, Pe and N")
+   
+
   #t.O.Po.E  <- restore.oe.OPoE(O=O, Po=Po, E=E, correction = pars.default$correction, 
   #                             t.extrapolate=t.extrapolate, t.ma=t.ma, t.val=t.val, model=pars.default$model.oe) 
   #t.O.Pe.E  <- restore.oe.OPeE(O=O, Pe=Pe, E=E, correction = pars.default$correction, 
@@ -181,10 +180,27 @@ oecalc <- function(OE, OE.se, OE.cilb, OE.ciub, OE.cilv, citl, citl.se, N, O, E,
   #t.pope   <- restore.oe.PoPe(Po=Po, Pe=Pe, t.extrapolate=t.extrapolate, t.ma=t.ma, t.val=t.val, model=pars.default$model.oe) 
   #t.citl   <- restore.oe.citl(citl=citl, citl.se=citl.se, O=O, Po=Po, N=N, t.extrapolate=t.extrapolate, t.ma=t.ma, t.val=t.val, 
   #                            model=pars.default$model.oe) 
+  
+  # Select appropriate estimate for 'theta' and record its source
+  dat.est <- dat.se <- dat.method <-NULL
+  for (i in 1:length(results)) {
+    dat.est <- cbind(dat.est, (results[[i]])[,1])
+    dat.se <- cbind(dat.se, sqrt(results[[i]][,2])) #take square root of error variance
+    dat.method <- cbind(dat.method, as.character(results[[i]][,3]))
+  }
+  myfun = function(dat) { which.min(is.na(dat)) }
+  sel.theta <- apply(dat.est, 1, myfun)
+  theta <- dat.est[cbind(seq_along(sel.theta), sel.theta)] 
+  theta.se <- dat.se[cbind(seq_along(sel.theta), sel.theta)] 
+  theta.source <-  dat.method[cbind(seq_along(sel.theta), sel.theta)] 
+  
+  ds <- data.frame(theta=theta, theta.se=theta.se, theta.source=theta.source)
+  return(ds)
+  
 }
 
 # Calculate OE and its error variance from O, E and N
-restore.oe.O.E.N <- function(O, E, N, correction = 0.5, g=NULL) {
+resoe.O.E.N <- function(O, E, N, correction = 0.5, g=NULL) {
   
   k <- length(O)
   out <- array(NA, dim=c(k,2))
@@ -212,5 +228,17 @@ restore.oe.O.E.N <- function(O, E, N, correction = 0.5, g=NULL) {
   out <- cbind(logoe, logoe.var)
   
   return (out)
+}
+
+resoe.O.Pe.N <- function(O, Pe, N, correction = 0.5, g=NULL) {
+  return(resoe.O.E.N(O=O, E=Pe*N, N=N, correction=correction, g=g))
+}
+
+resoe.E.Po.N <- function(E, Po, N, correction = 0.5, g=NULL) {
+  return(resoe.O.E.N(O=Po*N, E=E, N=N, correction=correction, g=g))
+}
+
+resoe.Po.Pe.N <- function(Po, Pe, N, correction = 0.5, g=NULL) {
+  return(resoe.O.E.N(O=Po*N, E=Pe*N, N=N, correction=correction, g=g))
 }
   

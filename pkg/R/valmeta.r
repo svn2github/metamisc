@@ -441,6 +441,10 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.
   # Meta-analysis of the total OE ratio
   #######################################################################################
   if (measure=="OE") {
+    
+    # TODO: FIrst call oecalc
+    # Use derived data to obtain O, E and N where missing
+    
     t.ma <- ifelse(missing(t.ma), NA, t.ma)
     
     if(missing(t.val)) {

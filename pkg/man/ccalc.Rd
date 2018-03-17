@@ -21,7 +21,7 @@ ccalc(cstat, cstat.se, cstat.cilb, cstat.ciub, cstat.cilv, sd.LP, N, O, Po,
 
 \item{sd.LP}{vector to specify the standard deviations of the linear predictor (prognostic index).}
 
-\item{N}{vector to specify the validation study sizes.}
+\item{N}{vector to specify the sample/group sizes.}
 
 \item{O}{vector to specify the total number of observed events.}
 

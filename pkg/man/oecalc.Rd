@@ -23,7 +23,7 @@ oecalc(OE, OE.se, OE.cilb, OE.ciub, OE.cilv, citl, citl.se, N, O, E, Po, Po.se,
 
 \item{citl.se}{vector with the standard error of the calibration-in-the-large statistics}
 
-\item{N}{vector to specify the validation study sizes.}
+\item{N}{vector to specify the sample/group sizes.}
 
 \item{O}{vector to specify the total number of observed events.}
 
@@ -40,7 +40,7 @@ oecalc(OE, OE.se, OE.cilb, OE.ciub, OE.cilv, citl, citl.se, N, O, E, Po, Po.se,
 
 \item{slab}{optional vector with labels for the studies.}
 
-\item{add}{a non-negative number indicating the amount to add to zero counts or frequencies. See `Details'}
+\item{add}{a non-negative number indicating the amount to add to zero counts. See `Details'}
 
 \item{g}{a quoted string that is the function to transform estimates of the total O:E ratio; see the details below.}
 
