@@ -7,7 +7,7 @@
 valmeta(measure = "cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.se,
   OE.95CI, citl, citl.se, N, O, E, Po, Po.se, Pe, t.val, t.ma,
   t.extrapolate = FALSE, method = "REML", test = "knha",
-  verbose = FALSE, slab, n.chains = 4, pars, ...)
+  ret.fit = FALSE, verbose = FALSE, slab, n.chains = 4, pars, ...)
 }
 \arguments{
 \item{measure}{A character string indicating which summary performance measure should be calculated. Options are
@@ -68,6 +68,8 @@ equal to one of the following: \code{"REML"} (Default), \code{"DL"}, \code{"HE"}
 should be computed. By default (\code{test="knha"}), the method by Knapp and Hartung (2003) is used for 
 adjusting test statistics and confidence intervals. Type '\code{?rma}' for more details.}
 
+\item{ret.fit}{logical indicating whether the full results from the fitted model should also be returned.}
+
 \item{verbose}{If TRUE then messages generated during the fitting process will be displayed.}
 
 \item{slab}{Optional vector specifying the label for each study}
@@ -94,13 +96,11 @@ the c-statistic; see "Details"), \code{model.oe} (The likelihood/link for modeli
 An object of class \code{valmeta} with the following elements:
 \describe{
  \item{"data"}{array with (transformed) data used for meta-analysis, and method(s) used for restoring missing information. }
- \item{"lme4"}{a fitted object of class \code{glmerMod} (if \pkg{lme4} was used for meta-analysis).}
  \item{"measure"}{character string specifying the performance measure that has been meta-analysed.}
  \item{"method"}{character string specifying the meta-analysis method.}
  \item{"model"}{character string specifying the meta-analysis model (link function).}
  \item{"results"}{numeric vector containing the meta-analysis results}
- \item{"rma"}{a fitted object of class \link[metafor]{rma} (if \pkg{metafor} was used for meta-analysis).}
- \item{"runjags"}{a fitted object of class \code{runjags} (if \pkg{runjags} was used for meta-analysis).}
+ \item{"fit"}{the full results from the fitted model}
  \item{"slab"}{vector specifying the label of each study.}
 }
 }

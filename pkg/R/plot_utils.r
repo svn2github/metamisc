@@ -25,9 +25,12 @@
 #' @author Thomas Debray <thomas.debray@gmail.com>
 #' 
 #' @export
-forest <- function (theta, theta.ci, theta.slab, theta.summary, 
+forest <- function (theta, 
+                    theta.ci, 
+                    theta.slab, 
+                    theta.summary, 
                     theta.summary.ci, 
-                    theta.summary.pi = c(NA, NA),
+                    theta.summary.pi,
                     title,
                     sort = "asc",
                     theme = theme_bw(),
@@ -40,6 +43,11 @@ forest <- function (theta, theta.ci, theta.slab, theta.summary,
   if (missing(theta)) stop("Study effect sizes are missing!")
   if (missing(theta.ci)) stop("Confidence intervals of effect sizes missing!")
   if (missing(theta.slab)) stop("Study labels are missing!")
+  
+  if (missing(theta.summary.pi)) {
+    theta.summary.pi <- rep(NA, 2)
+  }
+    
   
   num.studies <- unique(c(length(theta), dim(theta.ci)[1], length(theta.slab)))
   if (length(num.studies)>1) stop(paste("Mismatch in data dimensions!"))
@@ -108,19 +116,14 @@ forest <- function (theta, theta.ci, theta.slab, theta.summary,
   
   # Add meta-analysis summary
   g2 <- with(ALL, subset(ALL, study == label.summary))
-  g2$pi.upper <- theta.summary.pi[2]
-  g2$pi.lower <- theta.summary.pi[1]
   g2$ci.upper <- theta.summary.ci[2]
   g2$ci.lower <- theta.summary.ci[1]
-  
-  # Add meta-analysis summary
-  g3 <- with(ALL, subset(ALL, study == label.predint))
-  g3$pi.upper <- theta.summary.pi[2]
-  g3$pi.lower <- theta.summary.pi[1]
+  g2$pi.upper <- theta.summary.pi[2]
+  g2$pi.lower <- theta.summary.pi[1]
   
   # Prediction interval
-  if (!is.na(g3$pi.lower) & !is.na(g3$pi.upper)) {
-    p <- p +with(g3, geom_errorbar(data=g3, aes(ymin = pi.lower, ymax = pi.upper, x=label.predint), 
+  if (!is.na(g2$pi.lower) & !is.na(g2$pi.upper)) {
+    p <- p + with(g2, geom_errorbar(data=g2, aes(ymin = pi.lower, ymax = pi.upper, x=label.predint), 
                                    width = 0.5, size=1.0, linetype=predint.linetype))
   }
 

@@ -338,10 +338,11 @@ resoe.citl <- function(citl, citl.se, Po, O, N, correction, g=NULL) {
   out[,1] <- -(exp(citl)*Po-exp(citl)-Po)
   
   for (i in 1:k) {
-    citli = citl[i]
-    names(citli) = "citl"
+    citli <- citl[i]
+    vi  <- citl.se[i]**2
+    names(citli) <- names(vi) <- "citl"
     expr = paste("-(exp(citl)*",Po[i], "-exp(citl)-", Po[i],")")
-    out[i,2] <- as.numeric((deltaMethod(object=citli, g=expr, vcov.=(citl.se**2))["SE"]))**2
+    out[i,2] <- as.numeric((deltaMethod(object=citli, g=expr, vcov.=vi)["SE"]))**2
   }
   
   warning("Implementation not finalized!")

@@ -5,7 +5,7 @@
 \title{Forest plot}
 \usage{
 forest(theta, theta.ci, theta.slab, theta.summary, theta.summary.ci,
-  theta.summary.pi = c(NA, NA), title, sort = "asc", theme = theme_bw(),
+  theta.summary.pi, title, sort = "asc", theme = theme_bw(),
   predint.linetype = 1, xlim, xlab = "", refline = 0,
   label.summary = "Summary Estimate", ...)
 }

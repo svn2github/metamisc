@@ -44,6 +44,7 @@
 #' @param test Optional character string specifying how test statistics and confidence intervals for the fixed effects 
 #' should be computed. By default (\code{test="knha"}), the method by Knapp and Hartung (2003) is used for 
 #' adjusting test statistics and confidence intervals. Type '\code{?rma}' for more details.
+#' @param ret.fit logical indicating whether the full results from the fitted model should also be returned.
 #' @param verbose If TRUE then messages generated during the fitting process will be displayed.
 #' @param slab Optional vector specifying the label for each study
 #' @param n.chains Optional numeric specifying the number of chains to use in the Gibbs sampler 
@@ -117,13 +118,11 @@
 #' @return An object of class \code{valmeta} with the following elements:
 #' \describe{
 ##'  \item{"data"}{array with (transformed) data used for meta-analysis, and method(s) used for restoring missing information. }
-##'  \item{"lme4"}{a fitted object of class \code{glmerMod} (if \pkg{lme4} was used for meta-analysis).}
 ##'  \item{"measure"}{character string specifying the performance measure that has been meta-analysed.}
 ##'  \item{"method"}{character string specifying the meta-analysis method.}
 ##'  \item{"model"}{character string specifying the meta-analysis model (link function).}
 ##'  \item{"results"}{numeric vector containing the meta-analysis results}
-##'  \item{"rma"}{a fitted object of class \link[metafor]{rma} (if \pkg{metafor} was used for meta-analysis).}
-##'  \item{"runjags"}{a fitted object of class \code{runjags} (if \pkg{runjags} was used for meta-analysis).}
+##'  \item{"fit"}{the full results from the fitted model}
 ##'  \item{"slab"}{vector specifying the label of each study.}
 ##' }
 #' @references 
@@ -204,7 +203,7 @@
 
 valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.se, OE.95CI, citl, citl.se,
                     N, O, E, Po, Po.se, Pe, t.val, t.ma, t.extrapolate=FALSE, method="REML", test="knha", 
-                    verbose=FALSE, slab, n.chains = 4, pars, ...) {
+                    ret.fit = FALSE, verbose=FALSE, slab, n.chains = 4, pars, ...) {
   pars.default <- list(level = 0.95,
                        hp.mu.mean = 0, 
                        hp.mu.var = 1E6,
@@ -355,25 +354,30 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.
       fit <- rma(yi=theta, sei=theta.se, data=ds, method=method, test=test, slab=out$slab, ...) 
       preds <- predict(fit, level=pars.default$level)
       
+      # The predict function from metafor uses a Normal distribution for prediction intervals, 
+      # Here, we will use a Student T distribution instead
+      pi.lb <- coefficients(fit) + qt((1-pars.default$level)/2, df=(fit$k-2))*sqrt(fit$tau2+fit$se**2)
+      pi.ub <- coefficients(fit) + qt((1+pars.default$level)/2, df=(fit$k-2))*sqrt(fit$tau2+fit$se**2)
+      
       ds[selstudies, "theta.blup"] <- blup(fit)$pred
       
       if (pars.default$model.cstat == "normal/logit") {
         results$estimate <- inv.logit(coefficients(fit))
         results$CIl <- inv.logit(preds$ci.lb)
         results$CIu <- inv.logit(preds$ci.ub)
-        results$PIl <- ifelse(method=="FE", NA, inv.logit(preds$cr.lb))
-        results$PIu <- ifelse(method=="FE", NA, inv.logit(preds$cr.ub))
+        results$PIl <- ifelse(method=="FE", NA, inv.logit(pi.lb))
+        results$PIu <- ifelse(method=="FE", NA, inv.logit(pi.ub))
       } else if (pars.default$model.cstat == "normal/identity") {
         results$estimate <- coefficients(fit)
         results$CIl <- preds$ci.lb
         results$CIu <- preds$ci.ub
-        results$PIl <- ifelse(method=="FE", NA, preds$cr.lb)
-        results$PIu <- ifelse(method=="FE", NA, preds$cr.ub)
+        results$PIl <- ifelse(method=="FE", NA, pi.lb)
+        results$PIu <- ifelse(method=="FE", NA, pi.ub)
       } else {
         stop ("There is no implementation for the specified meta-analysis model!")
       }
       
-      out$rma <- fit
+      out$fit <- ifelse(ret.fit, fit, NA)
       out$numstudies <- fit$k
       out$results <- results
     } else {
@@ -416,6 +420,19 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.
                                       silent.jags = !verbose,
                                       inits=inits,
                                       ...)
+      
+      # Check convergence
+      psrf.ul <-  jags.model$psrf$psrf[,2]
+      psrf.target <- jags.model$psrf$psrf.target
+      
+      if(sum(psrf.ul > psrf.target)>0) {
+        warning(paste("Model did not properly converge! The upper bound of the convergence diagnostic (psrf) exceeds", 
+                      psrf.target, "for the parameters", 
+                      paste(rownames(jags.model$psrf$psrf)[which(psrf.ul > psrf.target)], " (psrf=", 
+                            round(jags.model$psrf$psrf[which(psrf.ul > psrf.target),2],2), ")", collapse=", ", sep=""),
+                      ". Consider re-running the analysis by increasing the optional arguments 'adapt', 'burnin' and/or 'sample'."  ))
+      }
+      
       fit <- jags.model$summaries
       
       
@@ -429,7 +446,7 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.
       results$PIl       <- fit["pred.obs", paste("Lower", txtLevel, sep="")]
       results$PIu       <- fit["pred.obs", paste("Upper", txtLevel, sep="")]
       
-      out$runjags <- jags.model
+      out$fit <- ifelse(ret.fit, jags.model, NA)
       out$PED <- sum(fit.dev$deviance)+sum(fit.dev$penalty)
       out$results <- results
     }
@@ -589,26 +606,36 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.
         fit <- rma(yi=ds$theta, sei=ds$theta.se, data=ds, method=method, test=test, slab=out$slab, ...) 
         preds <- predict(fit, level=pars.default$level)
         
+        # The predict function from metafor uses a Normal distribution for prediction intervals, 
+        # Here, we will use a Student T distribution instead
+        pi.lb <- coefficients(fit) + qt((1-pars.default$level)/2, df=(fit$k-2))*sqrt(fit$tau2+fit$se**2)
+        pi.ub <- coefficients(fit) + qt((1+pars.default$level)/2, df=(fit$k-2))*sqrt(fit$tau2+fit$se**2)
+        
         results$estimate <- coefficients(fit)
         results$CIl      <- preds$ci.lb
         results$CIu      <- preds$ci.ub
-        results$PIl      <- ifelse(method=="FE", NA, preds$cr.lb)
-        results$PIu      <- ifelse(method=="FE", NA, preds$cr.ub)
+        results$PIl      <- ifelse(method=="FE", NA, pi.lb)
+        results$PIu      <- ifelse(method=="FE", NA, pi.ub)
         
-        out$rma <- fit
+        out$fit <- ifelse(ret.fit, fit, NA)
         out$numstudies <- fit$k
       } else if (pars.default$model.oe=="normal/log") {
         if(verbose) print("Performing two-stage meta-analysis...")
         fit <- rma(yi=ds$theta, sei=ds$theta.se, data=ds, method=method, test=test, slab=out$slab, ...) 
         preds <- predict(fit, level=pars.default$level)
         
+        # The predict function from metafor uses a Normal distribution for prediction intervals, 
+        # Here, we will use a Student T distribution instead
+        pi.lb <- coefficients(fit) + qt((1-pars.default$level)/2, df=(fit$k-2))*sqrt(fit$tau2+fit$se**2)
+        pi.ub <- coefficients(fit) + qt((1+pars.default$level)/2, df=(fit$k-2))*sqrt(fit$tau2+fit$se**2)
+        
         results$estimate <- exp(coefficients(fit))
         results$CIl      <- exp(preds$ci.lb)
         results$CIu      <- exp(preds$ci.ub)
-        results$PIl      <- ifelse(method=="FE", NA, exp(preds$cr.lb))
-        results$PIu      <- ifelse(method=="FE", NA, exp(preds$cr.ub))
+        results$PIl      <- ifelse(method=="FE", NA, exp(pi.lb))
+        results$PIu      <- ifelse(method=="FE", NA, exp(pi.ub))
         
-        out$rma <- fit
+        out$fit <- ifelse(ret.fit, fit, NA)
         out$numstudies <- fit$k
       } else if (pars.default$model.oe=="poisson/log") { 
         if(verbose) print("Performing one-stage meta-analysis...")
@@ -623,7 +650,7 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.
           results$PIl      <- exp(lme4::fixef(fit) + qt((1-pars.default$level)/2, df=(lme4::ngrps(fit)-2))*sqrt(vcov(fit)[1,1]+(as.data.frame(lme4::VarCorr(fit))["vcov"])[1,1]))
           results$PIu      <- exp(lme4::fixef(fit) + qt((1+pars.default$level)/2, df=(lme4::ngrps(fit)-2))*sqrt(vcov(fit)[1,1]+(as.data.frame(lme4::VarCorr(fit))["vcov"])[1,1]))
           
-          out$lme4 <- fit
+          out$fit <- ifelse(ret.fit, fit, NA)
           out$numstudies <- nobs(fit)
         } else if (method=="FE") { #one-stage fixed-effects meta-analysis
           fit <- glm(O~1, offset=log(E), family=poisson(link="log"), data=ds)
@@ -634,7 +661,7 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.
           results$CIu      <- exp(preds.ci[2])
           results$PIl      <- results$PIu <- NA
           
-          out$glm <- fit
+          out$fit <- ifelse(ret.fit, fit, NA)
           out$numstudies <- nobs(fit)
         } else {
           stop(paste("No implementation found for ", method, " estimation (model '", pars.default$model.oe, "')!", sep=""))
@@ -715,6 +742,20 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.
                                       silent.jags = !verbose,
                                       inits=inits,
                                       ...)
+      # cat(paste("\nPenalized expected deviance: ", round(x$PED,2), "\n"))
+      
+      # Check convergence
+      psrf.ul <-  jags.model$psrf$psrf[,2]
+      psrf.target <- jags.model$psrf$psrf.target
+      
+      if(sum(psrf.ul > psrf.target)>0) {
+        warning(paste("Model did not properly converge! The upper bound of the convergence diagnostic (psrf) exceeds", 
+                      psrf.target, "for the parameters", 
+                      paste(rownames(jags.model$psrf$psrf)[which(psrf.ul > psrf.target)], " (psrf=", 
+                            round(jags.model$psrf$psrf[which(psrf.ul > psrf.target),2],2), ")", collapse=", ", sep=""),
+                        ". Consider re-running the analysis by increasing the optional arguments 'adapt', 'burnin' and/or 'sample'."  ))
+      }
+
         
       fit <- jags.model$summaries
       
@@ -729,7 +770,7 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.
       results$PIl      <- fit["pred.oe", paste("Lower", txtLevel, sep="")]
       results$PIu      <- fit["pred.oe", paste("Upper", txtLevel, sep="")]
       
-      out$runjags <- jags.model
+      out$fit <- ifelse(ret.fit, jags.model, NA)
       out$PED <- sum(fit.dev$deviance)+sum(fit.dev$penalty)
       out$results <- results
     }
@@ -802,23 +843,6 @@ print.valmeta <- function(x, ...) {
   } else {
     cat(paste("Summary ", text.stat, " with ", x$level*100, "% ", text.ci, " interval:\n\n", sep=""))
     print((x$results)[c("estimate", "CIl", "CIu")])
-  }
-  
-  if (!is.null(x$runjags)) {
-    #Print penalized expected deviance
-    cat(paste("\nPenalized expected deviance: ", round(x$PED,2), "\n"))
-    
-    # Check if model converged
-    psrf.ul <-  x$runjags$psrf$psrf[,2]
-    psrf.target <- x$runjags$psrf$psrf.target
-    
-    if(sum(psrf.ul > psrf.target)>0) {
-      warning(paste("Model did not properly converge! The upper bound of the convergence diagnostic (psrf) exceeds", 
-                    psrf.target, "for the parameters", 
-                    paste(rownames(x$runjags$psrf$psrf)[which(psrf.ul > psrf.target)], " (psrf=", 
-                          round(x$runjags$psrf$psrf[which(psrf.ul > psrf.target),2],2), ")", collapse=", ", sep=""),
-                    ". Consider re-running the analysis by increasing the optional arguments 'adapt', 'burnin' and/or 'sample'."  ))
-    }
   }
   
   cat("\n")
