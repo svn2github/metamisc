@@ -2,6 +2,13 @@ logit <- function(x) {  log(x/(1-x))  }
 
 inv.logit <- function(x) {  if(is.numeric(x)) 1/(1+exp(-x)) else stop("x is not numeric!") }
 
+calcPredInt <- function (x, sigma2, tau2, k, level=0.95) {
+  pi.lb <- x + qt((1-level)/2, df=(k-2))*sqrt(tau2+sigma2)
+  pi.ub <- x + qt((1+level)/2, df=(k-2))*sqrt(tau2+sigma2)
+  out <- list(lower=pi.lb, upper=pi.ub)
+  return(out)
+}
+
 generateMCMCinits <- function(n.chains, model.pars)
 {
   inits <- list()

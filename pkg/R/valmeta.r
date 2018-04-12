@@ -121,7 +121,11 @@
 ##'  \item{"measure"}{character string specifying the performance measure that has been meta-analysed.}
 ##'  \item{"method"}{character string specifying the meta-analysis method.}
 ##'  \item{"model"}{character string specifying the meta-analysis model (link function).}
-##'  \item{"results"}{numeric vector containing the meta-analysis results}
+##'  \item{"est"}{summary estimate for the performance statistic. For Bayesian meta-analysis, the posterior median is returned.}
+##'  \item{"ci.lb"}{lower bound of the confidence (or credibility) interval of the summary performance estimate.}
+##'  \item{"ci.ub"}{upper bound of the confidence (or credibility) interval of the summary performance estimate.}
+##'  \item{"pi.lb"}{lower bound of the (approximate) prediction interval of the summary performance estimate.}
+##'  \item{"pi.ub"}{upper bound of the (approximate) prediction interval of the summary performance estimate.}
 ##'  \item{"fit"}{the full results from the fitted model}
 ##'  \item{"slab"}{vector specifying the label of each study.}
 ##' }
@@ -303,7 +307,8 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.
   #######################################################################################
   # Prepare results
   #######################################################################################
-  results <- data.frame(estimate=NA, CIl=NA, CIu=NA, PIl=NA, PIu=NA)
+  est <- ci.lb <- ci.ub <- NA
+  #results <- data.frame(estimate=NA, CIl=NA, CIu=NA, PIl=NA, PIu=NA)
   
   #######################################################################################
   # Prepare object
@@ -356,30 +361,30 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.
       
       # The predict function from metafor uses a Normal distribution for prediction intervals, 
       # Here, we will use a Student T distribution instead
-      pi.lb <- coefficients(fit) + qt((1-pars.default$level)/2, df=(fit$k-2))*sqrt(fit$tau2+fit$se**2)
-      pi.ub <- coefficients(fit) + qt((1+pars.default$level)/2, df=(fit$k-2))*sqrt(fit$tau2+fit$se**2)
+      predint <- calcPredInt(coefficients(fit), sigma2=fit$se**2, tau2=fit$tau2, k=fit$k,level=pars.default$level)
+      pi.lb <- predint$lower
+      pi.ub <- predint$upper
       
       ds[selstudies, "theta.blup"] <- blup(fit)$pred
       
       if (pars.default$model.cstat == "normal/logit") {
-        results$estimate <- inv.logit(coefficients(fit))
-        results$CIl <- inv.logit(preds$ci.lb)
-        results$CIu <- inv.logit(preds$ci.ub)
-        results$PIl <- ifelse(method=="FE", NA, inv.logit(pi.lb))
-        results$PIu <- ifelse(method=="FE", NA, inv.logit(pi.ub))
+        out$est <- as.numeric(inv.logit(coefficients(fit)))
+        out$ci.lb <- inv.logit(preds$ci.lb)
+        out$ci.ub <- inv.logit(preds$ci.ub)
+        out$pi.lb <- ifelse(method=="FE", inv.logit(ci.lb), inv.logit(pi.lb))
+        out$pi.ub <- ifelse(method=="FE", inv.logit(ci.ub), inv.logit(pi.ub))
       } else if (pars.default$model.cstat == "normal/identity") {
-        results$estimate <- coefficients(fit)
-        results$CIl <- preds$ci.lb
-        results$CIu <- preds$ci.ub
-        results$PIl <- ifelse(method=="FE", NA, pi.lb)
-        results$PIu <- ifelse(method=="FE", NA, pi.ub)
+        out$est <- as.numeric(coefficients(fit))
+        out$ci.lb <- preds$ci.lb
+        out$ci.ub <- preds$ci.ub
+        out$pi.lb <- ifelse(method=="FE", ci.lb, pi.lb)
+        out$pi.ub <- ifelse(method=="FE", ci.ub, pi.ub)
       } else {
         stop ("There is no implementation for the specified meta-analysis model!")
       }
       
       out$fit <- ifelse(ret.fit, fit, NA)
       out$numstudies <- fit$k
-      out$results <- results
     } else {
       # All data are used!
       out$numstudies <- dim(ds)[1]
@@ -440,15 +445,14 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.
       fit.dev <- runjags::extract(jags.model,"PED")
       txtLevel <- (out$level*100)
       
-      results$estimate  <- fit["mu.obs", "Median"]
-      results$CIl       <- fit["mu.obs", paste("Lower", txtLevel, sep="")]
-      results$CIu       <- fit["mu.obs", paste("Upper", txtLevel, sep="")]
-      results$PIl       <- fit["pred.obs", paste("Lower", txtLevel, sep="")]
-      results$PIu       <- fit["pred.obs", paste("Upper", txtLevel, sep="")]
+      out$est    <- fit["mu.obs", "Median"]
+      out$ci.lb  <- fit["mu.obs", paste("Lower", txtLevel, sep="")]
+      out$ci.ub  <- fit["mu.obs", paste("Upper", txtLevel, sep="")]
+      out$pi.lb  <- fit["pred.obs", paste("Lower", txtLevel, sep="")]
+      out$pi.ub  <- fit["pred.obs", paste("Upper", txtLevel, sep="")]
       
       out$fit <- ifelse(ret.fit, jags.model, NA)
       out$PED <- sum(fit.dev$deviance)+sum(fit.dev$penalty)
-      out$results <- results
     }
     
     out$data <- ds
@@ -608,14 +612,13 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.
         
         # The predict function from metafor uses a Normal distribution for prediction intervals, 
         # Here, we will use a Student T distribution instead
-        pi.lb <- coefficients(fit) + qt((1-pars.default$level)/2, df=(fit$k-2))*sqrt(fit$tau2+fit$se**2)
-        pi.ub <- coefficients(fit) + qt((1+pars.default$level)/2, df=(fit$k-2))*sqrt(fit$tau2+fit$se**2)
+        predint <- calcPredInt(coefficients(fit), sigma2=fit$se**2, tau2=fit$tau2, k=fit$k, level=pars.default$level)
         
-        results$estimate <- coefficients(fit)
-        results$CIl      <- preds$ci.lb
-        results$CIu      <- preds$ci.ub
-        results$PIl      <- ifelse(method=="FE", NA, pi.lb)
-        results$PIu      <- ifelse(method=="FE", NA, pi.ub)
+        out$est   <- as.numeric(coefficients(fit))
+        out$ci.lb <- preds$ci.lb
+        out$ci.ub <- preds$ci.ub
+        out$pi.lb <- ifelse(method=="FE", ci.lb, predint$lower)
+        out$pi.ub <- ifelse(method=="FE", ci.ub, predint$upper)
         
         out$fit <- ifelse(ret.fit, fit, NA)
         out$numstudies <- fit$k
@@ -626,14 +629,13 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.
         
         # The predict function from metafor uses a Normal distribution for prediction intervals, 
         # Here, we will use a Student T distribution instead
-        pi.lb <- coefficients(fit) + qt((1-pars.default$level)/2, df=(fit$k-2))*sqrt(fit$tau2+fit$se**2)
-        pi.ub <- coefficients(fit) + qt((1+pars.default$level)/2, df=(fit$k-2))*sqrt(fit$tau2+fit$se**2)
-        
-        results$estimate <- exp(coefficients(fit))
-        results$CIl      <- exp(preds$ci.lb)
-        results$CIu      <- exp(preds$ci.ub)
-        results$PIl      <- ifelse(method=="FE", NA, exp(pi.lb))
-        results$PIu      <- ifelse(method=="FE", NA, exp(pi.ub))
+        predint <- calcPredInt(coefficients(fit), sigma2=fit$se**2, tau2=fit$tau2, k=fit$k, level=pars.default$level)
+
+        out$est    <- as.numeric(exp(coefficients(fit)))
+        out$ci.lb  <- exp(preds$ci.lb)
+        out$ci.ub  <- exp(preds$ci.ub)
+        out$pi.lb  <- ifelse(method=="FE", exp(ci.lb), exp(predint$lower))
+        out$pi.ub  <- ifelse(method=="FE", exp(ci.lb), exp(predint$upper))
         
         out$fit <- ifelse(ret.fit, fit, NA)
         out$numstudies <- fit$k
@@ -643,12 +645,13 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.
           if (test=="knha") warning("The Sidik-Jonkman-Hartung-Knapp correction cannot be applied")
           fit <- glmer(O~1|Study, offset=log(E), family=poisson(link="log"), data=ds)
           preds.ci <- confint(fit, level=pars.default$level, quiet=!verbose, ...)
+          predint <- calcPredInt(lme4::fixef(fit), sigma2=vcov(fit)[1,1], tau2=(as.data.frame(lme4::VarCorr(fit))["vcov"])[1,1], k=lme4::ngrps(fit), level=pars.default$level)
           
-          results$estimate <- exp(lme4::fixef(fit))
-          results$CIl      <- exp(preds.ci["(Intercept)",1])
-          results$CIu      <- exp(preds.ci["(Intercept)",2])
-          results$PIl      <- exp(lme4::fixef(fit) + qt((1-pars.default$level)/2, df=(lme4::ngrps(fit)-2))*sqrt(vcov(fit)[1,1]+(as.data.frame(lme4::VarCorr(fit))["vcov"])[1,1]))
-          results$PIu      <- exp(lme4::fixef(fit) + qt((1+pars.default$level)/2, df=(lme4::ngrps(fit)-2))*sqrt(vcov(fit)[1,1]+(as.data.frame(lme4::VarCorr(fit))["vcov"])[1,1]))
+          out$est    <- as.numeric(exp(lme4::fixef(fit)))
+          out$ci.lb  <- exp(preds.ci["(Intercept)",1])
+          out$ci.ub  <- exp(preds.ci["(Intercept)",2])
+          out$pi.lb  <- exp(predint$lower)
+          out$pi.ub  <- exp(predint$upper)
           
           out$fit <- ifelse(ret.fit, fit, NA)
           out$numstudies <- nobs(fit)
@@ -656,10 +659,9 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.
           fit <- glm(O~1, offset=log(E), family=poisson(link="log"), data=ds)
           preds.ci <- confint(fit, level=pars.default$level, quiet=!verbose, ...)
           
-          results$estimate <- exp(coefficients(fit))
-          results$CIl      <- exp(preds.ci[1])
-          results$CIu      <- exp(preds.ci[2])
-          results$PIl      <- results$PIu <- NA
+          out$est   <- as.numeric(exp(coefficients(fit)))
+          out$ci.lb <- out$pi.lb <- exp(preds.ci[1])
+          out$ci.ub <- out$pi.ub <- exp(preds.ci[2])
           
           out$fit <- ifelse(ret.fit, fit, NA)
           out$numstudies <- nobs(fit)
@@ -669,9 +671,6 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.
       } else {
         stop("Model not implemented yet!")
       }
-      names(results) <- c("estimate", "CIl", "CIu", "PIl", "PIu")
-      
-      out$results <- results
     } else {
       if(verbose) print("Performing Bayesian one-stage meta-analysis...")
       
@@ -764,15 +763,14 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.
       fit.dev <- runjags::extract(jags.model,"PED")
       txtLevel <- (out$level*100)
       
-      results$estimate <- fit["mu.oe", "Median"]
-      results$CIl      <- fit["mu.oe", paste("Lower", txtLevel, sep="")]
-      results$CIu      <- fit["mu.oe", paste("Upper", txtLevel, sep="")]
-      results$PIl      <- fit["pred.oe", paste("Lower", txtLevel, sep="")]
-      results$PIu      <- fit["pred.oe", paste("Upper", txtLevel, sep="")]
+      out$est   <- fit["mu.oe", "Median"]
+      out$ci.lb <- fit["mu.oe", paste("Lower", txtLevel, sep="")]
+      out$ci.ub <- fit["mu.oe", paste("Upper", txtLevel, sep="")]
+      out$pi.lb <- fit["pred.oe", paste("Lower", txtLevel, sep="")]
+      out$pi.ub <- fit["pred.oe", paste("Upper", txtLevel, sep="")]
       
       out$fit <- ifelse(ret.fit, jags.model, NA)
       out$PED <- sum(fit.dev$deviance)+sum(fit.dev$penalty)
-      out$results <- results
     }
     
     if ("Study" %in% colnames(ds)) {
@@ -839,12 +837,12 @@ print.valmeta <- function(x, ...) {
   
   if (x$method!="FE") {
     cat(paste("Summary ", text.stat, " with ", x$level*100, "% ", text.ci, " and ", text.pi, " ", x$level*100, "% prediction interval:\n\n", sep=""))
-    print(x$results)
+    results <- c(Estimate=x$est, CIl=x$ci.lb, CIu=x$ci.ub, PIl=x$pi.lb, PIu=x$pi.ub)
   } else {
     cat(paste("Summary ", text.stat, " with ", x$level*100, "% ", text.ci, " interval:\n\n", sep=""))
-    print((x$results)[c("estimate", "CIl", "CIu")])
+    results <- c(Estimate=x$est, CIl=x$ci.lb, CIu=x$ci.ub)
   }
-  
+  print(results)
   cat("\n")
   cat(paste("Number of studies included: ", x$numstudies))
 }
@@ -910,17 +908,30 @@ plot.valmeta <- function(x, sort="asc", ...) {
   yi.ci <- cbind(ci.lb, ci.ub)
   
   if (x$measure=="cstat") {
-    metamisc::forest(theta=yi, theta.ci=yi.ci, theta.slab=yi.slab, 
-           theta.summary=as.numeric(x$results["estimate"]), 
-           theta.summary.ci=as.numeric(x$results[c("CIl","CIu")]), 
-           theta.summary.pi=as.numeric(x$results[c("PIl","PIu")]), 
+    #metamisc::
+      forest(theta=yi, 
+             theta.ci.lb=yi.ci[,"ci.lb"], 
+             theta.ci.ub=yi.ci[,"ci.ub"], 
+             theta.slab=yi.slab, 
+           theta.summary=x$est, 
+           theta.summary.ci.lb=x$ci.lb,
+           theta.summary.ci.ub=x$ci.ub, 
+           theta.summary.pi.lb=x$pi.lb,
+           theta.summary.pi.ub=x$pi.ub,
            xlim=c(0,1),
            refline=0.5, xlab="c-statistic", sort=sort, ...)
   } else if (x$measure=="OE") {
-    metamisc::forest(theta=yi, theta.ci=yi.ci, theta.slab=yi.slab, 
-           theta.summary=as.numeric(x$results["estimate"]), 
-           theta.summary.ci=as.numeric(x$results[c("CIl","CIu")]), 
-           theta.summary.pi=as.numeric(x$results[c("PIl","PIu")]), 
+    #metamisc::
+      forest(theta=yi, 
+                     theta.ci.lb=yi.ci[,"ci.lb"], 
+                     theta.ci.ub=yi.ci[,"ci.ub"], 
+                     theta.slab=yi.slab, 
+           theta.summary=x$est, 
+           theta.summary.ci.lb=x$ci.lb,
+           theta.summary.ci.ub=x$ci.ub, 
+           theta.summary.pi.lb=x$pi.lb,
+           theta.summary.pi.ub=x$pi.ub,
+           theta.summary.pi=(x$results[1,c("PIl","PIu")]), 
            xlim=c(0,NA),
            refline=1, xlab="Total O:E ratio", sort=sort, ...)
   }

@@ -2,14 +2,14 @@
 #' 
 #' Generate a forest plot by specifying the various effect sizes, confidence intervals and summary estimate.
 #' @param theta Numeric vector with effect size for each study
-#' @param theta.ci Two-dimensional array specifying the lower bound (first column) and upper bound (second column) of the 
-#' confidence interval of the effect sizes
+#' @param theta.ci.lb Numeric vector specifying the lower bound of the confidence interval of the effect sizes
+#' @param theta.ci.ub Numeric vector specifying the upper bound of the confidence interval of the effect sizes
 #' @param theta.slab Character vector specifying the study labels
 #' @param theta.summary Meta-analysis summary estimate of the effect sizes
-#' @param theta.summary.ci Numeric vector specifying the lower bound (first item) and upper bound (second item) of the 
-#' confidence interval of the summary estimate
-#' @param theta.summary.pi Numeric vector specifying the lower bound (first item) and upper bound (second item) of the 
-#' prediction interval of the summary estimate. 
+#' @param theta.summary.ci.lb Lower bound of the confidence (or credibility) interval of the summary estimate
+#' @param theta.summary.ci.ub Upper bound of the confidence (or credibility) interval of the summary estimate
+#' @param theta.summary.pi.lb Lower bound of the (approximate) prediction interval of the summary estimate. 
+#' @param theta.summary.pi.ub Upper bound of the (approximate) prediction interval of the summary estimate.
 #' @param title Title of the forest plot
 #' @param sort By default, studies are sorted by ascending effect size (\code{sort="asc"}). Set to \code{"desc"} for 
 #' sorting in reverse order, or any other value to ignore sorting.
@@ -26,11 +26,12 @@
 #' 
 #' @export
 forest <- function (theta, 
-                    theta.ci, 
+                    theta.ci.lb,
+                    theta.ci.ub,
                     theta.slab, 
                     theta.summary, 
-                    theta.summary.ci, 
-                    theta.summary.pi,
+                    theta.summary.ci.lb, theta.summary.ci.ub, 
+                    theta.summary.pi.lb, theta.summary.pi.ub,
                     title,
                     sort = "asc",
                     theme = theme_bw(),
@@ -41,18 +42,23 @@ forest <- function (theta,
                     label.summary="Summary Estimate", ...) {
 
   if (missing(theta)) stop("Study effect sizes are missing!")
-  if (missing(theta.ci)) stop("Confidence intervals of effect sizes missing!")
+  if (missing(theta.ci.lb) | missing(theta.ci.ub)) stop("Confidence intervals of effect sizes missing!")
   if (missing(theta.slab)) stop("Study labels are missing!")
   
-  if (missing(theta.summary.pi)) {
-    theta.summary.pi <- rep(NA, 2)
+  add.predint <- TRUE # Add prediction interval by default
+  if (missing(theta.summary.pi.lb) | missing(theta.summary.pi.ub)) {
+    theta.summary.pi.lb <- theta.summary.pi.ub <- NA
+  }
+  if (NA %in% c(theta.summary.pi.lb, theta.summary.pi.ub)) {
+    add.predint <- FALSE
   }
     
   
-  num.studies <- unique(c(length(theta), dim(theta.ci)[1], length(theta.slab)))
+  num.studies <- unique(c(length(theta), length(theta.ci.lb), length(theta.ci.ub), length(theta.slab)))
   if (length(num.studies)>1) stop(paste("Mismatch in data dimensions!"))
   
   label.predint <- "Prediction Interval"
+  
   
   #Extract data
   yi <- theta
@@ -69,25 +75,25 @@ forest <- function (theta,
   
   
   # Add meta-analysis results
-  if (NA %in% theta.summary.pi) {
+  if (!add.predint) {
     scat  <- c(rep(1, num.studies), 0) #indicator variable for data points
     slab  <- c(slab[i.index], label.summary)
     yi    <- c(yi[i.index], theta.summary)
-    ci.lb <- c(theta.ci[i.index,1], theta.summary.ci[1])
-    ci.ub <- c(theta.ci[i.index,2], theta.summary.ci[2])
+    ci.lb <- c(theta.ci.lb[i.index], theta.summary.ci.lb)
+    ci.ub <- c(theta.ci.ub[i.index], theta.summary.ci.ub)
   } else {
     scat  <- c(rep(1,length(i.index)), 0, 0)
     slab  <- c(slab[i.index], label.summary, label.predint)
     yi    <- c(yi[i.index], theta.summary, theta.summary)
-    ci.lb <- c(theta.ci[i.index,1], theta.summary.ci[1], theta.summary.pi[1])
-    ci.ub <- c(theta.ci[i.index,2], theta.summary.ci[2], theta.summary.pi[2])
+    ci.lb <- c(theta.ci.lb[i.index], theta.summary.ci.lb, theta.summary.pi.lb)
+    ci.ub <- c(theta.ci.ub[i.index], theta.summary.ci.ub, theta.summary.pi.ub)
   }
-  
   
   ALL <- data.frame(study=slab, mean=yi, m.lower=ci.lb, m.upper=ci.ub, order=length(yi):1, scat=scat)
   
+
   # reorder factor levels based on another variable (HPD.mean)
-  ALL$study.ES_order <- reorder(ALL$study, ALL$order, mean)    
+  ALL$study.ES_order <- reorder(ALL$study, ALL$order, mean) 
   
   p <- with(ALL, ggplot(ALL[!is.na(ALL$mean), ], 
                         aes(x = study.ES_order, y = mean, ymin = m.lower, ymax = m.upper)) +
@@ -116,14 +122,16 @@ forest <- function (theta,
   
   # Add meta-analysis summary
   g2 <- with(ALL, subset(ALL, study == label.summary))
-  g2$ci.upper <- theta.summary.ci[2]
-  g2$ci.lower <- theta.summary.ci[1]
-  g2$pi.upper <- theta.summary.pi[2]
-  g2$pi.lower <- theta.summary.pi[1]
+  g2$ci.upper <- theta.summary.ci.ub
+  g2$ci.lower <- theta.summary.ci.lb
+  
+  g3 <- with(ALL, subset(ALL, study == label.summary))
+  g3$pi.upper <- theta.summary.pi.ub
+  g3$pi.lower <- theta.summary.pi.lb
   
   # Prediction interval
-  if (!is.na(g2$pi.lower) & !is.na(g2$pi.upper)) {
-    p <- p + with(g2, geom_errorbar(data=g2, aes(ymin = pi.lower, ymax = pi.upper, x=label.predint), 
+  if (add.predint) {
+    p <- p + with(g3, geom_errorbar(data=g3, aes(ymin = pi.lower, ymax = pi.upper, x=label.predint), 
                                    width = 0.5, size=1.0, linetype=predint.linetype))
   }
 

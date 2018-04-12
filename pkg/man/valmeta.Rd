@@ -99,7 +99,11 @@ An object of class \code{valmeta} with the following elements:
  \item{"measure"}{character string specifying the performance measure that has been meta-analysed.}
  \item{"method"}{character string specifying the meta-analysis method.}
  \item{"model"}{character string specifying the meta-analysis model (link function).}
- \item{"results"}{numeric vector containing the meta-analysis results}
+ \item{"est"}{summary estimate for the performance statistic. For Bayesian meta-analysis, the posterior median is returned.}
+ \item{"ci.lb"}{lower bound of the confidence (or credibility) interval of the summary performance estimate.}
+ \item{"ci.ub"}{upper bound of the confidence (or credibility) interval of the summary performance estimate.}
+ \item{"pi.lb"}{lower bound of the (approximate) prediction interval of the summary performance estimate.}
+ \item{"pi.ub"}{upper bound of the (approximate) prediction interval of the summary performance estimate.}
  \item{"fit"}{the full results from the fitted model}
  \item{"slab"}{vector specifying the label of each study.}
 }

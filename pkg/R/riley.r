@@ -599,15 +599,19 @@ plot.riley <- function(x, title, sort="asc", xlim, refline, ...)
 	}
 	
 	# Generate 2 forest plots
-	p1 <- forest(theta=yi1, theta.ci=yi1.ci, theta.slab=x$slab, 
-	       theta.summary=ma1, 
-	       theta.summary.ci=ma1.ci, 
-	       theta.summary.pi=ma1.pi, 
+	p1 <- forest(theta=yi1, 
+	             theta.ci.lb=yi1.ci[,1], theta.ci.ub=yi1.ci[,2], 
+	             theta.slab=x$slab, 
+	             theta.summary=ma1, 
+	             theta.summary.ci.lb=ma1.ci[1], theta.summary.ci.ub=ma1.ci[2], 
+	             theta.summary.pi.lb=ma1.pi[1], theta.summary.pi.ub=ma1.pi[2], 
 	       title = title[1], xlim=xlim, refline=refline, sort=sort, ...)
-	p2 <- forest(theta=yi2, theta.ci=yi2.ci, theta.slab=x$slab, 
+	p2 <- forest(theta=yi2, 
+	             theta.ci.lb=yi2.ci[,1], theta.ci.ub=yi2.ci[,2], 
+	             theta.slab=x$slab, 
 	       theta.summary=ma2, 
-	       theta.summary.ci=ma2.ci, 
-	       theta.summary.pi=ma2.pi, 
+	       theta.summary.ci.lb=ma2.ci[1], theta.summary.ci.ub=ma2.ci[2], 
+	       theta.summary.pi.lb=ma2.pi[1], theta.summary.pi.ub=ma2.pi[2], 
 	       title = title[2], xlim=xlim, refline=refline, sort=sort, ...)
 	
 	multiplot(p1, p2, cols=2)
