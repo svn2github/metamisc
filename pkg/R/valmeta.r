@@ -239,10 +239,11 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.
   if (measure=="OE" & pars.default$model.oe=="poisson/log" & t.extrapolate) {
     t.extrapolate <- FALSE
     warning("Extrapolation not implemented yet for poisson/log models!")
-  }else if (measure=="OE" & method=="BAYES" & t.extrapolate) {
+  } else if (measure=="OE" & method=="BAYES" & t.extrapolate) {
     t.extrapolate <- FALSE
     warning("Extrapolation not implemented yet for Bayesian models!")
   }
+
   
   #######################################################################################
   # Check if we need to load runjags
@@ -288,9 +289,14 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.
   #######################################################################################
   # Prepare data
   #######################################################################################
-  if (missing(cstat.se)) {
+  
+  if (missing(slab))
+    slab <- NULL
+  if (missing(cstat.se))
     cstat.se <- rep(NA, length=k)
-  }
+  if (missing(cstat.95CI)) 
+    cstat.95CI <- array(NA, dim=c(k,2))
+  
   if (missing(O)) {
     O <- rep(NA, length=k)
   }
@@ -320,15 +326,6 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.
   out$level <- pars.default$level 
   class(out) <- "valmeta"
   
-  
-  #######################################################################################
-  # Assign study labels
-  #######################################################################################
-  if(missing(slab)) {
-    out$slab <- paste("Study", seq(1, k))
-  } else {
-    out$slab <- make.unique(as.character(slab))
-  }
 
   #######################################################################################
   # Meta-analysis of the c-statistic
@@ -344,11 +341,17 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.
       stop (paste("Meta-analysis model currently not supported: '", out$model, '"', sep=""))
     }
       
-    ds <- ccalc(cstat=cstat, cstat.se=cstat.se, cstat.CI.lower=cstat.95CI[,1],
-                cstat.CI.upper=cstat.95CI[,2], sd.LP=sd.LP, 
-                N=N, O=O, Po=Po, slab=out$slab, g=g, level=pars.default$level, 
+    
+    ds <- ccalc(cstat=cstat, cstat.se=cstat.se, 
+                cstat.cilb=cstat.95CI[,1],
+                cstat.ciub=cstat.95CI[,2],
+                cstat.cilv=0.95,
+                sd.LP=sd.LP, 
+                N=N, O=O, Po=Po, slab=slab, g=g, level=pars.default$level, 
                 approx.se.method=pars.default$method.restore.c.se) 
     
+    ## Assign study labels
+    out$slab <- rownames(ds)
     
     if (method != "BAYES") { # Use of rma
       
@@ -464,7 +467,9 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.
   if (measure=="OE") {
     
     # TODO: FIrst call oecalc
+    # TOD: add study names via oecalc (currently ignored)
     # Use derived data to obtain O, E and N where missing
+    
     
     t.ma <- ifelse(missing(t.ma), NA, t.ma)
     
@@ -908,7 +913,7 @@ plot.valmeta <- function(x, sort="asc", ...) {
   yi.ci <- cbind(ci.lb, ci.ub)
   
   if (x$measure=="cstat") {
-    #metamisc::
+    #make sure to load plot_utils file and ggplot package when testing
       forest(theta=yi, 
              theta.ci.lb=yi.ci[,"ci.lb"], 
              theta.ci.ub=yi.ci[,"ci.ub"], 

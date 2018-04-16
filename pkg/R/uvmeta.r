@@ -265,9 +265,6 @@ uvmeta.default <- function(r, r.se, method="REML", test="knha", labels, na.actio
     
     txtLevel <- (out$level*100)
     
-    #results <- c(fit["mu",c("Mean","SD")], fit["tausq",c("Mean","SD")], fit["mu", paste(c("Lower", "Upper"), txtLevel, sep="")], fit["theta.new",  paste(c("Lower", "Upper"), txtLevel, sep="")])
-    #names(results) <- c("estimate", "SE", "tau2", "se.tau2", "CIl", "CIu", "PIl", "PIu")
-
     out$est <- fit["mu", "Median"]
     out$se  <- fit["mu", "SD"]
     out$tau2 <- fit["tausq", "Median"]

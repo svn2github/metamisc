@@ -52,7 +52,7 @@ An object of the class \code{uvmeta} for which many standard methods are availab
  \item{"est"}{estimated performance statistic of the model. For Bayesian meta-analysis, the posterior median is returned.}
  \item{"se"}{standard error (or posterior standard deviation) of the summary estimate.}
  \item{"tau2"}{estimated amount of (residual) heterogeneity. Always 0 when method=\code{"FE"}. For Bayesian meta-analysis, the posterior median is returned.}
- \item{"se.tau2"}{estimated standard error (or posterior standard deviation) of the estimated amount of (residual) heterogeneity.}
+ \item{"se.tau2"}{estimated standard error (or posterior standard deviation) of the between-study variation.}
  \item{"ci.lb"}{lower bound of the confidence (or credibility) interval of the summary estimate}
  \item{"ci.ub"}{upper bound of the confidence (or credibility) interval of the summary estimate}
  \item{"pi.lb"}{lower bound of the (approximate) prediction interval of the summary estimate}

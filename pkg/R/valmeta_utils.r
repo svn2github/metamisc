@@ -23,6 +23,13 @@ deltaMethod <- function (object, g, vcov., func = g, constants, level=0.95, ...)
   result
 }
 
+calcPredInt <- function (x, sigma2, tau2, k, level=0.95) {
+  pi.lb <- x + qt((1-level)/2, df=(k-2))*sqrt(tau2+sigma2)
+  pi.ub <- x + qt((1+level)/2, df=(k-2))*sqrt(tau2+sigma2)
+  out <- list(lower=pi.lb, upper=pi.ub)
+  return(out)
+}
+
 
 
 restore.c.var.hanley <- function(cstat, N.subjects, N.events, restore.method=4, g=NULL) {
