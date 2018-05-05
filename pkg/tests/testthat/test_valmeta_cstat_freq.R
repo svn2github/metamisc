@@ -12,11 +12,12 @@ test_that("Fixed effect meta-analysis of c-statistic works", {
                      cstat.cilb=c.index.95CIl, cstat.ciub=c.index.95CIu, 
                      N=n, O=n.events, data=EuroSCORE, 
                      g="log(cstat/(1-cstat))")
-  fit1.metafor <- rma(yi=theta, sei=theta.se, method="FE", data=dat.cstat)
+  
+  fit1.metafor <- rma(yi=theta, sei=theta.se, method="FE", data=dat.cstat, test="z")
   
   fit1.valmeta <- with(EuroSCORE, valmeta(cstat=c.index, cstat.se=se.c.index, 
                                           cstat.95CI=cbind(c.index.95CIl,c.index.95CIu), 
-                                          N=n, O=n.events, slab=Study, method="FE"))
+                                          N=n, O=n.events, slab=Study, method="FE", test="z"))
   
-  expect_identical(fit1.valmeta$est, inv.logit(fit1.metafor$beta))
+  expect_equal(fit1.valmeta$est, inv.logit(as.numeric(fit1.metafor$beta)))
 })
