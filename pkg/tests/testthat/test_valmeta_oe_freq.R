@@ -1,8 +1,9 @@
 context("Testing frequentist valmeta functionalities (O:E ratio)")
-library(lme4)
-
-data(EuroSCORE)
 skip_on_cran()
+
+library(lme4)
+data(EuroSCORE)
+
 
 test_that("Fixed effect meta-analysis of total O:E ratio works (Poisson distribution)", {
   

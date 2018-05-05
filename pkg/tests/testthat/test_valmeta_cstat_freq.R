@@ -1,8 +1,9 @@
 context("Testing frequentist valmeta functionalities (c-statistic)")
-library(metafor)
-
-data(EuroSCORE)
 skip_on_cran()
+
+
+library(metafor)
+data(EuroSCORE)
 
 
 test_that("Fixed effect meta-analysis of c-statistic works", {
