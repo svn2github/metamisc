@@ -4,6 +4,31 @@ library(lme4)
 data(EuroSCORE)
 skip_on_cran()
 
+test_that("Fixed effect meta-analysis of total O:E ratio works (Poisson distribution)", {
+  
+  # Let's ignore clustering of studies in this test 
+  
+  fit1.glm <- glm (n.events ~ 1, offset = log(e.events), 
+                   family = poisson(link = "log"), data = EuroSCORE)
+  
+  fit1.valmeta <- with(EuroSCORE, valmeta(measure="OE", 
+                                          O=n.events, 
+                                          E=e.events, 
+                                          test = "z",
+                                          method="FE", slab="Study",
+                                          pars=list(model.oe="poisson/log")))
+  
+  # Now try the same but omit study labels
+  fit2.valmeta <- with(EuroSCORE, valmeta(measure="OE", 
+                                          O=n.events, 
+                                          E=e.events, 
+                                          test = "z",
+                                          method="FE",
+                                          pars=list(model.oe="poisson/log")))
+  
+  expect_equal(fit1.valmeta$est, fit2.valmeta$est, exp(as.numeric(coefficients(fit1.glm))))
+})
+
 test_that("Random effects meta-analysis of total O:E ratio works (Poisson distribution)", {
   
   # Let's ignore clustering of studies in this test 
@@ -17,9 +42,19 @@ test_that("Random effects meta-analysis of total O:E ratio works (Poisson distri
                                           O=n.events, 
                                           E=e.events, 
                                           test = "z",
-                                          method="ML", pars=list(model.oe="poisson/log")))
+                                          method="ML", slab="Study",
+                                          pars=list(model.oe="poisson/log")))
   
-  expect_equal(fit1.valmeta$est, exp(as.numeric(fixef(fit1.lme4))))
+  # Now try the same but omit study labels
+  fit2.valmeta <- with(EuroSCORE, valmeta(measure="OE", 
+                                          O=n.events, 
+                                          E=e.events, 
+                                          test = "z",
+                                          method="ML",
+                                          pars=list(model.oe="poisson/log")))
+  
+  expect_equal(fit1.valmeta$est, fit2.valmeta$est, exp(as.numeric(fixef(fit1.lme4))))
 })
+
 
 
