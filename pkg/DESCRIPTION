@@ -2,7 +2,7 @@ Package: metamisc
 Type: Package
 Title: Diagnostic and Prognostic Meta-Analysis
 Version: 0.1.9
-Date: 2018-04-12
+Date: 2018-05-05
 Authors@R: c(person(given = "Thomas", family = "Debray", role = c("aut", "cre"), email = "thomas.debray@gmail.com", comment="http://orcid.org/0000-0002-1790-2719"), 
    person(given = "Valentijn", family = "de Jong", role = "aut"))
 Description: Meta-analysis of diagnostic and prognostic modeling studies. Summarize estimates of prognostic factors, diagnostic test accuracy and prediction model performance. Validate, update and combine published prediction models. Develop new prediction models with data from multiple studies. 

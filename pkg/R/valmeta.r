@@ -243,6 +243,10 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.
     t.extrapolate <- FALSE
     warning("Extrapolation not implemented yet for Bayesian models!")
   }
+  
+  if (method=="FE") {
+    test <- "z" #Do not use SJHK adjustment in a fixed effect MA
+  }
 
   
   #######################################################################################
@@ -596,7 +600,7 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.
       
       O.new <- round(O.new) #round O to improve convergence of the models
 
-      Study.new <- c(1:dim(ds)[1])
+      Study.new <- c(1:dim(ds)[1]) # Treat any row as a unique study (i.e. omit clustering of studies)
       ds <- data.frame(Study=Study.new, theta=theta, theta.se=theta.se, theta.CIl=theta.cil, theta.CIu=theta.ciu, 
                        O=O.new, E=E.new, N=N.new, theta.source=theta.source)
       
@@ -649,6 +653,7 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.
         if (method=="ML") { 
           if (test=="knha") warning("The Sidik-Jonkman-Hartung-Knapp correction cannot be applied")
           fit <- glmer(O~1|Study, offset=log(E), family=poisson(link="log"), data=ds)
+
           preds.ci <- confint(fit, level=pars.default$level, quiet=!verbose, ...)
           predint <- calcPredInt(lme4::fixef(fit), sigma2=vcov(fit)[1,1], tau2=(as.data.frame(lme4::VarCorr(fit))["vcov"])[1,1], k=lme4::ngrps(fit), level=pars.default$level)
           
