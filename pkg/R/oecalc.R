@@ -139,7 +139,7 @@ oecalc <- function(OE, OE.se, OE.cilb, OE.ciub, OE.cilv, citl, citl.se, N, O, E,
   if(is.null(N)) N <- rep(NA, times=k)
   if(is.null(Po)) Po <- rep(NA, times=k)
   if(is.null(Pe)) Pe <- rep(NA, times=k)
-
+  
   
   #######################################################################################
   # Assign study labels
@@ -190,8 +190,12 @@ oecalc <- function(OE, OE.se, OE.cilb, OE.ciub, OE.cilv, citl, citl.se, N, O, E,
     dat.se <- cbind(dat.se, sqrt(results[[i]][,2])) #take square root of error variance
     dat.method <- cbind(dat.method, as.character(results[[i]][,3]))
   }
+
   myfun = function(dat) { which.min(is.na(dat)) }
-  sel.theta <- apply(dat.est, 1, myfun)
+  sel.theta1 <- apply(dat.est, 1, myfun)
+  sel.theta2 <- apply(dat.se, 1, myfun)
+  sel.theta <- apply(cbind(sel.theta1, sel.theta2), 1, max) # only take the estimate for which we have an SE available
+  
   theta <- dat.est[cbind(seq_along(sel.theta), sel.theta)] # Preferred estimate for theta 
   theta.se <- dat.se[cbind(seq_along(sel.theta), sel.theta)]# Preferred estimate for SE(theta)
   theta.source <-  dat.method[cbind(seq_along(sel.theta), sel.theta)] # Method used for estimating theta and its SE
@@ -218,13 +222,14 @@ resoe.O.E.N <- function(O, E, N, correction, g=NULL) {
   }
 
   toe <- toe.var <- rep(NA, k) # Transformed OE and its error variance
-  
+
   for (i in 1:k) {
     oei <- out[i,1]
     toe[i] <- eval(parse(text=g), list(OE = oei))
     vi  <- out[i,2]
     names(oei) <- names(vi) <- "OE"
-    toe.var[i] <- as.numeric((deltaMethod(object=oei, g=g, vcov.=vi))["SE"])**2
+    toe.deriv <- deltaMethod(object=oei, g=g, vcov.=vi)
+    toe.var[i] <- as.numeric(toe.deriv["SE"])**2
   }
   
   out <- cbind(toe, toe.var)
@@ -291,7 +296,7 @@ resoe.OE.ci <- function(OE, OE.cilb, OE.ciub, OE.cilv, g=NULL) {
     toe[i] <- eval(parse(text=g), list(OE = out[i,1]))
     toe.cilb <- eval(parse(text=g), list(OE = OE.cilb[i]))
     toe.ciub <- eval(parse(text=g), list(OE = OE.ciub[i]))
-    toe.var[i] <- ((toe.ciub - toe.cilb)/(2*qnorm(0.5+OE.cilv/2)))**2 #Derive from 95% CI
+    toe.var[i] <- ((toe.ciub - toe.cilb)/(2*qnorm(0.5+OE.cilv[i]/2)))**2 #Derive from 95% CI
   }
   
   out <- cbind(toe, toe.var)

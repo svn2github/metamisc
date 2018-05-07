@@ -31,3 +31,6 @@ test_that("Standard error of transformed c-statistic", {
   expect_equal(logitcse1, logitcse2)
   
 })
+
+
+
