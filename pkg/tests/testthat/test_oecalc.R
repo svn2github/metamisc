@@ -84,6 +84,15 @@ test_that("Standard error of log O:E ratio", {
   OE.ciub <- exp(log(OE) + qnorm(0.975) * tOE.se)
   tOE.deriv <- resoe.OE.ci(OE=OE, OE.cilb=OE.cilb, OE.ciub=OE.ciub, OE.cilv=rep(0.95,length(OE)), g="log(OE)")
   expect_equal(tOE.se, sqrt(tOE.deriv[,2]))
+  
+  # Does everything work fine if some studies do not provide any meaningful data?
+  O <- EuroSCORE$n.events
+  O[1:10] <- NA
+  logoese10 <- sqrt(1/O - 1/EuroSCORE$n)
+  logoese11 <- sqrt((resoe.O.E(O=O, E=EuroSCORE$e.events, correction=1/2, g="log(OE)"))[,2])
+  logoese12 <- (oecalc(O=O, E=EuroSCORE$e.events, g="log(OE)"))$theta.se
+  #expect_equal(logoese10, logoese11, logoese12)
+  
 })
 
 

@@ -203,7 +203,30 @@ oecalc <- function(OE, OE.se, OE.cilb, OE.ciub, OE.cilv, citl, citl.se, N, O, E,
   theta.se <- dat.se[cbind(seq_along(sel.theta), sel.theta)]# Preferred estimate for SE(theta)
   theta.source <-  dat.method[cbind(seq_along(sel.theta), sel.theta)] # Method used for estimating theta and its SE
   
-  ds <- data.frame(theta=theta, theta.se=theta.se, theta.source=theta.source)
+  #######################################################################################
+  # Derive confindence intervals
+  #######################################################################################
+  theta.cil <- theta.ciu <- rep(NA, k)
+  
+  # Directly transform the provided confidence limits for studies where the reported level is equal to the requested level
+  if (is.null(g)) {
+    theta.cil[OE.cilv==level] <- OE.cilb[OE.cilv==level]
+    theta.ciu[OE.cilv==level] <- OE.ciub[OE.cilv==level]
+  } else {
+    theta.cil[OE.cilv==level] <- eval(parse(text=g), list(OE = OE.cilb[OE.cilv==level]))
+    theta.ciu[OE.cilv==level] <- eval(parse(text=g), list(OE = OE.ciub[OE.cilv==level]))
+  } 
+  
+  # Calculate the desired confidence intervals
+  theta.cil[is.na(theta.cil)] <- (theta+qnorm((1-level)/2)*theta.se)[is.na(theta.cil)]
+  theta.ciu[is.na(theta.ciu)] <- (theta+qnorm((1+level)/2)*theta.se)[is.na(theta.ciu)]
+  
+  #######################################################################################
+  # Sore results
+  #######################################################################################
+  ds <- data.frame(theta=theta, theta.se=theta.se, 
+                   theta.cilb=theta.cil, theta.ciub=theta.ciu, 
+                   theta.source=theta.source, O=O, E=E, N=N)
   
   if(is.null(slab) & !no.data) {
     slab <- rownames(data)
