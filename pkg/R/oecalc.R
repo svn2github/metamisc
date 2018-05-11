@@ -160,6 +160,9 @@ oecalc <- function(OE, OE.se, OE.cilb, OE.ciub, OE.cilv, citl, citl.se, N, O, E,
     
     if (length(slab) != k)
       stop("Study labels not of same length as data.")
+    
+    ### add slab attribute to the cstat vector
+    attr(OE, "slab") <- slab
   }
   
 
@@ -176,10 +179,10 @@ oecalc <- function(OE, OE.se, OE.cilb, OE.ciub, OE.cilv, citl, citl.se, N, O, E,
   results[[6]] <- data.frame(est=resoe.Po.Pe.N(Po=Po, Pe=Pe, N=N, correction = add, g=g), method="Po, Pe and N")
   results[[7]] <- data.frame(est=resoe.O.Po.E(O=O, Po=Po, E=E, correction = add, g=g), method="O, E and Po") 
   results[[8]] <- data.frame(est=resoe.O.Pe.E(O=O, Pe=Pe, E=E, correction = add, g=g), method="O, E and Pe") 
-  results[[9]] <- data.frame(est=resoe.O.E(O=O, E=E, correction = add, g=g), method="O and E") 
+  results[[9]] <- data.frame(est=resoe.O.E(O=O, E=E, correction = add, g=g), method="O and E")
+  results[[10]] <- data.frame(est=resoe.Po.Pe(Po=Po, Pe=Pe, g=g), method = "Po and Pe")
 
 
-  #t.pope   <- restore.oe.PoPe(Po=Po, Pe=Pe, t.extrapolate=t.extrapolate, t.ma=t.ma, t.val=t.val, model=pars.default$model.oe) 
   #t.citl   <- restore.oe.citl(citl=citl, citl.se=citl.se, O=O, Po=Po, N=N, t.extrapolate=t.extrapolate, t.ma=t.ma, t.val=t.val, 
   #                            model=pars.default$model.oe) 
   
@@ -201,8 +204,17 @@ oecalc <- function(OE, OE.se, OE.cilb, OE.ciub, OE.cilv, citl, citl.se, N, O, E,
   theta.source <-  dat.method[cbind(seq_along(sel.theta), sel.theta)] # Method used for estimating theta and its SE
   
   ds <- data.frame(theta=theta, theta.se=theta.se, theta.source=theta.source)
-  return(ds)
   
+  if(is.null(slab) & !no.data) {
+    slab <- rownames(data)
+    rownames(ds) <- slab
+  } else if (!is.null(slab)) {
+    slab <- make.unique(as.character(slab))
+    rownames(ds) <- slab
+  }
+  
+  
+  return(ds)
 }
 
 # Calculate OE and its error variance from O, E and N
@@ -357,4 +369,29 @@ resoe.citl <- function(citl, citl.se, Po, O, N, correction, g=NULL) {
   }
   
   warning("Implementation still needed")
+}
+
+resoe.Po.Pe <- function (Po, Pe, g=NULL) {
+  k <- length(Po)
+  out <- array(NA, dim=c(k,2))
+  
+  out[,1] <- Po/Pe
+  out[,2] <- NA # SE cannot be estimated from Po and Pe alone
+  
+  if(is.null(g)) {
+    return (out)
+  }
+  
+  toe <- toe.var <- rep(NA, k) #Transformed OE and its error variance
+  
+  for (i in 1:k) {
+    oei <- out[i,1]
+    vi  <- out[i,2]
+    names(oei) <- names(vi) <- "OE"
+    toe[i] <- eval(parse(text=g), list(OE = oei))
+    toe.var[i] <- NA  # SE cannot be estimated from Po and Pe alone
+  }
+  
+  out <- cbind(toe, toe.var)
+  return (out)
 }

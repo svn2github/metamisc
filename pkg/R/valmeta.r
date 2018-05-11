@@ -196,7 +196,6 @@
 #' 
 #' @keywords meta-analysis discrimination  calibration
 #' 
-#' @author Thomas Debray <thomas.debray@gmail.com>
 #' 
 #' @export
 #' @import metafor
@@ -281,8 +280,14 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.
   } else if (measure=="OE") {
     if (!missing(OE)) {
       k <- length(OE)
+    } else if (!missing(OE.se)) {
+      k <- length(OE.se)
     } else if (!missing(E)) {
       k <- length(E)
+    } else if (!missing(O)) {
+      k <- length(O)
+    } else if (!missing(Po)) {
+      k <- length(Po)
     } else if (!missing(Pe)) {
       k <- length(Pe)
     } else if (!missing(citl)) {
@@ -313,6 +318,44 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.
   if (missing(sd.LP)) {
     sd.LP <- rep(NA, length=k)
   }
+  if (missing(OE)) {
+    OE <- rep(NA, length=k)
+  }
+  if (missing(OE.se)) {
+    OE.se <- rep(NA, length=k)
+  }
+  
+  t.ma <- ifelse(missing(t.ma), NA, t.ma)
+  
+  if(missing(t.val)) {
+    t.val <- rep(NA, length=k)
+  }
+  if (missing(E)) {
+    E <- rep(NA, length=k)
+  }
+  if (missing(Po.se)) {
+    Po.se <- rep(NA, length=k)
+  }
+  if (missing(Pe)) {
+    Pe <- rep(NA, length=k)
+  }
+  if (missing(citl)) {
+    citl <- rep(NA, length=k)
+  }
+  if (missing(citl.se)) {
+    citl.se <- rep(NA, length=k)
+  }
+  if (missing(OE.95CI)) {
+    OE.95CI <- array(NA, dim=c(k,2))
+  }
+  if (is.null(dim(OE.95CI))) {
+    warning("Invalid dimension for 'OE.95CI', argument ignored.")
+    OE.95CI <- array(NA, dim=c(k,2))
+  }
+  if (dim(OE.95CI)[2] != 2 | dim(OE.95CI)[1] != k) {
+    warning("Invalid dimension for 'OE.95CI', argument ignored.")
+    OE.95CI <- array(NA, dim=c(k,2))
+  }
   
   #######################################################################################
   # Prepare results
@@ -335,6 +378,8 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.
   # Meta-analysis of the c-statistic
   #######################################################################################
   if (measure=="cstat") {
+    if (verbose) message("Extracting/computing estimates of the c-statistic ...")
+    
     out$model <- pars.default$model.cstat
     
     if (out$model == "normal/identity") {
@@ -469,60 +514,41 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.
   # Meta-analysis of the total OE ratio
   #######################################################################################
   if (measure=="OE") {
-    
-    # TODO: FIrst call oecalc
-    # TOD: add study names via oecalc (currently ignored)
-    # Use derived data to obtain O, E and N where missing
-    
-    
-    t.ma <- ifelse(missing(t.ma), NA, t.ma)
-    
-    if(missing(t.val)) {
-      t.val <- rep(NA, length=k)
-    }
-    if (missing(E)) {
-      E <- rep(NA, length=k)
-    }
-    if (missing(Po.se)) {
-      Po.se <- rep(NA, length=k)
-    }
-    if (missing(Pe)) {
-      Pe <- rep(NA, length=k)
-    }
-    if (missing(OE)) {
-      OE <- rep(NA, length=k)
-    }
-    if (missing(OE.se)) {
-      OE.se <- rep(NA, length=k)
-    }
-    if (missing(citl)) {
-      citl <- rep(NA, length=k)
-    }
-    if (missing(citl.se)) {
-      citl.se <- rep(NA, length=k)
-    }
-    if (missing(OE.95CI)) {
-      OE.95CI <- array(NA, dim=c(k,2))
-    }
-    if (is.null(dim(OE.95CI))) {
-      warning("Invalid dimension for 'OE.95CI', argument ignored.")
-      OE.95CI <- array(NA, dim=c(k,2))
-    }
-    if (dim(OE.95CI)[2] != 2 | dim(OE.95CI)[1] != k) {
-      warning("Invalid dimension for 'OE.95CI', argument ignored.")
-      OE.95CI <- array(NA, dim=c(k,2))
-    }
-    
-    # Check if the length of all relevant arguments is consistent
-    if (length(unique(c(length(N), length(O), length(E), length(Po), length(Po.se), 
-                        length(Pe), length(OE), length(OE.se), length(citl),
-                        length(citl.se), dim(OE.95CI)[1]))) > 1) {
-      stop("Dimension mismatch")
-    }
+    if (verbose) message("Extracting/computing estimates of the total O:E ratio ...")
     
     out$model <- pars.default$model.oe
+    
+    if (out$model == "normal/identity") {
+      g <- NULL
+    } else if (out$model=="normal/log" |  out$model=="poisson/log") {
+      g <- "log(OE)"
+    } else {
+      stop (paste("Meta-analysis model currently not supported: '", out$model, '"', sep=""))
+    }
+    
+    # TODO: Use derived data to obtain O, E and N where missing
+    ds <- oecalc(OE = OE, OE.se = OE.se,
+                 OE.cilb = OE.95CI[,1],
+                 OE.ciub = OE.95CI[,2],
+                 OE.cilv = 0.95,
+                 citl = citl, 
+                 citl.se = citl.se,
+                 N = N,
+                 O = O,
+                 E = E, 
+                 Po = Po,
+                 Po.se = Po.se,
+                 Pe = Pe, 
+                 slab=slab, g=g, level=pars.default$level) 
 
-    if (verbose) message("Extracting/computing estimates of the total O:E ratio ...")
+    ## Assign study labels
+    out$slab <- rownames(ds)
+    
+    
+    
+    #########################################################
+    ### TODO: TO BE DEPRECATED FROM HERE ONWARDS
+    
     
     
     #####################################################################################

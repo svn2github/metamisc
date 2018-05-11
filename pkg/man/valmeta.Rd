@@ -236,9 +236,6 @@ Viechtbauer W. Conducting Meta-Analyses in R with the metafor Package. \emph{Jou
 \code{\link{ccalc}} to calculate concordance statistics and corresponding standard errors, 
 \code{\link{plot.valmeta}} to generate forest plots
 }
-\author{
-Thomas Debray <thomas.debray@gmail.com>
-}
 \keyword{calibration}
 \keyword{discrimination}
 \keyword{meta-analysis}

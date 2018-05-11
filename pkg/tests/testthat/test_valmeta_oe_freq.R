@@ -16,7 +16,7 @@ test_that("Fixed effect meta-analysis of total O:E ratio works (Poisson distribu
                                           O=n.events, 
                                           E=e.events, 
                                           test = "z",
-                                          method="FE", slab="Study",
+                                          method="FE", slab = Study,
                                           pars=list(model.oe="poisson/log")))
   
   # Now try the same but omit study labels
@@ -43,7 +43,7 @@ test_that("Random effects meta-analysis of total O:E ratio works (Poisson distri
                                           O=n.events, 
                                           E=e.events, 
                                           test = "z",
-                                          method="ML", slab="Study",
+                                          method="ML", slab = Study,
                                           pars=list(model.oe="poisson/log")))
   
   # Now try the same but omit study labels
