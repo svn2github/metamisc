@@ -95,7 +95,7 @@ An object of class \code{valmeta} with the following elements:
  \item{"ci.ub"}{upper bound of the confidence (or credibility) interval of the summary performance estimate.}
  \item{"pi.lb"}{lower bound of the (approximate) prediction interval of the summary performance estimate.}
  \item{"pi.ub"}{upper bound of the (approximate) prediction interval of the summary performance estimate.}
- \item{"fit"}{the full results from the fitted model (only returned if \code{ret.fit = TRUE})}
+ \item{"fit"}{the full results from the fitted model. Only defined if \code{ret.fit = TRUE}.}
  \item{"slab"}{vector specifying the label of each study.}
 }
 }
@@ -193,10 +193,10 @@ pars <- list(hp.tau.dist="dhalft",   # Prior for the between-study standard devi
              hp.tau.df=3,            # Degrees of freedom for 'hp.tau.dist'
              hp.tau.max=10)          # Maximum value for the between-study standard deviation
 fit3 <- with(EuroSCORE.new, valmeta(measure="OE", O=n.events, E=e.events, N=n, 
-        method="BAYES", slab=Study, pars=pars))
+        method="BAYES", slab=Study, pars=pars, ret.fit = T))
 plot(fit3)
-print(fit3$runjags$model) # Inspect the JAGS model
-print(fit3$runjags$data)  # Inspect the JAGS data
+print(fit3$fit$model) # Inspect the JAGS model
+print(fit3$fit$data)  # Inspect the JAGS data
 } 
 
 ######### Validation of prediction models with a time-to-event outcome #########

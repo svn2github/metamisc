@@ -114,7 +114,7 @@
 ##'  \item{"ci.ub"}{upper bound of the confidence (or credibility) interval of the summary performance estimate.}
 ##'  \item{"pi.lb"}{lower bound of the (approximate) prediction interval of the summary performance estimate.}
 ##'  \item{"pi.ub"}{upper bound of the (approximate) prediction interval of the summary performance estimate.}
-##'  \item{"fit"}{the full results from the fitted model (only returned if \code{ret.fit = TRUE})}
+##'  \item{"fit"}{the full results from the fitted model. Only defined if \code{ret.fit = TRUE}.}
 ##'  \item{"slab"}{vector specifying the label of each study.}
 ##' }
 #' @references 
@@ -169,8 +169,10 @@
 #'              hp.tau.df=3,            # Degrees of freedom for 'hp.tau.dist'
 #'              hp.tau.max=10)          # Maximum value for the between-study standard deviation
 #' fit3 <- with(EuroSCORE.new, valmeta(measure="OE", O=n.events, E=e.events, N=n, 
-#'         method="BAYES", slab=Study, pars=pars))
+#'         method="BAYES", slab=Study, pars=pars, ret.fit = T))
 #' plot(fit3)
+#' print(fit3$fit$model) # Inspect the JAGS model
+#' print(fit3$fit$data)  # Inspect the JAGS data
 #' } 
 #' 
 #' ######### Validation of prediction models with a time-to-event outcome #########
@@ -333,7 +335,6 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.
   # Prepare results
   #######################################################################################
   est <- ci.lb <- ci.ub <- NA
-  #results <- data.frame(estimate=NA, CIl=NA, CIu=NA, PIl=NA, PIu=NA)
   
   #######################################################################################
   # Prepare object
@@ -407,7 +408,9 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.
         stop ("There is no implementation for the specified meta-analysis model!")
       }
       
-      out$fit <- ifelse(ret.fit, fit, NA)
+      if (ret.fit)
+        out$fit <- fit
+      
       out$numstudies <- fit$k
     } else {
       # All data are used!
@@ -475,7 +478,9 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.
       out$pi.lb  <- fit["pred.obs", paste("Lower", txtLevel, sep="")]
       out$pi.ub  <- fit["pred.obs", paste("Upper", txtLevel, sep="")]
       
-      out$fit <- ifelse(ret.fit, jags.model, NA)
+      if (ret.fit)
+        out$fit <- jags.model
+
       out$PED <- sum(fit.dev$deviance)+sum(fit.dev$penalty)
     }
     
@@ -535,7 +540,9 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.
         out$pi.lb <- ifelse(method=="FE", ci.lb, predint$lower)
         out$pi.ub <- ifelse(method=="FE", ci.ub, predint$upper)
         
-        out$fit <- ifelse(ret.fit, fit, NA)
+        if (ret.fit)
+          out$fit <- fit
+
         out$numstudies <- fit$k
       } else if (pars.default$model.oe=="normal/log") {
         if(verbose) print("Performing two-stage meta-analysis...")
@@ -552,7 +559,9 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.
         out$pi.lb  <- ifelse(method=="FE", exp(ci.lb), exp(predint$lower))
         out$pi.ub  <- ifelse(method=="FE", exp(ci.lb), exp(predint$upper))
         
-        out$fit <- ifelse(ret.fit, fit, NA)
+        if (ret.fit)
+          out$fit <- fit
+        
         out$numstudies <- fit$k
       } else if (pars.default$model.oe=="poisson/log") { 
         if(verbose) print("Performing one-stage meta-analysis...")
@@ -574,7 +583,9 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.
           out$pi.lb  <- exp(predint$lower)
           out$pi.ub  <- exp(predint$upper)
           
-          out$fit <- ifelse(ret.fit, fit, NA)
+          if (ret.fit)
+            out$fit <- fit
+          
           out$numstudies <- nobs(fit)
         } else if (method=="FE") { #one-stage fixed-effects meta-analysis
           fit <- glm(O~1, offset=log(E), family=poisson(link="log"), data=ds)
@@ -584,7 +595,9 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.
           out$ci.lb <- out$pi.lb <- exp(preds.ci[1])
           out$ci.ub <- out$pi.ub <- exp(preds.ci[2])
           
-          out$fit <- ifelse(ret.fit, fit, NA)
+          if (ret.fit)
+            out$fit <- fit
+          
           out$numstudies <- nobs(fit)
         } else {
           stop(paste("No implementation found for ", method, " estimation (model '", pars.default$model.oe, "')!", sep=""))
@@ -690,7 +703,9 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.
       out$pi.lb <- fit["pred.oe", paste("Lower", txtLevel, sep="")]
       out$pi.ub <- fit["pred.oe", paste("Upper", txtLevel, sep="")]
       
-      out$fit <- ifelse(ret.fit, jags.model, NA)
+      if (ret.fit)
+        out$fit <- jags.model
+      
       out$PED <- sum(fit.dev$deviance)+sum(fit.dev$penalty)
     }
     
