@@ -55,6 +55,29 @@ test_that("Random effects meta-analysis of total O:E ratio works (Poisson distri
                                           pars=list(model.oe="poisson/log")))
   
   expect_equal(fit1.valmeta$est, fit2.valmeta$est, exp(as.numeric(fixef(fit1.lme4))))
+  
+  # valmeta should still work if some studies cannot be used
+  O <- EuroSCORE$n.events
+  O[1:10] <- NA
+  fit3.valmeta <- valmeta(measure="OE", 
+                          O=O, 
+                          E=EuroSCORE$e.events,
+                          slab = EuroSCORE$Study,
+                          test = "z", method = "ML",
+                          pars=list(model.oe="poisson/log"))
+  expect_equal(fit3.valmeta$numstudies, sum(!is.na(O)))
+  
+  # valmeta should still work if observed event counts are not properly rounded
+  O <- EuroSCORE$n.events
+  O[1:10] <- O[1:10] + 0.2
+  fit4.valmeta <- valmeta(measure="OE", 
+                          O=O, 
+                          E=EuroSCORE$e.events,
+                          slab = EuroSCORE$Study,
+                          test = "z", method = "ML",
+                          pars=list(model.oe="poisson/log"))
+  
+  
 })
 
 

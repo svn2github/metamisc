@@ -52,6 +52,38 @@ test_that ("Coversion between CITL and log O:E ratio", {
   
 })
 
+test_that("Confidence intervals should convert properly", {
+  OE <- EuroSCORE$n.events / EuroSCORE$e.events
+  tOE.se <- sqrt(1/EuroSCORE$n.events - 1/EuroSCORE$n)
+  
+  level = 0.95
+  OE.95cilb <- exp(log(OE) + qnorm((1-level)/2) * tOE.se)
+  OE.95ciub <- exp(log(OE) + qnorm((1+level)/2) * tOE.se)
+  
+  level = 0.85
+  OE.85cilb <- exp(log(OE) + qnorm((1-level)/2) * tOE.se)
+  OE.85ciub <- exp(log(OE) + qnorm((1+level)/2) * tOE.se)
+  
+  
+  OE.cilb <- c(OE.95cilb[1:10], OE.85cilb[11:23])
+  OE.ciub <- c(OE.95ciub[1:10], OE.85ciub[11:23])   
+  OE.cilv <- c(rep(0.95, 10), rep(0.85, length(11:23)))
+  
+  logOE.se <- (oecalc(OE=OE, OE.cilb=OE.cilb, OE.ciub=OE.ciub, OE.cilv=OE.cilv, g="log(OE)", slab=EuroSCORE$Study))$theta.se
+  expect_equal(tOE.se, logOE.se)
+})
+
+test_that("Restoration of O and E should be correct", {
+  Po <- EuroSCORE$n.events/EuroSCORE$n
+  Pe <- EuroSCORE$e.events/EuroSCORE$n
+  
+  ds <- oecalc(Po=Po, Pe=Pe, N=n, data=EuroSCORE, g="log(OE)")
+  
+  expect_equal(EuroSCORE$n.events, ds$O, tolerance=1)
+  expect_equal(EuroSCORE$e.events, ds$E, tolerance=1)
+  
+})
+
 
 test_that("Standard error of log O:E ratio", {
   

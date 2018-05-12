@@ -222,6 +222,15 @@ oecalc <- function(OE, OE.se, OE.cilb, OE.ciub, OE.cilv, citl, citl.se, N, O, E,
   theta.ciu[is.na(theta.ciu)] <- (theta+qnorm((1+level)/2)*theta.se)[is.na(theta.ciu)]
   
   #######################################################################################
+  # Attempt to restore O, E and N
+  #######################################################################################
+  O[is.na(O)] <- (Po*N)[is.na(O)]
+  E[is.na(E)] <- (Pe*N)[is.na(E)]
+  N[is.na(N)] <- (O/Po)[is.na(N)]
+  N[is.na(N)] <- (E/Pe)[is.na(N)]
+  
+  
+  #######################################################################################
   # Sore results
   #######################################################################################
   ds <- data.frame(theta=theta, theta.se=theta.se, 

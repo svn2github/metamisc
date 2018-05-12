@@ -5,9 +5,9 @@
 \title{Meta-analysis of prediction model performance}
 \usage{
 valmeta(measure = "cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.se,
-  OE.95CI, citl, citl.se, N, O, E, Po, Po.se, Pe, t.val, t.ma,
-  t.extrapolate = FALSE, method = "REML", test = "knha",
-  ret.fit = FALSE, verbose = FALSE, slab, n.chains = 4, pars, ...)
+  OE.95CI, citl, citl.se, N, O, E, Po, Po.se, Pe, method = "REML",
+  test = "knha", ret.fit = FALSE, verbose = FALSE, slab, n.chains = 4,
+  pars, ...)
 }
 \arguments{
 \item{measure}{A character string indicating which summary performance measure should be calculated. Options are
@@ -49,15 +49,6 @@ of the 95\% confidence interval of the total O:E ratios}
 
 \item{Pe}{Optional vector with the (cumulative) expected event probability for each validation
 (if specified, during time \code{t.val})}
-
-\item{t.val}{Optional vector specifying the time period for which \code{cstat}, \code{O}, \code{E}, \code{Po} or
-\code{Pe} are applicable. Also specifies the time point at which \code{OE} and \code{CITL} have been calculated.}
-
-\item{t.ma}{Optional numeric value, specifying the target time period (of time point) of the meta-analysis}
-
-\item{t.extrapolate}{Optional logical indicating whether calibration performance of the prognostic model 
-should be extrapolated to time \code{t.ma}. Otherwise, studies where \code{t.val!=t.ma} will be omitted
-when meta-analysing the total O:E ratio.}
 
 \item{method}{Character string specifying whether a fixed- or a random-effects model should be fitted. 
 A fixed-effects model is fitted when using \code{method="FE"}. Random-effects models are fitted by setting method 
@@ -104,7 +95,7 @@ An object of class \code{valmeta} with the following elements:
  \item{"ci.ub"}{upper bound of the confidence (or credibility) interval of the summary performance estimate.}
  \item{"pi.lb"}{lower bound of the (approximate) prediction interval of the summary performance estimate.}
  \item{"pi.ub"}{upper bound of the (approximate) prediction interval of the summary performance estimate.}
- \item{"fit"}{the full results from the fitted model}
+ \item{"fit"}{the full results from the fitted model (only returned if \code{ret.fit = TRUE})}
  \item{"slab"}{vector specifying the label of each study.}
 }
 }
@@ -142,12 +133,6 @@ When performing a Bayesian meta-analysis, all data are modeled using a one-stage
 In particular, a binomial distribution (if \code{O}, \code{E} and \code{N} is known), a poisson distribution 
 (if only \code{O} and \code{E} are known) or a Normal distribution (if \code{OE} and \code{OE.se} or \code{OE.95CI} are known) is selected separately for each study.
 
-For meta-analysis of prognostic models, it is recommended to provide information on the time period 
-(\code{t.val}) during which calibration was assessed in the validation study. When the time period of 
-the validation study does not correspond to the time period of interest (\code{t.ma}), corresponding 
-studies are omitted from the meta-analysis. It is possible to extrapolate observed
-event rates by setting \code{t.extrapolate=TRUE}. This approach is currently only supported for
-frequentist meta-analysis models with \code{model.oe = "normal/log"} or \code{model.oe = "normal/identity"}. 
 }
 
 \subsection{Bayesian meta-analysis}{
@@ -218,8 +203,7 @@ print(fit3$runjags$data)  # Inspect the JAGS data
 data(Framingham)
 
 # Meta-analysis of total O:E ratio after 10 years of follow-up
-with(Framingham, valmeta(measure="OE", Po=Po, Pe=Pe, N=n, t.val=t.val, t.ma=10))
-with(Framingham, valmeta(measure="OE", Po=Po, Pe=Pe, N=n, t.val=t.val, t.ma=10, t.extrapolate=TRUE))
+with(Framingham, valmeta(measure="OE", Po=Po, Pe=Pe, N=n))
 
 }
 \references{
