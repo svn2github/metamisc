@@ -20,6 +20,7 @@
 #' @param xlab Optional character string specifying the X label
 #' @param refline Optional numeric specifying a reference line
 #' @param label.summary Optional character string specifying the label for the summary estimate
+#' @param label.predint Optional character string specifying the label for the (approximate) prediction interval
 #' @param \dots Additional arguments, which are currently ignored.
 #' 
 #' @author Thomas Debray <thomas.debray@gmail.com>
@@ -35,11 +36,13 @@ forest <- function (theta,
                     title,
                     sort = "asc",
                     theme = theme_bw(),
-                    predint.linetype=1,
+                    predint.linetype = 1,
                     xlim,
-                    xlab="", 
-                    refline=0,
-                    label.summary="Summary Estimate", ...) {
+                    xlab = "", 
+                    refline = 0,
+                    label.summary = "Summary Estimate", 
+                    label.predint = "Prediction Interval",
+                    ...) {
 
   if (missing(theta)) stop("Study effect sizes are missing!")
   if (missing(theta.ci.lb) | missing(theta.ci.ub)) stop("Confidence intervals of effect sizes missing!")
@@ -48,14 +51,11 @@ forest <- function (theta,
   num.studies <- unique(c(length(theta), length(theta.ci.lb), length(theta.ci.ub), length(theta.slab)))
   if (length(num.studies)>1) stop(paste("Mismatch in data dimensions!"))
   
-  label.predint <- "Prediction Interval"
-  
   
   #Extract data
   yi <- theta
-  
-  
   k <- length(theta)
+  
   if (missing(theta.slab)) {
     if (!is.null(attr(theta, "slab"))) {
       slab <- attr(theta, "slab")
@@ -102,7 +102,7 @@ forest <- function (theta,
   
   if (!missing(theta.summary)) {
     if (!add.predint) {
-      scat  <- c(scat, 0) #indicator variable for data points
+      scat  <- c(scat, 0)
       slab  <- c(slab, label.summary)
       yi    <- c(yi, theta.summary)
       ci.lb <- c(ci.lb, theta.summary.ci.lb)

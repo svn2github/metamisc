@@ -8,7 +8,8 @@ forest(theta, theta.ci.lb, theta.ci.ub, theta.slab, theta.summary,
   theta.summary.ci.lb, theta.summary.ci.ub, theta.summary.pi.lb,
   theta.summary.pi.ub, title, sort = "asc", theme = theme_bw(),
   predint.linetype = 1, xlim, xlab = "", refline = 0,
-  label.summary = "Summary Estimate", ...)
+  label.summary = "Summary Estimate", label.predint = "Prediction Interval",
+  ...)
 }
 \arguments{
 \item{theta}{Numeric vector with effect size for each study}
@@ -46,6 +47,8 @@ See \link[ggplot2]{theme_bw} for more information.}
 \item{refline}{Optional numeric specifying a reference line}
 
 \item{label.summary}{Optional character string specifying the label for the summary estimate}
+
+\item{label.predint}{Optional character string specifying the label for the (approximate) prediction interval}
 
 \item{\dots}{Additional arguments, which are currently ignored.}
 }

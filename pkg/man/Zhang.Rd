@@ -35,7 +35,7 @@ Riley RD, Jackson D, Salanti G, Burke DL, Price M, Kirkham J, et al. Multivariat
 \examples{
 data(Zhang)
 
-# Generate a forest plot of the hazard ratios for overall survival
+# Display the hazard ratios for overall survival in a forest plot
 ds <- subset(Zhang, outcome=="OS")
 with(ds, forest(theta = HR, theta.ci.lb = HR.025, theta.ci.ub = HR.975, 
                 theta.slab = Study, xlab = "Hazard ratio of HER2 versus OS", refline = 1))
