@@ -45,6 +45,34 @@ forest <- function (theta,
   if (missing(theta.ci.lb) | missing(theta.ci.ub)) stop("Confidence intervals of effect sizes missing!")
   if (missing(theta.slab)) stop("Study labels are missing!")
   
+  num.studies <- unique(c(length(theta), length(theta.ci.lb), length(theta.ci.ub), length(theta.slab)))
+  if (length(num.studies)>1) stop(paste("Mismatch in data dimensions!"))
+  
+  label.predint <- "Prediction Interval"
+  
+  
+  #Extract data
+  yi <- theta
+  
+  
+  k <- length(theta)
+  if (missing(theta.slab)) {
+    if (!is.null(attr(theta, "slab"))) {
+      slab <- attr(theta, "slab")
+    }
+    else {
+      slab <- paste("Study", seq_len(k))
+    }
+  }
+  else {
+    if (length(theta.slab) == 1 && is.na(theta.slab)) 
+      slab <- rep("", k)
+    else
+      slab <- theta.slab
+  }
+  
+  
+  
   add.predint <- TRUE # Add prediction interval by default
   if (missing(theta.summary.pi.lb) | missing(theta.summary.pi.ub)) {
     theta.summary.pi.lb <- theta.summary.pi.ub <- NA
@@ -54,15 +82,6 @@ forest <- function (theta,
   }
     
   
-  num.studies <- unique(c(length(theta), length(theta.ci.lb), length(theta.ci.ub), length(theta.slab)))
-  if (length(num.studies)>1) stop(paste("Mismatch in data dimensions!"))
-  
-  label.predint <- "Prediction Interval"
-  
-  
-  #Extract data
-  yi <- theta
-  slab <- theta.slab
   
   #Sort data
   if (sort=="asc") {
@@ -75,19 +94,28 @@ forest <- function (theta,
   
   
   # Add meta-analysis results
-  if (!add.predint) {
-    scat  <- c(rep(1, num.studies), 0) #indicator variable for data points
-    slab  <- c(slab[i.index], label.summary)
-    yi    <- c(yi[i.index], theta.summary)
-    ci.lb <- c(theta.ci.lb[i.index], theta.summary.ci.lb)
-    ci.ub <- c(theta.ci.ub[i.index], theta.summary.ci.ub)
-  } else {
-    scat  <- c(rep(1,length(i.index)), 0, 0)
-    slab  <- c(slab[i.index], label.summary, label.predint)
-    yi    <- c(yi[i.index], theta.summary, theta.summary)
-    ci.lb <- c(theta.ci.lb[i.index], theta.summary.ci.lb, theta.summary.pi.lb)
-    ci.ub <- c(theta.ci.ub[i.index], theta.summary.ci.ub, theta.summary.pi.ub)
-  }
+  scat  <- rep(1, num.studies) #indicator variable for data points
+  slab  <- slab[i.index]
+  yi    <- yi[i.index]
+  ci.lb <- theta.ci.lb[i.index]
+  ci.ub <- theta.ci.ub[i.index]
+  
+  if (!missing(theta.summary)) {
+    if (!add.predint) {
+      scat  <- c(scat, 0) #indicator variable for data points
+      slab  <- c(slab, label.summary)
+      yi    <- c(yi, theta.summary)
+      ci.lb <- c(ci.lb, theta.summary.ci.lb)
+      ci.ub <- c(ci.ub, theta.summary.ci.ub)
+    } else {
+      scat  <- c(scat, 0, 0)
+      slab  <- c(slab, label.summary, label.predint)
+      yi    <- c(yi, theta.summary, theta.summary)
+      ci.lb <- c(ci.lb, theta.summary.ci.lb, theta.summary.pi.lb)
+      ci.ub <- c(ci.ub, theta.summary.ci.ub, theta.summary.pi.ub)
+    }
+  } 
+  
   
   ALL <- data.frame(study=slab, mean=yi, m.lower=ci.lb, m.upper=ci.ub, order=length(yi):1, scat=scat)
   
@@ -121,25 +149,28 @@ forest <- function (theta,
   }
   
   # Add meta-analysis summary
-  g2 <- with(ALL, subset(ALL, study == label.summary))
-  g2$ci.upper <- theta.summary.ci.ub
-  g2$ci.lower <- theta.summary.ci.lb
-  
-  g3 <- with(ALL, subset(ALL, study == label.summary))
-  g3$pi.upper <- theta.summary.pi.ub
-  g3$pi.lower <- theta.summary.pi.lb
-  
-  # Prediction interval
-  if (add.predint) {
-    p <- p + with(g3, geom_errorbar(data=g3, aes(ymin = pi.lower, ymax = pi.upper, x=label.predint), 
-                                   width = 0.5, size=1.0, linetype=predint.linetype))
+  if (!missing(theta.summary)) {
+    g2 <- with(ALL, subset(ALL, study == label.summary))
+    g2$ci.upper <- theta.summary.ci.ub
+    g2$ci.lower <- theta.summary.ci.lb
+    
+    g3 <- with(ALL, subset(ALL, study == label.summary))
+    g3$pi.upper <- theta.summary.pi.ub
+    g3$pi.lower <- theta.summary.pi.lb
+    
+    # Prediction interval
+    if (add.predint) {
+      p <- p + with(g3, geom_errorbar(data=g3, aes(ymin = pi.lower, ymax = pi.upper, x=label.predint), 
+                                      width = 0.5, size=1.0, linetype=predint.linetype))
+    }
+    
+    # Confidence interval
+    p <- p + with(g2, geom_errorbar(data=g2, aes(ymin = ci.lower, ymax = ci.upper, x=label.summary), width = 0.5, size=1.0))
+    
+    # Summary estimate
+    p <- p + with(g2, geom_point(data=g2, shape=23, size=3, fill="white"))
   }
-
-  # Confidence interval
-  p <- p + with(g2, geom_errorbar(data=g2, aes(ymin = ci.lower, ymax = ci.upper, x=label.summary), width = 0.5, size=1.0))
-
-  # Summary estimate
-  p <- p + with(g2, geom_point(data=g2, shape=23, size=3, fill="white"))
+  
 
   p
 }
