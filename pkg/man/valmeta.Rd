@@ -124,13 +124,14 @@ is Normally distributed across studies \code{pars$model.cstat = "normal/identity
 \subsection{Meta-analysis of the total observed versus expected ratio}{
 A summary estimate for the total observed versus expected (O:E) ratio can be obtained by specifying
 \code{measure="OE"}. The total O:E ratio provides a rough indication of the overall model calibration (across the 
-entire range of predicted risks). 
+entire range of predicted risks). When missing, the total O:E ratio and/or its standard error are derived from other 
+reported information. See \code{\link{oecalc}} for more information.
 
 For frequentist meta-analysis, within-study variation can either be modeled using a Normal (\code{model.oe = "normal/log"} 
 or \code{model.oe = "normal/identity"}) or a Poisson distribution (\code{model.oe = "normal/log"}). 
 
 When performing a Bayesian meta-analysis, all data are modeled using a one-stage random effects (hierarchical related regression) model.
-In particular, a binomial distribution (if \code{O}, \code{E} and \code{N} is known), a poisson distribution 
+In particular, a binomial distribution (if \code{O}, \code{E} and \code{N} is known), a Poisson distribution 
 (if only \code{O} and \code{E} are known) or a Normal distribution (if \code{OE} and \code{OE.se} or \code{OE.95CI} are known) is selected separately for each study.
 
 }
@@ -207,17 +208,18 @@ with(Framingham, valmeta(measure="OE", Po=Po, Pe=Pe, N=n))
 
 }
 \references{
-Debray TPA, Damen JAAG, Snell KIE, Ensor J, Hooft L, Reitsma JB, et al. A guide to systematic review 
-and meta-analysis of prediction model performance. \emph{BMJ}. 2017; 356:i6460.
+Debray TPA, Damen JAAG, Snell KIE, Ensor J, Hooft L, Reitsma JB, et al. A guide to systematic review and meta-analysis 
+of prediction model performance. BMJ. 2017;356:i6460.
 
-Stijnen T, Hamza TH, Ozdemir P. Random effects meta-analysis of event outcome in the framework of 
-the generalized linear mixed model with applications in sparse data. \emph{Stat Med}. 2010; 29(29):3046--67.
+Debray TPA, Damen JAAG, Riley R, Snell KIE, Reitsma JB, Hooft L, et al. A framework for meta-analysis of 
+prediction model studies with binary and time-to-event outcomes. Stat Methods Med Res. 2018; In press. 
 
 Viechtbauer W. Conducting Meta-Analyses in R with the metafor Package. \emph{Journal of Statistical Software}. 
 2010; 36(3). Available from: \url{http://www.jstatsoft.org/v36/i03/}
 }
 \seealso{
-\code{\link{ccalc}} to calculate concordance statistics and corresponding standard errors, 
+\code{\link{ccalc}} to calculate concordance statistics and corresponding standard errors, \code{\link{oecalc}} to 
+calculate the total O:E ratio and corresponding standard errors, 
 \code{\link{plot.valmeta}} to generate forest plots
 }
 \keyword{calibration}
