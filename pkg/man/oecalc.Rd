@@ -4,8 +4,8 @@
 \alias{oecalc}
 \title{Calculate the total O:E ratio}
 \usage{
-oecalc(OE, OE.se, OE.cilb, OE.ciub, OE.cilv, citl, citl.se, N, O, E, Po, Po.se,
-  Pe, data, slab, add = 1/2, g = NULL, level = 0.95, ...)
+oecalc(OE, OE.se, OE.cilb, OE.ciub, OE.cilv, EO, EO.se, citl, citl.se, N, O, E,
+  Po, Po.se, Pe, data, slab, add = 1/2, g = NULL, level = 0.95, ...)
 }
 \arguments{
 \item{OE}{vector with the estimated ratio of total observed versus total expected events}
@@ -18,6 +18,10 @@ oecalc(OE, OE.se, OE.cilb, OE.ciub, OE.cilv, citl, citl.se, N, O, E, Po, Po.se,
 
 \item{OE.cilv}{vector to specify the levels of aformentioned confidence interval limits. 
 (default: 0.95, which corresponds to the 95\% confidence interval).}
+
+\item{EO}{vector with the estimated ratio of total expected versus total observed events}
+
+\item{EO.se}{vector with the standard errors of the estimated E:O ratios}
 
 \item{citl}{vector with the estimated calibration-in-the-large statistics}
 
@@ -48,6 +52,19 @@ oecalc(OE, OE.se, OE.cilb, OE.ciub, OE.cilv, citl, citl.se, N, O, E, Po, Po.se,
 
 \item{\ldots}{Additional arguments.}
 }
+\value{
+An array with the following columns:
+\describe{
+ \item{"theta"}{The (transformed) O:E ratio. }
+ \item{"theta.se"}{Standard errors of the (transformed) O:E ratio.}
+ \item{"theta.cilb"}{Lower confidence interval of the (transformed) O:E ratios. The level is specified in
+ \code{level}. Intervals are calculated on the same scale as \code{theta} by assuming a Normal distribution.}
+ \item{"theta.ciub"}{Upper confidence interval of the (transformed) c-statistics. The level is specified in
+ \code{level}. Intervals are calculated on the same scale as \code{theta} by assuming a Normal distribution.}
+ \item{"theta.source"}{Method used for calculating the (transformed) O:E ratio.}
+ \item{"theta.se.source"}{Method used for calculating the standard error of the (transformed) O:E ratio.}
+}
+}
 \description{
 This function calculates (transformed versions of) the ratio of total number of observed versus expected events with the 
 corresponding sampling variance.
@@ -62,6 +79,15 @@ oecalc(O=n.events, E=e.events, N=n, data=EuroSCORE, slab=Study)
 # Calculate the log of the total O:E ratio and its standard error
 oecalc(O=n.events, E=e.events, N=n, data=EuroSCORE, slab=Study, g="log(OE)")
 
+}
+\references{
+Debray TPA, Damen JAAG, Snell KIE, Ensor J, Hooft L, Reitsma JB, et al. A guide to systematic review and meta-analysis of prediction model performance. BMJ. 2017;356:i6460. 
+
+Debray TPA, Damen JAAG, Riley R, Snell KIE, Reitsma JB, Hooft L, et al. A framework for meta-analysis of  prediction model studies with binary and time-to-event outcomes. Stat Methods Med Res. 2018; In press. 
+
+Snell KI, Ensor J, Debray TP, Moons KG, Riley RD. Meta-analysis of prediction model performance across 
+multiple studies: Which scale helps ensure between-study normality for the C -statistic and calibration measures? 
+\emph{Statistical Methods in Medical Research}. 2017.
 }
 \author{
 Thomas Debray <thomas.debray@gmail.com>

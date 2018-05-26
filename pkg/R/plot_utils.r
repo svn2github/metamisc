@@ -43,6 +43,7 @@ forest <- function (theta,
                     label.summary = "Summary Estimate", 
                     label.predint = "Prediction Interval",
                     ...) {
+  requireNamespace("ggplot2")
 
   if (missing(theta)) stop("Study effect sizes are missing!")
   if (missing(theta.ci.lb) | missing(theta.ci.ub)) stop("Confidence intervals of effect sizes missing!")

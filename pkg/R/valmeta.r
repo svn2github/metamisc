@@ -830,8 +830,8 @@ plot.valmeta <- function(x, sort="asc", ...) {
   k <- dim(x$data)[1]
   yi.slab <- c(as.character(x$slab))
   yi <- c(x$data[,"theta"])
-  ci.lb <- c(x$data[,"theta.CIl"])
-  ci.ub <- c(x$data[,"theta.CIu"])
+  ci.lb <- c(x$data[,"theta.cilb"])
+  ci.ub <- c(x$data[,"theta.ciub"])
   
   if (x$model=="normal/logit") {
     yi <- sapply(yi, inv.logit)
@@ -869,7 +869,6 @@ plot.valmeta <- function(x, sort="asc", ...) {
            theta.summary.ci.ub=x$ci.ub, 
            theta.summary.pi.lb=x$pi.lb,
            theta.summary.pi.ub=x$pi.ub,
-           theta.summary.pi=(x$results[1,c("PIl","PIu")]), 
            xlim=c(0,NA),
            refline=1, xlab="Total O:E ratio", sort=sort, ...)
   }

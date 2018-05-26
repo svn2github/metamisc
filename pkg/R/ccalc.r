@@ -44,8 +44,9 @@
 #' }
 #' 
 #' @references 
-#' Debray TPA, Damen JAAG, Snell KIE, Ensor J, Hooft L, Reitsma JB, et al. A guide to systematic review 
-#' and meta-analysis of prediction model performance. \emph{BMJ}. 2017; 356:i6460.
+#' Debray TPA, Damen JAAG, Snell KIE, Ensor J, Hooft L, Reitsma JB, et al. A guide to systematic review and meta-analysis of prediction model performance. BMJ. 2017;356:i6460. 
+#' 
+#' Debray TPA, Damen JAAG, Riley R, Snell KIE, Reitsma JB, Hooft L, et al. A framework for meta-analysis of  prediction model studies with binary and time-to-event outcomes. Stat Methods Med Res. 2018; In press. 
 #' 
 #' Hanley JA, McNeil BJ. The meaning and use of the area under a receiver operating characteristic (ROC) 
 #' curve. \emph{Radiology}. 1982; 143(1):29--36.
@@ -65,9 +66,9 @@
 #' \describe{
 ##'  \item{"theta"}{The (transformed) c-statistics. }
 ##'  \item{"theta.se"}{Standard errors of the (transformed) c-statistics.}
-##'  \item{"theta.CIl"}{Lower confidence interval of the (transformed) c-statistics. The level is specified in
+##'  \item{"theta.cilb"}{Lower confidence interval of the (transformed) c-statistics. The level is specified in
 ##'  \code{level}. Intervals are calculated on the same scale as \code{theta} by assuming a Normal distribution.}
-##'  \item{"theta.CIu"}{Upper confidence interval of the (transformed) c-statistics. The level is specified in
+##'  \item{"theta.ciub"}{Upper confidence interval of the (transformed) c-statistics. The level is specified in
 ##'  \code{level}. Intervals are calculated on the same scale as \code{theta} by assuming a Normal distribution.}
 ##'  \item{"theta.source"}{Method used for calculating the (transformed) c-statistic.}
 ##'  \item{"theta.se.source"}{Method used for calculating the standard error of the (transformed) c-statistic.}
@@ -275,7 +276,7 @@ ccalc <- function(cstat, cstat.se, cstat.cilb, cstat.ciub, cstat.cilv, sd.LP, N,
     
     
     # Store results, and method for calculating SE
-    ds <- data.frame(theta=theta, theta.se=sqrt(theta.var), theta.CIl=theta.cil, theta.CIu=theta.ciu, 
+    ds <- data.frame(theta=theta, theta.se=sqrt(theta.var), theta.cilb=theta.cil, theta.ciub=theta.ciu, 
                      theta.source=theta.source, theta.se.source=theta.var.source)
   
     

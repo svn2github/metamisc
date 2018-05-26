@@ -134,4 +134,24 @@ test_that("Study names", {
   expect_equal(oe.est1$theta, oe.est2$theta)
 })
 
+test_that("EO should convert to OE and appropriate SE", {
+  N <- seq(10000, 100000, 10000) #take large sample sizes to ensure that we dont have inequalities due to sampling issues
+  O <- hadamard.prod(seq(0.10, 1.00, 0.10), N)
+  E <- hadamard.prod(seq(0.10, 1.00, 0.10), N)+5000
+  
+  # Let's use MCMC to determine var(O/E) and var(E/O)
+  n.rep <- 10000
+  var.EOi <- var.OEi <- rep(NA, length(N))
+  for (i in 1:length(N)) {
+    Oi <- rbinom(n.rep, prob=O[i]/N[i], size=N[i])
+    var.EOi[i] <- var(E[i]/Oi) #Treat E as fixed
+    var.OEi[i] <- var(Oi/E[i]) #Treat E as fixed
+  }
+  
+  oe.est1 <- oecalc(OE = O/E, OE.se = sqrt(var.OEi), g = "log(OE)")
+  oe.est2 <- oecalc(EO = E/O, EO.se = sqrt(var.EOi), g = "log(OE)")
+  expect_equal(oe.est1$theta, oe.est2$theta)
+  expect_equal(oe.est1$theta.se, oe.est2$theta.se, tolerance = .001)
+})
+
 
