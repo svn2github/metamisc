@@ -262,3 +262,10 @@ successive <- function(ds, k = NULL, ...) {
   }
   out
 }
+
+# Remove observations (rows) that have at least one missing value.
+# Necessary for metapred(), to ensure that the same observations are used
+# ds data.frame
+# Returns: data.frame
+remove.na.obs <- function(ds) 
+  ds[apply(ds, 1, function(ds) sum(is.na(ds))) == 0, ]

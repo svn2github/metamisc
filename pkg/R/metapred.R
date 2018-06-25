@@ -2,8 +2,7 @@
 # @Valentijn: perhaps better to combine param perfFUN, genFUN and selFUN into one parameter with 3 or 4 distinct options
 # @Valentijn: I suggest to omit intercept recalibration. The intercept issue can be addressed directly by specifying distinct 
 # error functions that do or do not account for mis-calibration in intercept term
-# @Valentijn: I would center covariates by default, this often helps to improve generalizability and also speeds estimation
-# @Valentijn: You can change default of meta.method to DL. This is a lot faster and has limited implications on estimated means.
+
 
 # is.metapred()
 # variances for intercept recalibration.
@@ -18,6 +17,12 @@
 
 # Changed:
 # Added more robust tests for stepwise.
+# Automatically remove observations with missing values.
+# @Valentijn: I would center covariates by default, this often helps to improve generalizability and also speeds estimation
+#   Valentijn: Done.
+# @Valentijn: You can change default of meta.method to DL. This is a lot faster and has limited implications on estimated means.
+#   Valentijn: Done.
+
 
 #' Generalized Stepwise Regression for prediction models
 #'
@@ -33,7 +38,7 @@
 #' @param data data.frame containing the datasets.
 #' @param strata Name of the strata (e.g. studies or clusters) variable, as character. Used for two-stage MA only.
 #' @param formula Formula of the full model to be evaluated, and possibly reduced. If not supplied,
-#' it is assumed the first column in the data set is the outcome, and all remaining columns
+#' it is assumed the first column in the data set is the outcome,  and all remaining columns
 #' (except \code{strata}) are predictors. See \link[stats]{formula} for details.
 #' @param estFUN Function for estimating the model in the first stage. Currently "lm" and "glm" are supported.
 #' @param stepwise Logical. Should stepwise selection be performed?
@@ -45,10 +50,10 @@
 #' which are only used for validation. A user written function may be supplied as well.
 #' @param cv.k Parameter for cvFUN. For \code{cvFUN="bootstrap"}, this is the number of bootstraps. For \code{cvFUN="fixed"}, 
 #' this is a vector of the indices of the (sorted) data sets.
-#' @param metaFUN Function for computing the meta-analytic coefficient estimates in two-stage MA. Default: \link[metafor]{rma}
-#' from the metafor package is used. Default settings are univariate random effects, estimated with "REML". Method can be
+#' @param metaFUN Function for computing the meta-analytic coefficient estimates in two-stage MA. Default: \link[metafor]{rma.uni}
+#' from the metafor package is used. Default settings are univariate random effects, estimated with "DL". Method can be
 #' passed trough the \code{meta.method} argument.
-#' @param meta.method Name of method for meta-analysis. Default is "REML". For more options see \link[metafor]{rma}.
+#' @param meta.method Name of method for meta-analysis. Default is "DL". For more options see \link[metafor]{rma.uni}.
 #' @param predFUN Function for predicting new values. Defaults to the appropriate link functions for two-stage MA where
 #' \code{glm()} or \code{lm()} is used in the first stage. For one-stage models \code{predict()} is used.
 #' @param perfFUN Function for computing the performance of the prediction models. Default: mean squared error (\code{perfFUN="mse"}).
@@ -91,26 +96,26 @@
 #' @export
 
 metapred <- function(data, strata, formula = NULL, estFUN = "glm", stepwise = TRUE, center.out = FALSE,
-                     center.cov = FALSE, recal.int = FALSE, cvFUN = NULL, cv.k = NULL,
-                     metaFUN = NULL, meta.method = "REML", predFUN = NULL, perfFUN = NULL, genFUN = NULL, selFUN = "which.min",
+                     center.cov = TRUE, recal.int = FALSE, cvFUN = NULL, cv.k = NULL,
+                     metaFUN = NULL, meta.method = "DL", predFUN = NULL, perfFUN = NULL, genFUN = NULL, selFUN = "which.min",
                      ...) {
   call   <- match.call()
-  data   <- as.data.frame(data)
+  data   <- remove.na.obs(as.data.frame(data))
   estFUN <- match.fun(estFUN)
   two.stage <- TRUE
-
+  
   if (is.null(formula)) formula <- stats::formula(data[ , -which(colnames(data) == strata)])
   strata.i  <- data[, which(colnames(data) == strata)]
   data      <- stats::model.frame(formula, data = data)
   data      <- centerData(data, center.in = strata.i, center.1st = center.out, center.rest = center.cov) # change for 1 stage?
   data.list <- asDataList(data, strata.i)
-
+  
   if (is.null(cvFUN))   cvFUN   <- "l1o"
   if (is.null(metaFUN)) metaFUN <- "urma"
   if (is.null(perfFUN)) perfFUN <- "mse"
   if (is.null(genFUN))  genFUN  <- "absmean"
   # Change to "-" when perfFUN <- mcfadden or some other measure for which greater = better.
-
+  
   # Do not add metaFUN to this list!
   # probably not predFUN either.
   cvFUN.name <- if (!missing(cvFUN) && is.character(cvFUN)) cvFUN else "cvFUN"
@@ -119,7 +124,7 @@ metapred <- function(data, strata, formula = NULL, estFUN = "glm", stepwise = TR
   perfFUN <- get(perfFUN)
   genFUN  <- get(genFUN)
   selFUN  <- get(selFUN)
-
+  
   J <- ncol(data) - 1 # because 1 is outcome. For surv will have to be 2
   ccs <- seq_len(J) + 1
   b <- v <- b.recal <- perf <- gen <- list()
@@ -128,48 +133,48 @@ metapred <- function(data, strata, formula = NULL, estFUN = "glm", stepwise = TR
   if (!isTRUE(length(folds$dev) > 0) || !isTRUE(length(folds$dev[[1]]) > 0))
     stop("At least 1 cluster must be used for development.")
   family <- NULL
-
+  
   for (j in (seq_len(ncol(data)) - 1)) {
-
+    
     fold.b <- fold.v <- fold.perf <- fold.b.recal <- list()
-
+    
     for (fold.i in seq_len(length(folds$dev)))
     {
       # Generate new model(s)
       step <- modelStep(data.list = data.list, ccs = ccs, estFUN = estFUN, perfFUN = perfFUN,
                         metaFUN = metaFUN, meta.method = meta.method, drop = j, cl = folds$dev.i[[fold.i]],
                         cl.name = folds$dev[[fold.i]], ...)
-
+      
       fold.b[getFoldName(ds = folds$dev[[fold.i]], f = fold.i, type = cvFUN.name)] <- list(step$meta.b)
       fold.v[getFoldName(ds = folds$dev[[fold.i]], f = fold.i, type = cvFUN.name)] <- list(step$meta.v)
-
+      
       if (is.null(family) && (!is.null(step$dummy.model$family)))
         family <- step$dummy.model$family
-
+      
       # Compute performance measures
       step.perf <- perfStep(newdata = Reduce(rbind, data.list[folds$val[[fold.i]]]), b = step$meta.b,
                             fit = step$dummy.model, two.stage = two.stage, ccs = step$step.ccs, f = step$f,
                             recal.int = recal.int, estFUN = estFUN, predFUN = predFUN, perfFUN = perfFUN, ...)
-
+      
       fold.perf[   getFoldName(ds = folds$val[[fold.i]], f = fold.i, type = cvFUN.name)] <- list(step.perf$perf)
       fold.b.recal[getFoldName(ds = folds$val[[fold.i]], f = fold.i, type = cvFUN.name)] <- list(step.perf$b)
     }
-
+    
     b[      getStepName(j)] <- list(fold.b)
     v[      getStepName(j)] <- list(fold.v)
     b.recal[getStepName(j)] <- list(fold.b.recal)
-
+    
     fold.perf.df <- t(data.frame(fold.perf))
-
-
+    
+    
     # row.names(fold.perf.df) <- sapply(folds$val, getFoldName)
     step.gen <- apply(fold.perf.df, MARGIN = 2, FUN = genFUN)
     gen[getStepName(j)]  <- list(step.gen)
     perf[getStepName(j)] <- list(fold.perf.df)
-
+    
     # Select a model
     selected.model <- selFUN(unlist(c(best.gen, step.gen)))
-
+    
     if (!stepwise) break
     if (j) {
       if (!(selected.model - 1)) break
@@ -178,9 +183,9 @@ metapred <- function(data, strata, formula = NULL, estFUN = "glm", stepwise = TR
     } else     best.gen <- step.gen[[1]]
   }
   # End loop covariate selection. = up to one "step" for each covariate
-
+  
   coefficients.recal <- if (recal.int) b.recal else NULL
-
+  
   # Generate final model
   final.predictors    <- getCovariateNames(data.list, ccs)
   final.formula.names <- getFormula(data, ccs)                       # To select columns from a model.frame
@@ -190,7 +195,7 @@ metapred <- function(data, strata, formula = NULL, estFUN = "glm", stepwise = TR
                                    cl = NULL, drop = FALSE, ...)
   final.b             <- final.model$meta.b[[1]]
   final.v             <- final.model$meta.v[[1]]
-
+  
   out <- list(stepwise = list(gen = gen, perf = perf, coefficients = b, n.steps = j, v = v,
                               coefficients.recal = coefficients.recal),
               # final = list(
@@ -203,7 +208,7 @@ metapred <- function(data, strata, formula = NULL, estFUN = "glm", stepwise = TR
               options = list(cv.k = cv.k, meta.method = meta.method, recal.int = recal.int,
                              center.cov = center.cov, center.out = center.out)
   )
-
+  
   class(out) <- c("metapred")
   return(out)
 }
@@ -215,32 +220,32 @@ print.metapred <- function(x, digits = max(3L, getOption("digits") - 3L), ...) {
   cat("Steps attempted:",              x$stepwise$n.steps, "\n")
   cat("Final predictors:",             x$predictors, "\n")
   cat("Final generalisability value:", x$gen, "\n"); cat("\n")
-
+  
   print(round(x$coefficients, digits = digits))
 }
 
 perfStep <- function(newdata, b, fit, two.stage, ccs = rep(list(1:ncol(newdata), ncol(b))), f = formula(newdata),
                      recal.int = FALSE, estFUN = NULL, predFUN = NULL, perfFUN = NULL, ...) {
   b.original <- b <- as.list(b)
-
+  
   if (length(b) > 0) {
     if (isTRUE(recal.int))
       for (i in 1:length(b))
         b[[i]][1] <- b[[i]][1] + computeRecal(object = fit, newdata = newdata, b = b[[i]], estFUN = estFUN)[1]
   } else
     stop("length(b) must be > 0; to estimate performance.")
-
-
+  
+  
   predictMethod <- getPredictMethod(fit = fit, two.stage = two.stage, predFUN = predFUN, ...)
   p <- list()
   for (i in 1:length(b)) {
     p[[i]] <- predictMethod(object = fit, newdata = newdata, type = "response", b = b[[i]],
                             f = f[[i]], two.stage = two.stage, ...)
   }
-
+  
   perf <- sapply(p, FUN = perfFUN, y = newdata[ , 1], data = newdata, fit = fit)
   names(perf) <- rownames(b)
-
+  
   out <- list(perf = perf, predictMethod = predictMethod, b = b, b.original = b.original, recal.int = recal.int)
   out
 }
@@ -249,12 +254,12 @@ perfStep <- function(newdata, b, fit, two.stage, ccs = rep(list(1:ncol(newdata),
 mse <- function(p, y, data = NULL, ...) mean((p - y)^2)
 
 # Error function: Variance of prediction error
-vare <- function(p, y, data = NULL, ...) var(p-y)
+vare <- function(p, y, data = NULL, ...) var(p - y)
 
 absmean <- function(perf.measures, ...) {
   pm <- unlist(perf.measures)
   abs(mean(pm))
-  }
+}
 
 squareddiff <- function(perf.measures, ...) {
   pm <- unlist(perf.measures)
@@ -278,7 +283,7 @@ getPredictMethod <- function(fit, two.stage, predFUN = NULL, ...) {
     if (is.function(predFUN))
       return(get(predFUN))
   else stop("predFUN should be a function.")
-
+  
   # If two-stage, the fit is used only to extract the link function.
   # If one-stage, fit's prediction method may be used.
   if (two.stage) {
@@ -316,10 +321,10 @@ predict.metapred <- function(object, newdata = NULL, type = "response", recal.in
 {
   if (isTRUE(is.null(newdata)))
     stop("A newdata argument should be supplied. The colnames should match variable names of the metapred object.")
-
+  
   if (isTRUE(recal.int))
     object <- recalibrate(object = object, newdata = newdata)
-
+  
   object$FUN$predFUN(object = object, newdata = newdata, type = type, ...)
 }
 
@@ -329,16 +334,16 @@ modelStep <- function(data.list, ccs, estFUN, perfFUN, metaFUN, meta.method, gen
   if (isTRUE(is.null(cl.name))) cl.name <- as.character(cl)
   metaFUN <- match.fun(metaFUN)
   step.b <- step.v <- step.covar <- step.ccs <- step.f <- step.meta.b <- step.meta.v <- list()
-
+  
   if (drop && (is.null(ccs) || length(ccs) == 0))
     stop("model already empty. Nothing left to  remove.")
-
+  
   ccs.test <- if (drop) ccs else Inf # Inf leads to the full model
   for (ccs.ex in ccs.test) {
     ccs.t <- ccs[which(!ccs.ex == ccs)]
     study.b <- study.v <- study.covar <- list()
     f <- getFormula(data.list[[1]], ccs.t)
-
+    
     for (s in cl) {
       study.model <- estFUN(formula = f, data = data.list[[s]], ...)
       study.b[[getFoldName(cl.name)]]     <- getCoefs(study.model)
@@ -350,16 +355,16 @@ modelStep <- function(data.list, ccs, estFUN, perfFUN, metaFUN, meta.method, gen
     step.covar[getModelName(data.list, ccs.t)] <- list(study.covar)
     step.ccs[getModelName(data.list, ccs.t)]   <- list(ccs.t)
     step.f[getModelName(data.list, ccs.t)]     <- list(f)
-
-
+    
+    
     b <- as.data.frame(t(as.data.frame(study.b)))
     v <- as.data.frame(t(as.data.frame(study.v)))
-
+    
     step.meta <- metaFUN(b = b, v = v, method = meta.method) # , covar = step.covar)
     step.meta.b[getModelName(data.list, ccs.t)]  <- list(step.meta$b)
     step.meta.v[getModelName(data.list, ccs.t)]  <- list(step.meta$v)
   }
-
+  
   return(list(meta.b = step.meta.b, meta.v = step.meta.v,
               first.stage.b = step.b, first.stage.v = step.v, first.stage.covar = step.covar,
               f = step.f, step.ccs = step.ccs,
@@ -372,22 +377,22 @@ modelStep <- function(data.list, ccs, estFUN, perfFUN, metaFUN, meta.method, gen
 # method Method for meta-analysis.
 # ... Optional arguments for rma().
 #' @importFrom metafor rma
-urma <- function(b, v, method = "REML", ...)
+urma <- function(b, v, method = "DL", ...)
 {
   if (!(is.data.frame(b) || is.matrix(b)) || !(is.data.frame(v) || is.matrix(v)) )
     stop("b and v must both be a data.frame or matrix.")
   if (!identical(dim(b), dim(v)))
     stop("b and v must have the same dimensions.")
-
+  
   meta.b <- meta.se <- rep(NA, ncol(b))
   for (col in 1:ncol(b)) {
     r <- metafor::rma(b[ , col] , v[ , col], method = method, ...)
     meta.b[col]  <- r$beta
     meta.se[col] <- r$se
   }
-
+  
   meta.v <- meta.se^2
-
+  
   names(meta.b) <- names(meta.v) <- names(meta.se) <- colnames(b)
   list(b = meta.b, v = meta.v, se = meta.se)
 }
@@ -410,3 +415,7 @@ family.metapred <- function(object, ...)
 #' @export
 formula.metapred <- function(x, ...)
   x$formula
+
+# Test whether object is meta.pred
+is.metapred <- function(x)
+  inherits(x, "metapred")

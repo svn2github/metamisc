@@ -5,8 +5,8 @@
 \title{Generalized Stepwise Regression for prediction models}
 \usage{
 metapred(data, strata, formula = NULL, estFUN = "glm", stepwise = TRUE,
-  center.out = FALSE, center.cov = FALSE, recal.int = FALSE,
-  cvFUN = NULL, cv.k = NULL, metaFUN = NULL, meta.method = "REML",
+  center.out = FALSE, center.cov = TRUE, recal.int = FALSE,
+  cvFUN = NULL, cv.k = NULL, metaFUN = NULL, meta.method = "DL",
   predFUN = NULL, perfFUN = NULL, genFUN = NULL, selFUN = "which.min",
   ...)
 }
@@ -16,7 +16,7 @@ metapred(data, strata, formula = NULL, estFUN = "glm", stepwise = TRUE,
 \item{strata}{Name of the strata (e.g. studies or clusters) variable, as character. Used for two-stage MA only.}
 
 \item{formula}{Formula of the full model to be evaluated, and possibly reduced. If not supplied,
-it is assumed the first column in the data set is the outcome, and all remaining columns
+it is assumed the first column in the data set is the outcome,  and all remaining columns
 (except \code{strata}) are predictors. See \link[stats]{formula} for details.}
 
 \item{estFUN}{Function for estimating the model in the first stage. Currently "lm" and "glm" are supported.}
@@ -36,11 +36,11 @@ which are only used for validation. A user written function may be supplied as w
 \item{cv.k}{Parameter for cvFUN. For \code{cvFUN="bootstrap"}, this is the number of bootstraps. For \code{cvFUN="fixed"}, 
 this is a vector of the indices of the (sorted) data sets.}
 
-\item{metaFUN}{Function for computing the meta-analytic coefficient estimates in two-stage MA. Default: \link[metafor]{rma}
-from the metafor package is used. Default settings are univariate random effects, estimated with "REML". Method can be
+\item{metaFUN}{Function for computing the meta-analytic coefficient estimates in two-stage MA. Default: \link[metafor]{rma.uni}
+from the metafor package is used. Default settings are univariate random effects, estimated with "DL". Method can be
 passed trough the \code{meta.method} argument.}
 
-\item{meta.method}{Name of method for meta-analysis. Default is "REML". For more options see \link[metafor]{rma}.}
+\item{meta.method}{Name of method for meta-analysis. Default is "DL". For more options see \link[metafor]{rma.uni}.}
 
 \item{predFUN}{Function for predicting new values. Defaults to the appropriate link functions for two-stage MA where
 \code{glm()} or \code{lm()} is used in the first stage. For one-stage models \code{predict()} is used.}
