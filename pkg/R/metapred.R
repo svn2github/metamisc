@@ -251,8 +251,9 @@ perfStep <- function(newdata, b, fit, two.stage, ccs = rep(list(1:ncol(newdata),
   out
 }
 
+### Performance / error functions
 # Error function: Mean Squared Error
-mse <- function(p, y, data = NULL, ...) mean((p - y)^2)
+mse <- brier <- function(p, y, data = NULL, ...) mean((p - y)^2)
 
 # Error function: Variance of prediction error
 vare <- function(p, y, data = NULL, ...) var(p - y)
@@ -262,13 +263,29 @@ absmean <- function(perf.measures, ...) {
   abs(mean(pm))
 }
 
-squareddiff <- function(perf.measures, ...) {
-  pm <- unlist(perf.measures)
-  abs(mean(pm)) + mean((mean(pm) - pm)^2)
+# Measure 1: Coefficient of variation of prediction error.
+coefVarPred <- function(p, y, data = NULL, abs = TRUE, ...)
+  coefVar(x = p - y, abs = abs, ...) 
+
+### Heterogeneity, generalizability, pooled performance functions
+
+
+
+# Measure 1: Coefficient of variation (=scaled sd)
+# In general sense, abs needs not be TRUE, but for metapred it should,
+# such that higher values are worse performance.
+coefVar <- function(x, abs = TRUE, ...) {
+  cv <- sd(x)/mean(x)
+  if (isTRUE(abs)) abs(cv) else cv
 }
+
+coefVarMean <- function(x, abs = TRUE, ...) 
+  coefVar(x, abs = abs) + if (abs) abs(mean(x)) else mean(x)
+
 
 pooledvar <- function(perf.measures, N, ...) {
   pm <- unlist(perf.measures)
+  pm
   ## TODO: Extract sample size for each cluster and apply corresponding to the right perf.measures
   
 }
