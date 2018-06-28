@@ -1,3 +1,6 @@
+context("recalibrate metapred or other class")
+
+
 ### Some stuff necessary for testing
 set.seed(8092017)
 n <- 100

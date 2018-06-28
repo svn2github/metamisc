@@ -1,3 +1,5 @@
+context("metapred and its S3 methods.")
+
 ### Some stuff necessary for testing
 set.seed(8092017)
 n <- 100
@@ -8,6 +10,7 @@ td.ig <- td + 1 # For inverse gaussian and Gamma.
 ### To be included:
 # one-stage
 # predFUN.
+# Tests for options of predict.metapred
 
 test_that("The predict functions predict accurately.", {
   m.bi <- glm(td, family = binomial)
