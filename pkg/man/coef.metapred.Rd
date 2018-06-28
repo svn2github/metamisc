@@ -2,8 +2,7 @@
 % Please edit documentation in R/metapred.R
 \name{coef.metapred}
 \alias{coef.metapred}
-\title{Extract the regression coefficients
-The \code{coef} function extracts the estimated model coefficients from objects of class \code{"metapred"}.}
+\title{Extract the regression coefficients}
 \usage{
 \method{coef}{metapred}(object, ...)
 }
@@ -13,6 +12,5 @@ The \code{coef} function extracts the estimated model coefficients from objects 
 \item{\ldots}{Optional arguments (currently not supported).}
 }
 \description{
-Extract the regression coefficients
-The \code{coef} function extracts the estimated model coefficients from objects of class \code{"metapred"}.
+The \code{coef} function extracts the estimated coefficients of the final model of objects of class \code{"metapred"}.
 }
