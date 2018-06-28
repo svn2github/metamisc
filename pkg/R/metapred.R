@@ -2,9 +2,9 @@
 # @Valentijn: perhaps better to combine param perfFUN, genFUN and selFUN into one parameter with 3 or 4 distinct options
 # @Valentijn: I suggest to omit intercept recalibration. The intercept issue can be addressed directly by specifying distinct 
 # error functions that do or do not account for mis-calibration in intercept term
+# Add summary.metapred
 
 
-# is.metapred()
 # variances for intercept recalibration.
 # One-stage MA: predStep: is  type = response correct?
 # perf method
@@ -16,6 +16,7 @@
 # This means that cvFUN = fixed does not work correctly either.
 
 # Changed:
+# Added is.metapred()
 # Added more robust tests for stepwise.
 # Automatically remove observations with missing values.
 # @Valentijn: I would center covariates by default, this often helps to improve generalizability and also speeds estimation
@@ -38,12 +39,12 @@
 #' @param data data.frame containing the datasets.
 #' @param strata Name of the strata (e.g. studies or clusters) variable, as character. Used for two-stage MA only.
 #' @param formula Formula of the full model to be evaluated, and possibly reduced. If not supplied,
-#' it is assumed the first column in the data set is the outcome,  and all remaining columns
-#' (except \code{strata}) are predictors. See \link[stats]{formula} for details.
+#' \code{metapred} assumes the first column in the data set is the outcome, and all remaining columns
+#' (except \code{strata}) are predictors. See \link[stats]{formula} for formulas in general.
 #' @param estFUN Function for estimating the model in the first stage. Currently "lm" and "glm" are supported.
 #' @param stepwise Logical. Should stepwise selection be performed?
-#' @param center.out Logical. Should the outcome be centered within studies?
-#' @param center.cov Logical. Should covariates be centered within studies?
+#' @param center Numeric. Indicates which columns are to be centered within clusters. Defaults to all except the
+#' first column, which is assumed to be the outcome.
 #' @param recal.int Logical. Should the intercept be recalibrated?
 #' @param cvFUN Cross-validation method, on the study (i.e. cluster or stratum) level. "
 #' l1o" for leave-one-out cross-validation (default). "bootstrap" for bootstrap. Or "fixed", for one or more data sets
@@ -95,8 +96,8 @@
 #'
 #' @export
 
-metapred <- function(data, strata, formula = NULL, estFUN = "glm", stepwise = TRUE, center.out = FALSE,
-                     center.cov = TRUE, recal.int = FALSE, cvFUN = NULL, cv.k = NULL,
+metapred <- function(data, strata, formula = NULL, estFUN = "glm", stepwise = TRUE, center = NULL,
+                     recal.int = FALSE, cvFUN = NULL, cv.k = NULL,
                      metaFUN = NULL, meta.method = "DL", predFUN = NULL, perfFUN = NULL, genFUN = NULL, selFUN = "which.min",
                      ...) {
   call   <- match.call()
@@ -107,7 +108,7 @@ metapred <- function(data, strata, formula = NULL, estFUN = "glm", stepwise = TR
   if (is.null(formula)) formula <- stats::formula(data[ , -which(colnames(data) == strata)])
   strata.i  <- data[, which(colnames(data) == strata)]
   data      <- stats::model.frame(formula, data = data)
-  data      <- centerData(data, center.in = strata.i, center.1st = center.out, center.rest = center.cov) # change for 1 stage?
+  data      <- centerData(data, center.i = strata.i, center.which = center) # change for 1 stage?
   data.list <- asDataList(data, strata.i)
   
   if (is.null(cvFUN))   cvFUN   <- "l1o"
@@ -206,7 +207,7 @@ metapred <- function(data, strata, formula = NULL, estFUN = "glm", stepwise = TR
               FUN = list(cvFUN = cvFUN, perfFUN = perfFUN, metaFUN = metaFUN, genFUN = genFUN,
                          selFUN = selFUN, predFUN = step.perf$predictMethod, estFUN = estFUN.name),
               options = list(cv.k = cv.k, meta.method = meta.method, recal.int = recal.int,
-                             center.cov = center.cov, center.out = center.out)
+                             center = center)
   )
   
   class(out) <- c("metapred")
@@ -314,13 +315,23 @@ predictGLM <- function(object, newdata, b = NULL, f = NULL,  ...) {
 # For prediction of newdata. Not used internally.
 # object Model fit object
 # newdata New data set of class "data.frame"
-# type Currently unused name of prediction type.
+# type Type of prediction. This is intended to override the default of glm and lm.
+# recal.int = FALSE Recalibrate the intercept before prediction?
+# center.cov = NULL Center covariates, before prediction? Defaults to same as development for meta.pred classes,
+# and to FALSE for others.
+# center.out = FALSE Center the outcome, before prediction?
 # ... For compatibility only.
 #' @export
-predict.metapred <- function(object, newdata = NULL, type = "response", recal.int = FALSE, ...)
+predict.metapred <- function(object, newdata = NULL, type = "response", recal.int = FALSE, center = NULL, ...)
 {
   if (isTRUE(is.null(newdata)))
     stop("A newdata argument should be supplied. The colnames should match variable names of the metapred object.")
+  
+  if (is.metapred(object))
+    if (is.null(center)) 
+      center <- object$options$center
+  
+  newdata <- centerData(newdata, center.i = rep(1, nrow(newdata)), center.which = center) 
   
   if (isTRUE(recal.int))
     object <- recalibrate(object = object, newdata = newdata)
@@ -399,7 +410,8 @@ urma <- function(b, v, method = "DL", ...)
 
 
 #' Extract the regression coefficients
-#' The \code{coef} function extracts the estimated model coefficients from objects of class \code{"metapred"}.
+#' 
+#' The \code{coef} function extracts the estimated coefficients of the final model of objects of class \code{"metapred"}.
 #' @param object A fitted \code{metapred} object
 #' @param \ldots Optional arguments (currently not supported).
 #' 

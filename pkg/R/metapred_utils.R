@@ -13,22 +13,48 @@ center <- function(x, center.in) {
   x
 }
 
+
+# Old. Works but choice of variables is limited and does not make a lot of sense.
+# # Centers data within studies / clusters
+# # Note that the center indicator is also centered. This is not intended, but can be worked around.
+# # data data.frame. data set.
+# # center.in numeric vector corresponding to cluster indices.
+# # center.1st logical. Should the 1st variable (response) be centered
+# # center.rest logical. Should the other variables (predictors) be centered?
+# centerData <- function(data, center.in, center.1st = FALSE, center.rest = FALSE) {
+#   if (!is.data.frame(data) && !is.matrix(data))
+#     stop("data should be a data.frame or matrix.")
+#   if (length(center.in) != nrow(data))
+#     stop("length(center.in) should match nrow(data).")
+#   if (isTRUE(center.1st))
+#     data[ , 1] <- center(data[ , 1], center.in)
+#   if (isTRUE(center.rest) && ncol(data) > 2)
+#     for (col in 2:ncol(data))
+#       data[ , col] <- center(data[ , col], center.in)
+#     data
+# }
+
+
 # Centers data within studies / clusters
+# # Note that the center indicator is also centered. This is not intended, but can be worked around.
 # data data.frame. data set.
-# center.in numeric vector corresponding to cluster indices.
-# center.1st logical. Should the 1st variable (response) be centered
-# center.rest logical. Should the other variables (predictors) be centered?
-centerData <- function(data, center.in, center.1st = FALSE, center.rest = FALSE) {
+# center.i numeric vector corresponding to cluster indicators.
+# center.which numeric or integer Which variables should be centered? Defaults to all except for the first column (assumed to be
+# the outcome)
+centerData <- function(data, center.i, center.which = NULL) {
   if (!is.data.frame(data) && !is.matrix(data))
     stop("data should be a data.frame or matrix.")
-  if (length(center.in) != nrow(data))
-    stop("length(center.in) should match nrow(data).")
-  if (isTRUE(center.1st))
-    data[ , 1] <- center(data[ , 1], center.in)
-  if (isTRUE(center.rest) && ncol(data) > 2)
-    for (col in 2:ncol(data))
-      data[ , col] <- center(data[ , col], center.in)
-    data
+  if (length(center.i) != nrow(data))
+    stop("length(center.i) should match nrow(data).")
+  if (is.null(center.which))
+    center.which <- seq_len(ncol(data))[-1]
+  if (isTRUE(any(!!center.which))) {
+    if (all(center.which <= ncol(data)) && all(center.which > 0))
+      for (col in center.which)
+        data[ , col] <- center(data[ , col], center.i) 
+      else stop("center.which should indicate (numeric values of) columns of data set that are to be centered. Use 0 or FALSE for none.")  
+  }
+  return(data)
 }
 
 # coerces data set to data.list

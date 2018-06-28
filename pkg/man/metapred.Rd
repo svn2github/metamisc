@@ -5,10 +5,9 @@
 \title{Generalized Stepwise Regression for prediction models}
 \usage{
 metapred(data, strata, formula = NULL, estFUN = "glm", stepwise = TRUE,
-  center.out = FALSE, center.cov = TRUE, recal.int = FALSE,
-  cvFUN = NULL, cv.k = NULL, metaFUN = NULL, meta.method = "DL",
-  predFUN = NULL, perfFUN = NULL, genFUN = NULL, selFUN = "which.min",
-  ...)
+  center = NULL, recal.int = FALSE, cvFUN = NULL, cv.k = NULL,
+  metaFUN = NULL, meta.method = "DL", predFUN = NULL, perfFUN = NULL,
+  genFUN = NULL, selFUN = "which.min", ...)
 }
 \arguments{
 \item{data}{data.frame containing the datasets.}
@@ -16,16 +15,15 @@ metapred(data, strata, formula = NULL, estFUN = "glm", stepwise = TRUE,
 \item{strata}{Name of the strata (e.g. studies or clusters) variable, as character. Used for two-stage MA only.}
 
 \item{formula}{Formula of the full model to be evaluated, and possibly reduced. If not supplied,
-it is assumed the first column in the data set is the outcome,  and all remaining columns
-(except \code{strata}) are predictors. See \link[stats]{formula} for details.}
+\code{metapred} assumes the first column in the data set is the outcome, and all remaining columns
+(except \code{strata}) are predictors. See \link[stats]{formula} for formulas in general.}
 
 \item{estFUN}{Function for estimating the model in the first stage. Currently "lm" and "glm" are supported.}
 
 \item{stepwise}{Logical. Should stepwise selection be performed?}
 
-\item{center.out}{Logical. Should the outcome be centered within studies?}
-
-\item{center.cov}{Logical. Should covariates be centered within studies?}
+\item{center}{Numeric. Indicates which columns are to be centered within clusters. Defaults to all except the
+first column, which is assumed to be the outcome.}
 
 \item{recal.int}{Logical. Should the intercept be recalibrated?}
 
