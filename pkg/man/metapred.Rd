@@ -4,10 +4,10 @@
 \alias{metapred}
 \title{Generalized Stepwise Regression for prediction models}
 \usage{
-metapred(data, strata, formula = NULL, estFUN = "glm", stepwise = TRUE,
-  center = NULL, recal.int = FALSE, cvFUN = NULL, cv.k = NULL,
-  metaFUN = NULL, meta.method = "DL", predFUN = NULL, perfFUN = NULL,
-  genFUN = NULL, selFUN = "which.min", ...)
+metapred(data, strata, formula = NULL, estFUN = "glm",
+  stepwise = "backward", center = NULL, recal.int = FALSE, cvFUN = NULL,
+  cv.k = NULL, metaFUN = NULL, meta.method = "DL", predFUN = NULL,
+  perfFUN = NULL, genFUN = NULL, selFUN = "which.min", ...)
 }
 \arguments{
 \item{data}{data.frame containing the datasets.}
@@ -20,7 +20,7 @@ metapred(data, strata, formula = NULL, estFUN = "glm", stepwise = TRUE,
 
 \item{estFUN}{Function for estimating the model in the first stage. Currently "lm" and "glm" are supported.}
 
-\item{stepwise}{Logical. Should stepwise selection be performed?}
+\item{stepwise}{Direction of stepwise selection. "backward", "forward", or FALSE for no selection}
 
 \item{center}{Numeric. Indicates which columns are to be centered within clusters. Defaults to all except the
 first column, which is assumed to be the outcome.}
@@ -32,7 +32,7 @@ l1o" for leave-one-out cross-validation (default). "bootstrap" for bootstrap. Or
 which are only used for validation. A user written function may be supplied as well.}
 
 \item{cv.k}{Parameter for cvFUN. For \code{cvFUN="bootstrap"}, this is the number of bootstraps. For \code{cvFUN="fixed"}, 
-this is a vector of the indices of the (sorted) data sets.}
+this is a vector of the indices of the (sorted) data sets. Not used for \code{cvFUN="l1o"}.}
 
 \item{metaFUN}{Function for computing the meta-analytic coefficient estimates in two-stage MA. Default: \link[metafor]{rma.uni}
 from the metafor package is used. Default settings are univariate random effects, estimated with "DL". Method can be
@@ -56,7 +56,7 @@ coefficients. Alternatively, choose \code{pooledvar} for a weighted average of v
 \item{...}{To pass arguments to estFUN (e.g. family = "binomial"), or other methods.}
 }
 \value{
-\code{metapred} A list of class \code{metapred}, containing the final coefficients in \code{coefficients}, and the stepwise
+\code{metapred} A list of class \code{metapred}, containing the final coefficients in \code{coef}, and the stepwise
 tree of estimates of the coefficients \code{(coef)}, performance measures \code{(perf)}, generalizability measures
 \code{(gen)} in \code{stepwise}, and more.
 }
@@ -66,7 +66,7 @@ data from individuals in multiple studies.
 }
 \examples{
 data(DVTipd)
-DVTipd$cluster <- 1:4 # Add a fictional clustering to the data set.
+DVTipd$cluster <- letters[1:4] # Add a fictional clustering to the data set.
 metamisc:::metapred(DVTipd, strata = "cluster", f = dvt ~ sex + vein + malign, family = binomial)
 
 \dontrun{

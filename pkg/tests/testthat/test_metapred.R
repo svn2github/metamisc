@@ -144,7 +144,7 @@ test_that("metapred's stepwise is WAD.", {
   expect_length(mp$coefficients, 3)  # All noise predictors are selected, because stepwise = F.
 })
 
-test_that("coef.metapred gets the coefficients", {
+test_that("coefficients.metapred gets the coefficientsficients", {
   mp <- metapred(data = td, strata = "X4", family = binomial)
   expect_true(is.numeric(coef(mp)))
 

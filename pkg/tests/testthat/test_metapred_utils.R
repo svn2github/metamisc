@@ -6,21 +6,28 @@ n <- 2
 td <- data.frame(y = rep(0, n * 4), x = rep(0, n * 4), z = c(rep(0, n * 2), rep(1, n * 2)), s = rep(c(rep(0, n), rep(1, n)), 2))
 
 test_that("Centering works.", {
-  expect_true(is.data.frame(cd <- metamisc:::centerData(data = td, center.i = td$s, center.which = FALSE) ) )
+  expect_true(is.data.frame(cd <- metamisc:::centerData(data = td, cluster.vec = td$s, center.which = FALSE) ) )
   expect_identical(td, cd) # Nothing should change if center.which = FALSE
   
-  expect_true(is.data.frame(cd <- metamisc:::centerData(data = td, center.i = td$s, center.which = seq_len(ncol(td)))))
+  expect_true(is.data.frame(cd <- metamisc:::centerData(data = td, cluster.vec = td$s, center.which = seq_len(ncol(td)))))
   expect_identical(cd$x, rep(0, n * 4))
   expect_identical(cd$z, c(rep(-.5, n * 2), rep(.5, n * 2)))
   expect_identical(cd$y, rep(0, n * 4))
   # Note that the center indicator is also centered. This is not intended, but can be worked around.
   
-  expect_true(is.data.frame(cd <- metamisc:::centerData(data = td, center.i = td$s))) # used to be:center.1st = FALSE, center.rest = TRUE (is now the default)
+  expect_true(is.data.frame(cd <- metamisc:::centerData(data = td, cluster.vec = td$s))) # used to be:center.1st = FALSE, center.rest = TRUE (is now the default)
   expect_identical(cd$x, rep(0, n * 4))
   expect_identical(cd$z, c(rep(-.5, n * 2), rep(.5, n * 2)))
   expect_identical(cd$y, td$y)
   
-  expect_true(is.data.frame(cd <- metamisc:::centerData(data = td, center.i = td$s, center.which = 0)))
+  expect_true(is.data.frame(cd <- metamisc:::centerData(data = td, cluster.vec = td$s, center.which = 0)))
+  expect_identical(cd$x, td$x)
+  expect_identical(cd$z, td$z)
+  expect_identical(cd$y, td$y)
+  
+  
+  # Or using the cluster variable in the data.frame:
+  expect_true(is.data.frame(cd <- metamisc:::centerData(data = td, cluster.var = "s", center.which = 0)))
   expect_identical(cd$x, td$x)
   expect_identical(cd$z, td$z)
   expect_identical(cd$y, td$y)

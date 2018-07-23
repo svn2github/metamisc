@@ -3,6 +3,8 @@
 # @Valentijn: I suggest to omit intercept recalibration. The intercept issue can be addressed directly by specifying distinct 
 # error functions that do or do not account for mis-calibration in intercept term
 # Add summary.metapred
+# categorical variables
+#   + categorical variables as one or as multiple.
 
 
 # variances for intercept recalibration.
@@ -12,8 +14,7 @@
 # performance measurement, current is Brier for binomial
 # add more options to penalty step
 # , cl.name in modelStep
-# Remove Reduce() from perfStep, and make perfStep() compatible with multiple data sets.
-# This means that cvFUN = fixed does not work correctly either.
+# Remove Reduce() from perfStep, and make perfStep() compatible with multiple data sets (for cvFUN = fixed, or cvFUN = bs)
 
 # Changed:
 # Added is.metapred()
@@ -42,7 +43,7 @@
 #' \code{metapred} assumes the first column in the data set is the outcome, and all remaining columns
 #' (except \code{strata}) are predictors. See \link[stats]{formula} for formulas in general.
 #' @param estFUN Function for estimating the model in the first stage. Currently "lm" and "glm" are supported.
-#' @param stepwise Logical. Should stepwise selection be performed?
+#' @param stepwise Direction of stepwise selection. "backward", "forward", or FALSE for no selection
 #' @param center Numeric. Indicates which columns are to be centered within clusters. Defaults to all except the
 #' first column, which is assumed to be the outcome.
 #' @param recal.int Logical. Should the intercept be recalibrated?
@@ -50,7 +51,7 @@
 #' l1o" for leave-one-out cross-validation (default). "bootstrap" for bootstrap. Or "fixed", for one or more data sets
 #' which are only used for validation. A user written function may be supplied as well.
 #' @param cv.k Parameter for cvFUN. For \code{cvFUN="bootstrap"}, this is the number of bootstraps. For \code{cvFUN="fixed"}, 
-#' this is a vector of the indices of the (sorted) data sets.
+#' this is a vector of the indices of the (sorted) data sets. Not used for \code{cvFUN="l1o"}.
 #' @param metaFUN Function for computing the meta-analytic coefficient estimates in two-stage MA. Default: \link[metafor]{rma.uni}
 #' from the metafor package is used. Default settings are univariate random effects, estimated with "DL". Method can be
 #' passed trough the \code{meta.method} argument.
@@ -66,13 +67,13 @@
 #' "which.max" if high values for \code{genFUN} indicate a good model.
 #' @param ... To pass arguments to estFUN (e.g. family = "binomial"), or other methods.
 #'
-#' @return \code{metapred} A list of class \code{metapred}, containing the final coefficients in \code{coefficients}, and the stepwise
+#' @return \code{metapred} A list of class \code{metapred}, containing the final coefficients in \code{coef}, and the stepwise
 #' tree of estimates of the coefficients \code{(coef)}, performance measures \code{(perf)}, generalizability measures
 #' \code{(gen)} in \code{stepwise}, and more.
 #'
 #' @examples 
 #' data(DVTipd)
-#' DVTipd$cluster <- 1:4 # Add a fictional clustering to the data set.
+#' DVTipd$cluster <- letters[1:4] # Add a fictional clustering to the data set.
 #' metamisc:::metapred(DVTipd, strata = "cluster", f = dvt ~ sex + vein + malign, family = binomial)
 #' 
 #'\dontrun{
@@ -96,7 +97,7 @@
 #'
 #' @export
 
-metapred <- function(data, strata, formula = NULL, estFUN = "glm", stepwise = TRUE, center = NULL,
+metapred <- function(data, strata, formula = NULL, estFUN = "glm", stepwise = "backward", center = NULL,
                      recal.int = FALSE, cvFUN = NULL, cv.k = NULL,
                      metaFUN = NULL, meta.method = "DL", predFUN = NULL, perfFUN = NULL, genFUN = NULL, selFUN = "which.min",
                      ...) {
@@ -108,7 +109,8 @@ metapred <- function(data, strata, formula = NULL, estFUN = "glm", stepwise = TR
   if (is.null(formula)) formula <- stats::formula(data[ , -which(colnames(data) == strata)])
   strata.i  <- data[, which(colnames(data) == strata)]
   data      <- stats::model.frame(formula, data = data)
-  data      <- centerData(data, center.i = strata.i, center.which = center) # change for 1 stage?
+  # data      <- centerData(data, center.i = strata.i, center.which = center) # change for 1 stage?
+  data      <- centerData(data, cluster.vec = strata.i, center.which = center) # change for 1 stage?
   data.list <- asDataList(data, strata.i)
   
   if (is.null(cvFUN))   cvFUN   <- "l1o"
@@ -128,9 +130,11 @@ metapred <- function(data, strata, formula = NULL, estFUN = "glm", stepwise = TR
   
   J <- ncol(data) - 1 # because 1 is outcome. For surv will have to be 2
   ccs <- seq_len(J) + 1
-  b <- v <- b.recal <- perf <- gen <- list()
+  b <- v <- b.recal <- perf <- gen <- changed.preds <- list()
   best.gen <- NULL
-  folds <- cvFUN(1:length(data.list), k = cv.k)
+  # folds <- cvFUN(1:length(data.list), k = cv.k)
+  folds <- cvFUN(sort(unique(strata.i)), k = cv.k)
+  folds <<- folds
   if (!isTRUE(length(folds$dev) > 0) || !isTRUE(length(folds$dev[[1]]) > 0))
     stop("At least 1 cluster must be used for development.")
   family <- NULL
@@ -153,7 +157,8 @@ metapred <- function(data, strata, formula = NULL, estFUN = "glm", stepwise = TR
         family <- step$dummy.model$family
       
       # Compute performance measures
-      step.perf <- perfStep(newdata = Reduce(rbind, data.list[folds$val[[fold.i]]]), b = step$meta.b,
+      # Note that in iecv (default) nothing is to be Reduce()d, as only one cluster is used for performance at a time.
+      step.perf <- perfStep(newdata = Reduce(rbind, data.list[folds$val.i[[fold.i]]]), b = step$meta.b,
                             fit = step$dummy.model, two.stage = two.stage, ccs = step$step.ccs, f = step$f,
                             recal.int = recal.int, estFUN = estFUN, predFUN = predFUN, perfFUN = perfFUN, ...)
       
@@ -176,16 +181,18 @@ metapred <- function(data, strata, formula = NULL, estFUN = "glm", stepwise = TR
     # Select a model
     selected.model <- selFUN(unlist(c(best.gen, step.gen)))
     
-    if (!stepwise) break
+    if (stepwise == FALSE) break
     if (j) {
       if (!(selected.model - 1)) break
-      ccs      <- ccs[-(selected.model - 1)]
+      changed.pred <- -(selected.model - 1)
+      changed.preds[[getStepName(j)]] <- changed.pred
+      ccs      <- ccs[changed.pred]
       best.gen <- step.gen[[selected.model - 1]]
     } else     best.gen <- step.gen[[1]]
   }
   # End loop covariate selection. = up to one "step" for each covariate
   
-  coefficients.recal <- if (recal.int) b.recal else NULL
+  coef.recal <- if (recal.int) b.recal else NULL
   
   # Generate final model
   final.predictors    <- getCovariateNames(data.list, ccs)
@@ -198,12 +205,13 @@ metapred <- function(data, strata, formula = NULL, estFUN = "glm", stepwise = TR
   final.v             <- final.model$meta.v[[1]]
   
   out <- list(stepwise = list(gen = gen, perf = perf, coefficients = b, n.steps = j, v = v,
-                              coefficients.recal = coefficients.recal),
+                              coef.recal = coef.recal, changed.preds = changed.preds, direction = stepwise),
               # final = list(
               gen = best.gen, predictors = final.predictors, formula = final.formula,
               formula.names = final.formula.names, coefficients = final.b, variance = final.v, #),
               call = call,
               family = family,
+              strata = strata,
               FUN = list(cvFUN = cvFUN, perfFUN = perfFUN, metaFUN = metaFUN, genFUN = genFUN,
                          selFUN = selFUN, predFUN = step.perf$predictMethod, estFUN = estFUN.name),
               options = list(cv.k = cv.k, meta.method = meta.method, recal.int = recal.int,
@@ -217,12 +225,17 @@ metapred <- function(data, strata, formula = NULL, estFUN = "glm", stepwise = TR
 #' @method print metapred
 #' @export
 print.metapred <- function(x, digits = max(3L, getOption("digits") - 3L), ...) {
-  cat("Call: ");                       print(x$call); cat("\n")
+  cat("Call: ");                       print(x$call); cat("\n") # cat cannot handle a call
   cat("Steps attempted:",              x$stepwise$n.steps, "\n")
-  cat("Final predictors:",             x$predictors, "\n")
+  
+  if (x$stepwise$direction != FALSE)
+    cat("Predictors ", if (x$stepwise$direction == "forward") "added: " else if (x$stepwise$direction == "backward") 
+      "removed: ", if (length(x$stepwise$changed.preds) > 0) unlist(x$stepwise$changed.preds) else "none", "\n")
+  
+  cat("Final predictors:", if (length(x$predictors) > 0) x$predictors else "none", "\n")
   cat("Final generalisability value:", x$gen, "\n"); cat("\n")
   
-  print(round(x$coefficients, digits = digits))
+  print(round(coef(x), digits = digits))
 }
 
 perfStep <- function(newdata, b, fit, two.stage, ccs = rep(list(1:ncol(newdata), ncol(b))), f = formula(newdata),
@@ -315,7 +328,7 @@ getPredictMethod <- function(fit, two.stage, predFUN = NULL, ...) {
 # Prediction function for two-stage GLM objects
 # object glm model fit object
 # newdata newdata to predict for, of class "data.frame"
-# b vector of coefficients. Overrides coefficients of object
+# b vector of coef. Overrides coef of object
 # f formula used for selecting relevant variables from newdata.
 # ... For compatibility only.
 predictGLM <- function(object, newdata, b = NULL, f = NULL,  ...) {
@@ -331,6 +344,7 @@ predictGLM <- function(object, newdata, b = NULL, f = NULL,  ...) {
 
 # For prediction of newdata. Not used internally.
 # object Model fit object
+# strata character, name of strata variable in newdata
 # newdata New data set of class "data.frame"
 # type Type of prediction. This is intended to override the default of glm and lm.
 # recal.int = FALSE Recalibrate the intercept before prediction?
@@ -339,7 +353,7 @@ predictGLM <- function(object, newdata, b = NULL, f = NULL,  ...) {
 # center.out = FALSE Center the outcome, before prediction?
 # ... For compatibility only.
 #' @export
-predict.metapred <- function(object, newdata = NULL, type = "response", recal.int = FALSE, center = NULL, ...)
+predict.metapred <- function(object, newdata = NULL, strata = object$strata, type = "response", recal.int = FALSE, center = NULL, ...)
 {
   if (isTRUE(is.null(newdata)))
     stop("A newdata argument should be supplied. The colnames should match variable names of the metapred object.")
@@ -348,7 +362,9 @@ predict.metapred <- function(object, newdata = NULL, type = "response", recal.in
     if (is.null(center)) 
       center <- object$options$center
   
-  newdata <- centerData(newdata, center.i = rep(1, nrow(newdata)), center.which = center) 
+  # newdata <- centerData(newdata, center.i = rep(1, nrow(newdata)), center.which = center) 
+    newdata <- centerData(newdata, cluster.var = strata, center.which = center) 
+    
   
   if (isTRUE(recal.int))
     object <- recalibrate(object = object, newdata = newdata)
@@ -400,7 +416,7 @@ modelStep <- function(data.list, ccs, estFUN, perfFUN, metaFUN, meta.method, gen
 }
 
 # Univariate Random Effects Meta-Analysis
-# b data.frame or matrix, containing coefficients
+# b data.frame or matrix, containing coef
 # v data.frame or matrix, containing variances
 # method Method for meta-analysis.
 # ... Optional arguments for rma().

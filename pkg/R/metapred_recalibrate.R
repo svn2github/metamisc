@@ -34,9 +34,9 @@ computeRecal <- function(object, newdata, b = NULL, f = ~ 1, estFUN = NULL,  ...
 # shrink <- function(object, newdata, method = "chisq", b = NULL, estFUN = NULL, ...) {
 #   call <- match.call()
 #   if (is.null(b)) b <- coef(object)
-#   if (is.null(object$original.coefficients))
-#     object$original.coefficients <- list()
-#   if (!is.list(object$original.coefficients))
+#   if (is.null(object$orig.coef))
+#     object$orig.coef <- list()
+#   if (!is.list(object$orig.coef))
 #     stop("object is incompatible")
 #   
 #   if (identical(method, "chisq")) {
@@ -47,7 +47,7 @@ computeRecal <- function(object, newdata, b = NULL, f = ~ 1, estFUN = NULL,  ...
 #   else {
 #   f <- formula( ~ lp)
 #   
-#   object$original.coefficients[[length(object$original.coefficients) + 1]] <- coef(object)
+#   object$orig.coef[[length(object$orig.coef) + 1]] <- coef(object)
 #   br <- computeRecal(object = object, newdata = newdata, f = f, estFUN = estFUN, ...)
 #   
 #   object$shrinkage.factor <- br[2] + 1
@@ -107,17 +107,17 @@ computeRecal <- function(object, newdata, b = NULL, f = ~ 1, estFUN = NULL,  ...
 #' @export
 recalibrate <- function(object, newdata, f = ~ 1, estFUN = NULL, ...) {
   call <- match.call()
-  if (is.null(object$original.coefficients))
-    object$original.coefficients <- list()
-  if (!is.list(object$original.coefficients))
+  if (is.null(object$orig.coef))
+    object$orig.coef <- list()
+  if (!is.list(object$orig.coef))
     stop("object is incompatible with recalibrate.")
   f <- as.formula(f)
 
-  object$original.coefficients[[length(object$original.coefficients) + 1]] <- coef(object)
+  object$orig.coef[[length(object$orig.coef) + 1]] <- coef(object)
   br <- computeRecal(object = object, newdata = newdata, f = f, estFUN = estFUN, ...)
   i <- match(names(br), names(object$coefficients))
   object$coefficients[i] <- object$coefficients[i] + br
-  
+
   if (is.call(object$call))
   {
     object$original.call <- object$call
@@ -152,9 +152,9 @@ recalibrate <- function(object, newdata, f = ~ 1, estFUN = NULL, ...) {
 #   coefficients <- FALSE # for future development.
 #   if (isTRUE(intercept) || isTRUE(coefficients))
 #   {
-#     if (is.null(object$original.coefficients))
-#       object$original.coefficients <- list()
-#     if (!is.list(object$original.coefficients))
+#     if (is.null(object$orig.coef))
+#       object$orig.coef <- list()
+#     if (!is.list(object$orig.coef))
 #       stop("object is incompatible with recalibrate.")
 #     if (is.null(estFUN)) {
 #       if (inherits(object, "metapred"))
@@ -167,12 +167,12 @@ recalibrate <- function(object, newdata, f = ~ 1, estFUN = NULL, ...) {
 #   if (isTRUE(intercept))
 #   {
 #     int <- computeInt(object = object, newdata = newdata, estFUN = estFUN, ...)
-#     object$original.coefficients[[length(object$original.coefficients) + 1]] <- coef(object)
+#     object$orig.coef[[length(object$orig.coef) + 1]] <- coef(object)
 #     object$coefficients[1] <- int
 #   }
 #
 #   if (isTRUE(coefficients))
-#     stop("coefficient recalibration is not implemented yet.")
+#     stop("coefficientsficient recalibration is not implemented yet.")
 #
 #   if (isTRUE(intercept) || isTRUE(coefficients))
 #     if (is.call(object$call))

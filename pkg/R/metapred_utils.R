@@ -36,23 +36,62 @@ center <- function(x, center.in) {
 
 
 # Centers data within studies / clusters
-# # Note that the center indicator is also centered. This is not intended, but can be worked around.
+# # Note that the center indicator is also centered. This is not intended, but can be worked around. Sadly, this means
+# that a categorical cluster variable will also be tried to be centered, causing an error.
 # data data.frame. data set.
 # center.i numeric vector corresponding to cluster indicators.
 # center.which numeric or integer Which variables should be centered? Defaults to all except for the first column (assumed to be
 # the outcome)
-centerData <- function(data, center.i, center.which = NULL) {
+# centerData.old <- function(data, center.i, center.which = NULL) {
+#   if (!is.data.frame(data) && !is.matrix(data))
+#     stop("data should be a data.frame or matrix.")
+#   if (length(center.i) != nrow(data))
+#     stop("length(center.i) should match nrow(data).")
+#   if (is.null(center.which))
+#     center.which <- seq_len(ncol(data))[-1]
+#   if (isTRUE(any(!!center.which))) {
+#     if (all(center.which <= ncol(data)) && all(center.which > 0))
+#       for (col in center.which)
+#         data[ , col] <- center(data[ , col], center.i) 
+#       else stop("center.which should indicate (numeric values of) columns of data set that are to be centered. Use 0 or FALSE for none.")  
+#   }
+#   return(data)
+# }
+
+# Centers data within studies / clusters
+# data data.frame. data set.
+# cluster.var name of variable in data, vector corresponding to cluster indicators. 
+# Overrides cluster.vec If both are NULL, all are in the same cluster. 
+# cluster.vec vector of cluster indicators. Overridden by cluster.var. If both are NULL, all are in the same cluster.
+# center.which numeric or integer Which variables should be centered? Defaults to all except for the first column (assumed to be
+# the outcome)
+centerData <- function(data, cluster.var = NULL, cluster.vec = NULL, center.which = NULL) {
   if (!is.data.frame(data) && !is.matrix(data))
     stop("data should be a data.frame or matrix.")
-  if (length(center.i) != nrow(data))
-    stop("length(center.i) should match nrow(data).")
+  
+  if (!is.null(cluster.var)) {
+    cluster.vec <- data[ , cluster.var]
+    center.col <- which(colnames(data) == cluster.var)
+  } else {
+    center.col <- 0
+    if (is.null(cluster.vec)) cluster.vec <- rep(1, nrow(data))
+  }
+
+  # print(str(cluster.vec))
+  # print(str(data))
+  
+  if (length(cluster.vec) != nrow(data))
+    stop("length(cluster.vec) should match nrow(data).")
+  
   if (is.null(center.which))
     center.which <- seq_len(ncol(data))[-1]
+  
   if (isTRUE(any(!!center.which))) {
-    if (all(center.which <= ncol(data)) && all(center.which > 0))
+    if (all(center.which <= ncol(data)) && all(center.which > 0)) {
       for (col in center.which)
-        data[ , col] <- center(data[ , col], center.i) 
-      else stop("center.which should indicate (numeric values of) columns of data set that are to be centered. Use 0 or FALSE for none.")  
+        if (col != center.col) 
+          data[ , col] <- center(data[ , col], cluster.vec) 
+    } else stop("center.which should indicate (numeric values of) columns of data set that are to be centered. Use 0 or FALSE for none.")  
   }
   return(data)
 }
@@ -90,11 +129,23 @@ getDataList <- function(data.list, ccs, cl)
 # data data.frame.
 # covariate.columns indices of covariate columns.
 # All return character.
-getFoldName <- function(ds, f = NULL, type = NULL)
-  paste(getclName(ds = ds), getcvName(f = f, type = type), sep = if (length(f) > 0 || length(type) > 0) ". " else "")
+# getFoldName <- function(ds, f = NULL, type = NULL)
+#   paste(getclName(ds = ds), getcvName(f = f, type = type), sep = if (length(f) > 0 || length(type) > 0) ". " else "")
+
+# For l10, fixed and successive, the validation folds are unique. Bootstrap reuses them, and must add an iteration number.
+getFoldName <- function(ds, f = NULL, type = NULL) {
+  if (isTRUE(type == "l1o") || isTRUE(type == "leaveOneOut") || isTRUE(type == "fixed") || isTRUE(type == "successive"))
+    paste(getclName(ds = ds))
+  else 
+    paste(getclName(ds = ds), getcvName(f = f, type = type), sep = if (length(f) > 0 || length(type) > 0) ". " else "")
+}
+  
+
+# getclName <- function(ds)
+#   paste("cl", toString(ds), sep = " ")
 
 getclName <- function(ds)
-  paste("cl", toString(ds), sep = " ")
+  paste(toString(ds), sep = " ")
 
 getcvName <- function(f, type = NULL)
   paste(type, f, sep = " ")
@@ -111,7 +162,7 @@ getModelName <- function(data.list, covariate.columns)
     return("intercept only") else return(toString(name))
 
 getStepName <- function(x)
-  paste("step", x, sep = "")
+  paste("s", x, sep = "")
 
 getPredictorNames <- function(f, data)
   colnames(stats::model.frame.default(formula = f, data = data))[-1]
@@ -219,7 +270,7 @@ removePredictors <- function(f, p.names)
 #   bootstrap: number of bootstraps
 #   fixed: indices of data sets for validation.
 #   successive (still a hidden function): Number of validation sets.
-#   leaveOneOut: ignored.
+#   leaveOneOut = l1o: iecv: internal-external cross-validation of data sets/clusters.
 leaveOneOut <- l1o <- function(ds, ...) {
   ds <- sort(ds)
   if (length(ds) < 2)
