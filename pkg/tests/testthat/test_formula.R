@@ -1,5 +1,6 @@
 context("formula functions for metapred")
 
+# necessary for testing
 f0    <- formula(y ~ 1)
 fa    <- formula(y ~ a)
 fab   <- formula(y ~ a + b)
@@ -43,6 +44,27 @@ test_that("error is raised when terms are added and removed", {
   expect_error(updateFormula(fab, c("z", "b"))) # error, as intended
 })
 
+
+
+# necessary for testing
+axb <- f2tl(faxb)
+ab <- f2tl(fab)
+abb2 <- f2tl(fabb2)
+
+# Differences in vectors of characters
+test_that("The difference in vectors is given", {
+  expect_equal(setSymDiff(ab, axb), "a:b")
+  expect_equal(setSymDiff(abb2, ab), "I(b^2)")
+  expect_equal(setSymDiff(abb2, axb), c("a:b", "I(b^2)"))
+  expect_length(setSymDiff(ab, ab), 0L)
+})
+
+# Differences in formulas, as character vectors.
+test_that("The difference in formulas is given", {
+  expect_equal(getFormulaDiffAsChar(f0, fabb2), c("a", "b", "I(b^2)"))
+  expect_equal(getFormulaDiffAsChar(fabb2, fabb2), character()) # or length() == 0
+  expect_equal(getFormulaDiffAsChar(faxb, fabb2), c("a:b", "I(b^2)"))
+})
 
 
 

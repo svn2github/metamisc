@@ -23,19 +23,15 @@ updateFormula <- function(f, x) {
 # formulaRemove <- function(f, x)
 #   update.formula(f, paste("~ .", paste("-", as.character(x) , sep = " ", collapse = " "), sep = " "  ) )
 
-# f0    <- formula(y ~ 1)
-# fa    <- formula(y ~ a)
-# fab   <- formula(y ~ a + b)
-# fabc  <- formula(y ~ a + b + c)
-# fab0  <- formula(y ~ a + b - 1)
-# faxb  <- formula(y ~ a * b)
-# fab2  <- formula(y ~ a + I(b^2))
-# fabb2 <- formula(y ~ a + I(b^2) + b) # Reordered, for testing purposes
-# fapb  <- formula(y ~ I(a+b))
-# 
-# f2tl(faxb)
-# f2tl(fab)
 
-getFormulaDiff <- function(f, g) {
-  
-}
+# Differences in vectors of characters
+# x, y vector
+# returns ordered vector of symmetric difference between x and y
+setSymDiff <- function(x, y) 
+  sort(unique(c(setdiff(x, y), setdiff(y, x))))
+
+# Differences in formulas
+# f, g formula
+# returns ordered vector of symmetric difference between f and g 
+getFormulaDiffAsChar <- function(f, g)
+  setSymDiff(f2tl(f), f2tl(g))
