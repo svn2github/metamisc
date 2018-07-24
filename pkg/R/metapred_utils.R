@@ -13,7 +13,6 @@ center <- function(x, center.in) {
   x
 }
 
-
 # Old. Works but choice of variables is limited and does not make a lot of sense.
 # # Centers data within studies / clusters
 # # Note that the center indicator is also centered. This is not intended, but can be worked around.
@@ -33,7 +32,6 @@ center <- function(x, center.in) {
 #       data[ , col] <- center(data[ , col], center.in)
 #     data
 # }
-
 
 # Centers data within studies / clusters
 # # Note that the center indicator is also centered. This is not intended, but can be worked around. Sadly, this means
@@ -77,9 +75,6 @@ centerData <- function(data, cluster.var = NULL, cluster.vec = NULL, center.whic
     if (is.null(cluster.vec)) cluster.vec <- rep(1, nrow(data))
   }
 
-  # print(str(cluster.vec))
-  # print(str(data))
-  
   if (length(cluster.vec) != nrow(data))
     stop("length(cluster.vec) should match nrow(data).")
   
@@ -116,8 +111,6 @@ asDataList <- function(data, strata.i) {
 # returns data.list.
 getDataList <- function(data.list, ccs, cl) 
   lapply(data.list[cl], getData, predictors = ccs)
-
-
 
 
 # These functions are used for making various names. Any change should be made here, such that
@@ -192,7 +185,6 @@ getData <- function(data, pred.indices) {
   d
 }
 
-
 # gets formula of for data set. Replacement of formula.data.frame, which returns bogus for
 # 1 column data.frames.
 # data data.frame
@@ -227,7 +219,6 @@ getVars   <- function(fit, ...) diag(vcov(fit))
 getCoVars <- function(fit, ...) vcov(fit)
 getSE     <- function(fit, ...) sqrt(getVars(fit))
 
-
 # Coerces l to one string
 # l list or vector of strings.
 # returns 1 string, character.
@@ -239,7 +230,6 @@ oneStr <- function(l, sep = "") {
   }
   return(out)
 }
-
 
 # Necessary for making a formula from a model.frame.
 # f formula
@@ -262,7 +252,6 @@ removePredictor <- function(f, p.name)
 # Returns: formula
 removePredictors <- function(f, p.names)
   removePredictor(f, paste(oneStr(unlist(p.names), sep = " - "), sep = " - "))
-
 
 ### The following functions are for generating the folds for the cross-validation in metapred
 # ds Numeric or character vector. Names of the data sets.
