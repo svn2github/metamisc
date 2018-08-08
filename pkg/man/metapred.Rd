@@ -2,28 +2,39 @@
 % Please edit documentation in R/metapred.R
 \name{metapred}
 \alias{metapred}
-\title{Generalized Stepwise Regression for prediction models}
+\title{Generalized Stepwise Regression for prediction models in clustered data}
 \usage{
-metapred(data, strata, formula = NULL, estFUN = "glm",
-  stepwise = "backward", center = NULL, recal.int = FALSE, cvFUN = NULL,
-  cv.k = NULL, metaFUN = NULL, meta.method = "DL", predFUN = NULL,
-  perfFUN = NULL, genFUN = NULL, selFUN = "which.min", ...)
+metapred(data, strata, formula = NULL, estFUN = "glm", scope = NULL,
+  retest = FALSE, max.steps = 1000, center = TRUE, recal.int = FALSE,
+  cvFUN = NULL, cv.k = NULL, metaFUN = NULL, meta.method = NULL,
+  predFUN = NULL, perfFUN = NULL, genFUN = NULL, selFUN = "which.min",
+  ...)
 }
 \arguments{
-\item{data}{data.frame containing the datasets.}
+\item{data}{data.frame containing the data.}
 
 \item{strata}{Name of the strata (e.g. studies or clusters) variable, as character. Used for two-stage MA only.}
 
-\item{formula}{Formula of the full model to be evaluated, and possibly reduced. If not supplied,
+\item{formula}{\code{formula} of the first model to be evaluated. \code{metapred} will start at \code{formula} and update it
+using terms of \code{scope}. Defaults to full main effects model, where the first column in \code{data} is assumed to be
+the outcome.
 \code{metapred} assumes the first column in the data set is the outcome, and all remaining columns
 (except \code{strata}) are predictors. See \link[stats]{formula} for formulas in general.}
 
 \item{estFUN}{Function for estimating the model in the first stage. Currently "lm" and "glm" are supported.}
 
-\item{stepwise}{Direction of stepwise selection. "backward", "forward", or FALSE for no selection}
+\item{scope}{\code{formula}. The difference between \code{formula} and \code{scope} defines the range of models examined in the 
+stepwise search. Defaults to NULL, which leads to the intercept-only model. If \code{scope} is nested in \code{formula}, 
+this implies backwards selection will be applied (default). If \code{scope} is nested in \code{formula}, this implies forward 
+selection will be applied. If equal, no stepwise selection is applied.}
 
-\item{center}{Numeric. Indicates which columns are to be centered within clusters. Defaults to all except the
-first column, which is assumed to be the outcome.}
+\item{retest}{Logical. Should added (removed) terms be retested for removal (addition)? \code{TRUE} implies bi-directional 
+stepwise search.}
+
+\item{max.steps}{Integer. Maximum number of steps (additions or removals of terms) to take. Defaults to 1000, which is
+essentially as many as it takes. 0 implies no stepwise process.}
+
+\item{center}{logical. Should numeric covariates be centered?}
 
 \item{recal.int}{Logical. Should the intercept be recalibrated?}
 
@@ -34,7 +45,8 @@ which are only used for validation. A user written function may be supplied as w
 \item{cv.k}{Parameter for cvFUN. For \code{cvFUN="bootstrap"}, this is the number of bootstraps. For \code{cvFUN="fixed"}, 
 this is a vector of the indices of the (sorted) data sets. Not used for \code{cvFUN="l1o"}.}
 
-\item{metaFUN}{Function for computing the meta-analytic coefficient estimates in two-stage MA. Default: \link[metafor]{rma.uni}
+\item{metaFUN}{Function for computing the meta-analytic coefficient estimates in two-stage MA. 
+Default: \link[metafor]{rma.uni}
 from the metafor package is used. Default settings are univariate random effects, estimated with "DL". Method can be
 passed trough the \code{meta.method} argument.}
 
@@ -43,7 +55,8 @@ passed trough the \code{meta.method} argument.}
 \item{predFUN}{Function for predicting new values. Defaults to the appropriate link functions for two-stage MA where
 \code{glm()} or \code{lm()} is used in the first stage. For one-stage models \code{predict()} is used.}
 
-\item{perfFUN}{Function for computing the performance of the prediction models. Default: mean squared error (\code{perfFUN="mse"}).
+\item{perfFUN}{Function for computing the performance of the prediction models. Default: mean squared error 
+(\code{perfFUN="mse"}).
 Other options are \code{"vare"}.}
 
 \item{genFUN}{Function computing generalizability measure using the performance measures. Default: (absolute) mean
@@ -66,21 +79,23 @@ data from individuals in multiple studies.
 }
 \examples{
 data(DVTipd)
-DVTipd$cluster <- letters[1:4] # Add a fictional clustering to the data set.
-metamisc:::metapred(DVTipd, strata = "cluster", f = dvt ~ sex + vein + malign, family = binomial)
+DVTipd$cluster <- letters[1:4] # Add a fictional clustering to the data.
+#f <- dvt ~ sex + vein + malign
+f <- dvt ~ histdvt + ddimdich
+# Leaving scope empty implies backwards selection
+mp <- metamisc::metapred(DVTipd, strata = "cluster", formula = f, family = binomial)
 
 \dontrun{
 # Some additional examples:
-metamisc:::metapred(DVTipd, strata = "cluster", f = dvt ~ sex + vein + malign
-, family = binomial, stepwise = FALSE)
-metamisc:::metapred(DVTipd, strata = "cluster", f = dvt ~ sex + altdiagn + histdvt
-, family = binomial, recal.int = TRUE)
-metamisc:::metapred(DVTipd, strata = "cluster", f = dvt ~ sex + altdiagn + histdvt
-, family = binomial, meta.method = "DL")
+metapred(DVTipd, strata = "cluster", formula = dvt ~ 1, scope = f, family = binomial) # Forwards
+metapred(DVTipd, strata = "cluster", formula = f, scope = f, family = binomial) # no selection
+metapred(DVTipd, strata = "cluster", formula = f, max.steps = 0, family = binomial) # no selection
+metapred(DVTipd, strata = "cluster", formula = f, recal.int = TRUE, family = binomial)
+metapred(DVTipd, strata = "cluster", formula = f, meta.method = "REML", family = binomial)
 }
 # By default, metapred assumes the first column is the outcome.
 DVTipd.reordered <- DVTipd[c("dvt", "ddimdich", "histdvt", "cluster")]
-mp <- metamisc:::metapred(DVTipd.reordered, strata = "cluster", family = binomial)
+mp <- metamisc::metapred(DVTipd.reordered, strata = "cluster", family = binomial)
 fitted <- predict(mp, newdata = DVTipd.reordered)
 
 
