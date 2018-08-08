@@ -4,8 +4,7 @@
 center <- function(x, center.in) {
   if (length(center.in) != length(x))
     stop("length(center.in) should match length(x).")
-  for (trial in sort(unique(center.in)))
-  {
+  for (trial in sort(unique(center.in))) {
     selection.id <- center.in == trial
     selection <- x[selection.id]
     x[selection.id] <- selection - mean(selection, na.rm = T)
@@ -56,40 +55,63 @@ center <- function(x, center.in) {
 #   return(data)
 # }
 
+
+# Deprecated
 # Centers data within studies / clusters
 # data data.frame. data set.
 # cluster.var name of variable in data, vector corresponding to cluster indicators. 
 # Overrides cluster.vec If both are NULL, all are in the same cluster. 
 # cluster.vec vector of cluster indicators. Overridden by cluster.var. If both are NULL, all are in the same cluster.
-# center.which numeric or integer Which variables should be centered? Defaults to all except for the first column (assumed to be
-# the outcome)
-centerData <- function(data, cluster.var = NULL, cluster.vec = NULL, center.which = NULL) {
-  if (!is.data.frame(data) && !is.matrix(data))
-    stop("data should be a data.frame or matrix.")
-  
-  if (!is.null(cluster.var)) {
-    cluster.vec <- data[ , cluster.var]
-    center.col <- which(colnames(data) == cluster.var)
-  } else {
-    center.col <- 0
-    if (is.null(cluster.vec)) cluster.vec <- rep(1, nrow(data))
-  }
+# center.which numeric or integer Which variables should be centered? Defaults to all numeric except for the first 
+# column (assumed to be the outcome)
+# centerData <- function(data, cluster.var = NULL, cluster.vec = NULL, center.which = NULL) {
+#   if (!is.data.frame(data) && !is.matrix(data))
+#     stop("data should be a data.frame or matrix.")
+#   
+#   if (!is.null(cluster.var)) {
+#     cluster.vec <- data[ , cluster.var]
+#     center.col <- which(colnames(data) == cluster.var)
+#   } else {
+#     center.col <- 0
+#     if (is.null(cluster.vec)) cluster.vec <- rep(1, nrow(data))
+#   }
+# 
+#   if (length(cluster.vec) != nrow(data))
+#     stop("length(cluster.vec) should match nrow(data).")
+#   
+#   # if (is.null(center.which)) # old, gives error when categorical variables are supplied
+#   #   center.which <- seq_len(ncol(data))[-1]
+#   
+#   if (is.null(center.which)) { # new, experimental
+#     center.which <- unlist(lapply(data, is.numeric))
+#     center.which[1] <- FALSE
+#     center.which <- which(center.which)
+#   }
+#   
+#   if (isTRUE(any(!!center.which))) {
+#     if (all(center.which <= ncol(data)) && all(center.which > 0)) {
+#       for (col in center.which)
+#         if (col != center.col) 
+#           data[ , col] <- center(x = data[ , col], center.in = cluster.vec) 
+#     } else stop("center.which should indicate (numeric values of) columns of data set that are to be centered. Use 0 or FALSE for none.")  
+#   }
+#   return(data)
+# }
 
-  if (length(cluster.vec) != nrow(data))
-    stop("length(cluster.vec) should match nrow(data).")
+# Center covariates within clusters
+# data data.frame
+# y.name character, name of outcome variable
+# cluster.name character, name of cluster variable.
+centerCovs <- function(data, y.name, cluster.name) {
+  to.center <- which((!(colnames(data) == cluster.name | colnames(data) == y.name) ) & apply(data, 2, is.numeric))
+  cluster.vec <- data[ , cluster.name]
   
-  if (is.null(center.which))
-    center.which <- seq_len(ncol(data))[-1]
+  for (col in to.center)
+    data[ , col] <- center(data[ , col], center.in = cluster.vec)
   
-  if (isTRUE(any(!!center.which))) {
-    if (all(center.which <= ncol(data)) && all(center.which > 0)) {
-      for (col in center.which)
-        if (col != center.col) 
-          data[ , col] <- center(data[ , col], cluster.vec) 
-    } else stop("center.which should indicate (numeric values of) columns of data set that are to be centered. Use 0 or FALSE for none.")  
-  }
-  return(data)
+  data
 }
+
 
 # coerces data set to data.list
 # data data.frame. data set.
@@ -115,30 +137,30 @@ getDataList <- function(data.list, ccs, cl)
 
 # These functions are used for making various names. Any change should be made here, such that
 # these functions can also be used to retrieve objects from a list.
-# ds vector. indices of datasets.
+# st.u vector. unique indices or names of clusters.
 # f numeric. fold index.
 # type character. type of cv (just a chosen name)
 # data.list list of data sets.
 # data data.frame.
 # covariate.columns indices of covariate columns.
 # All return character.
-# getFoldName <- function(ds, f = NULL, type = NULL)
-#   paste(getclName(ds = ds), getcvName(f = f, type = type), sep = if (length(f) > 0 || length(type) > 0) ". " else "")
+# getFoldName <- function(st.u, f = NULL, type = NULL)
+#   paste(getclName(st.u = st.u), getcvName(f = f, type = type), sep = if (length(f) > 0 || length(type) > 0) ". " else "")
 
 # For l10, fixed and successive, the validation folds are unique. Bootstrap reuses them, and must add an iteration number.
-getFoldName <- function(ds, f = NULL, type = NULL) {
+getFoldName <- function(st.u, f = NULL, type = NULL) {
   if (isTRUE(type == "l1o") || isTRUE(type == "leaveOneOut") || isTRUE(type == "fixed") || isTRUE(type == "successive"))
-    paste(getclName(ds = ds))
+    paste(getclName(st.u = st.u))
   else 
-    paste(getclName(ds = ds), getcvName(f = f, type = type), sep = if (length(f) > 0 || length(type) > 0) ". " else "")
+    paste(getclName(st.u = st.u), getcvName(f = f, type = type), sep = if (length(f) > 0 || length(type) > 0) ". " else "")
 }
   
 
-# getclName <- function(ds)
-#   paste("cl", toString(ds), sep = " ")
+# getclName <- function(st.u)
+#   paste("cl", toString(st.u), sep = " ")
 
-getclName <- function(ds)
-  paste(toString(ds), sep = " ")
+getclName <- function(st.u)
+  paste(toString(st.u), sep = " ")
 
 getcvName <- function(f, type = NULL)
   paste(type, f, sep = " ")
@@ -253,85 +275,85 @@ removePredictor <- function(f, p.name)
 removePredictors <- function(f, p.names)
   removePredictor(f, paste(oneStr(unlist(p.names), sep = " - "), sep = " - "))
 
-### The following functions are for generating the folds for the cross-validation in metapred
-# ds Numeric or character vector. Names of the data sets.
+### The following functions are for generating the folst.u for the cross-validation in metapred
+# st.u Numeric or character vector. Unique names of the strata / clusters.
 # k Numeric. Differs per function
 #   bootstrap: number of bootstraps
 #   fixed: indices of data sets for validation.
 #   successive (still a hidden function): Number of validation sets.
 #   leaveOneOut = l1o: iecv: internal-external cross-validation of data sets/clusters.
-leaveOneOut <- l1o <- function(ds, ...) {
-  ds <- sort(ds)
-  if (length(ds) < 2)
+leaveOneOut <- l1o <- function(st.u, ...) {
+  st.u <- sort(st.u)
+  if (length(st.u) < 2)
     stop("iecv not possible for less than 2 data sets.")
-  indexes <- seq_len(length(ds))
-  out <- list(dev = list(), dev.i = list(), val = as.list(ds[indexes]), val.i = as.list(indexes))
+  indexes <- seq_len(length(st.u))
+  out <- list(dev = list(), dev.i = list(), val = as.list(st.u[indexes]), val.i = as.list(indexes))
   
   for (i in indexes) {
-    out$dev[[i]]   <- ds[-indexes[i]]
+    out$dev[[i]]   <- st.u[-indexes[i]]
     out$dev.i[[i]] <- indexes[-i]
   }
   
   out
 }
 
-bs <- bootstrap <- function(ds, k = NULL, ...) {
-  ds <- sort(ds)
+bs <- bootstrap <- function(st.u, k = NULL, ...) {
+  st.u <- sort(st.u)
   if (is.null(k))
     k <- 200
-  if (length(ds) < 2)
+  if (length(st.u) < 2)
     stop("Bootstrapping data sets is impossible for < 2 data sets.")
   dev <- dev.i <- val <- val.i <- list()
   
   i <- 1
   while (length(dev) < k) {
-    indexes <- sample(1:length(ds), replace = T)
-    if (length(unique(indexes)) >= length(ds))
+    indexes <- sample(1:length(st.u), replace = T)
+    if (length(unique(indexes)) >= length(st.u))
       next
-    dev[[i]] <- ds[indexes]
-    val[[i]] <- ds[-indexes]
+    dev[[i]] <- st.u[indexes]
+    val[[i]] <- st.u[-indexes]
     dev.i[[i]] <- indexes
-    val.i[[i]] <- seq_len(length(ds))[-indexes]
+    val.i[[i]] <- seq_len(length(st.u))[-indexes]
     i <- i + 1
   }
   list(dev = dev, dev.i = dev.i , val = val, val.i = val.i)
 }
 
-fixed <- function(ds, k = NULL, ...)
+fixed <- function(st.u, k = NULL, ...)
 {
-  ds <- sort(ds)
-  if (length(ds) < 2)
+  st.u <- sort(st.u)
+  if (length(st.u) < 2)
     stop("Selecting a validation set is impossible for < 2 data sets.")
   if (is.null(k))
-    k <- length(ds)
-  indexes <- seq_len(length(ds))
-  list(dev = list(ds[-k]), dev.i = list(indexes[-k]), val = list(ds[k]), val.i = list(indexes[k]))
+    k <- length(st.u)
+  indexes <- seq_len(length(st.u))
+  list(dev = list(st.u[-k]), dev.i = list(indexes[-k]), val = list(st.u[k]), val.i = list(indexes[k]))
 }
 
-successive <- function(ds, k = NULL, ...) {
-  ds <- sort(ds)
+successive <- function(st.u, k = NULL, ...) {
+  st.u <- sort(st.u)
   if (is.null(k)) k <- 1
   k <- as.integer(k)
   if (k < 1) stop("k must be >= 1")
-  if (length(ds) < (k + 1)) stop("Cross-validation requires k + 1 data sets, where k is the number of test sets.")
+  if (length(st.u) < (k + 1)) stop("Cross-validation requires k + 1 data sets, where k is the number of test sets.")
   out <- list(dev = list(), dev.i = list(), val = list(), val.i = list())
   
-  for (i in seq_len(length(ds) - k) ) {
+  for (i in seq_len(length(st.u) - k) ) {
     sel <- 1:i
     out$dev.i[[i]] <- sel
-    out$dev[[i]] <- ds[sel]
+    out$dev[[i]] <- st.u[sel]
   }
   for (i in seq_len(length(out$dev)) ) {
     sel <- (i + 1):(i + k)
     out$val.i[[i]] <- sel
-    out$val[[i]] <- ds[sel]
+    out$val[[i]] <- st.u[sel]
   }
   out
 }
 
 # Remove observations (rows) that have at least one missing value.
 # Necessary for metapred(), to ensure that the same observations are used
-# ds data.frame
+# df data.frame
 # Returns: data.frame
-remove.na.obs <- function(ds) 
-  ds[apply(ds, 1, function(ds) sum(is.na(ds))) == 0, ]
+remove.na.obs <- function(df) 
+  df[apply(df, 1, function(df) sum(is.na(df))) == 0, ]
