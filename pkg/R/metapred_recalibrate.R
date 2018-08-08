@@ -4,7 +4,8 @@
 # object Model fit object, of class glm, lm or metapred
 # newdata Data to use for recalibration.
 
-computeRecal <- function(object, newdata, b = NULL, f = ~ 1, estFUN = NULL,  ...) {
+computeRecal <- function(object, newdata, b = NULL, f = ~ 1, estFUN = NULL, f.orig = NULL,  ...) {
+  dots <- list(...)
   if (is.null(b)) b <- coef(object)
   if (is.null(estFUN)) {
     if (inherits(object, "metapred"))
@@ -14,7 +15,7 @@ computeRecal <- function(object, newdata, b = NULL, f = ~ 1, estFUN = NULL,  ...
   estFUN <- match.fun(estFUN)
 
   # Make offset (linear predictor)
-  pred.mf <- as.matrix(stats::model.frame(formula = formula(object), data = newdata))
+  pred.mf <- as.matrix(stats::model.frame(formula = if (is.null(f.orig)) formula(object) else f.orig, data = newdata))
   pred.mf[ , 1] <- 1
   lp <- pred.mf %*% b
 
@@ -22,10 +23,14 @@ computeRecal <- function(object, newdata, b = NULL, f = ~ 1, estFUN = NULL,  ...
   osdata   <- cbind(newdata, lp)
   f <- update.formula(formula(object), formula(f))
   if (is.null(object$family))
-    br <- coef(estFUN(f, data = osdata, offset = lp))
-  else
+  { 
+    if (!is.null(dots[["family"]])) {
+      br <- coef(estFUN(f, data = osdata, offset = lp, family = dots[["family"]]))
+    } else 
+      br <- coef(estFUN(f, data = osdata, offset = lp))
+  } else 
     br <- coef(estFUN(f, data = osdata, offset = lp, family = object$family))
-
+  
   br
 }
 
