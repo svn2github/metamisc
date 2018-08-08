@@ -10,15 +10,18 @@ faxb  <- formula(y ~ a * b)
 fab2  <- formula(y ~ a + I(b^2))
 fabb2 <- formula(y ~ a + I(b^2) + b) # Reordered, for testing purposes
 fapb  <- formula(y ~ I(a+b))
+# fabc  <- formula(y ~ a + b + strata(c)) # future functionality
 
 # utility function for obtaining terms (predictors, or interactions etc) of formula
 test_that("terms can be obtained", {
   expect_true(all(f2tl(fab0) == c("a", "b")))
   expect_false(any(f2tl(fab) == c("b", "a"))) # sadly gives false, 
   expect_true(all(c("b", "a") %in% f2tl(fab))) # that's why %in% is used internally.
+  
+  expect_true(f2o(fabb2) == "y")
+  expect_true(f2o(f0) == "y")
 })
-
-
+   
 # Add predictors
 test_that("terms can be added", {
   expect_equal(updateFormula(f0, "a"), fa)
@@ -44,7 +47,12 @@ test_that("error is raised when terms are added and removed", {
   expect_error(updateFormula(fab, c("z", "b"))) # error, as intended
 })
 
-
+# # Multiple updates
+# test_that("Multiple updates can be done", {
+#   expect_length(updatesFormula(f, c("m", "n")), 2)
+#   expect_type(updatesFormula(f, c("m", "n")), "list")
+#   expect_type(updatesFormula(f, c("m", "n"))[[1]], "language")
+# })
 
 # necessary for testing
 axb <- f2tl(faxb)
