@@ -696,7 +696,6 @@ fitted.mp.cv <- function(object, ...) {
 # fitted.mp.cv.val <- function(object, newdata, folds, st.i, recal.int = FALSE, predFUN = NULL, ...) 
 #   fitted.mp.cv.dev(object = object, newdata = newdata, folds = folds, st.i = st.i, predFUN = predFUN)
 
-
 #' @author Valentijn de Jong
 #' @method print   mp.cv
 #' @export
@@ -876,7 +875,6 @@ mp.recal.meta.fit <- function(meta.fit, formula, newdata, estFUN, ...) {
 # estFUN estimation function, e.g. glm
 # folds folds list, as in utils.
 # Returns same object with updated coefficients.
-
 mp.cv.recal <- function(cv.dev, newdata, folds, estFUN) {
   for (i in seq_along(cv.dev[["cv"]]))
     cv.dev[["cv"]][[i]] <- mp.recal.meta.fit(meta.fit = cv.dev[["cv"]][[i]], 
@@ -894,7 +892,6 @@ mp.cv.recal <- function(cv.dev, newdata, folds, estFUN) {
 # metaFUN function for estimating meta-analytic models, e.g. urma (this file)
 # meta.method options for metaFUN
 # Returns an object of class mp.cv.meta.fit, which is a list of meta-analytic prediction models
-
 mp.cv.meta.fit <- function(stratified.fit, folds, metaFUN = urma, meta.method = "DL") {
   out <- list()
   
