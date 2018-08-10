@@ -1,60 +1,18 @@
 context("metapred and its S3 methods.")
 
+### TODO
+# predFUN.
+# Tests for options of predict.metapred
+
 ### Some stuff necessary for testing
+# The data
 set.seed(8092017)
 n <- 100
 n.cov <- 3
 td <- data.frame(matrix(rbinom(n * (n.cov + 1), 1, .5), ncol = n.cov + 1, nrow = n))
 td.ig <- td + 1 # For inverse gaussian and Gamma.
 
-### To be included:
-# one-stage
-# predFUN.
-# Tests for options of predict.metapred
-
-test_that("The predict functions predict accurately.", {
-  m.bi <- glm(td, family = binomial)
-  expect_true(is.function(pm <- metamisc:::getPredictMethod(m.bi, two.stage = TRUE)))
-  expect_true(all(unlist(pm(m.bi, td, coef(m.bi))) == unlist(m.bi$fitted.values))) # == intentionally ignores names.
-
-  m.lm <- lm(td)
-  expect_true(is.function(pm <- metamisc:::getPredictMethod(m.lm, two.stage = TRUE)))
-  expect_true(all.equal(unlist(pm(m.lm, td, coef(m.lm))) ,as.matrix(unlist(m.lm$fitted.values)),
-                        use.names = F, check.attributes = F)) # also intentionally ignores names.
-
-  m.no <- glm(td)
-  expect_true(is.function(pm <- metamisc:::getPredictMethod(m.no, two.stage = TRUE)))
-  expect_true(all(unlist(pm(m.no, td, coef(m.no))) == unlist(m.no$fitted.values))) # == intentionally ignores names.
-
-  m.gm <- glm(td.ig, family = Gamma)
-  expect_true(is.function(pm <- metamisc:::getPredictMethod(m.gm, two.stage = TRUE)))
-  expect_true(all.equal(unlist(pm(m.gm, td.ig, coef(m.gm))) ,as.matrix(unlist(m.gm$fitted.values)),
-                        use.names = F, check.attributes = F)) # also intentionally ignores names.
-
-  m.ig <- glm(td.ig, family = inverse.gaussian)
-  expect_true(is.function(pm <- metamisc:::getPredictMethod(m.ig, two.stage = TRUE)))
-  expect_true(all(unlist(pm(m.ig, td.ig, coef(m.ig))) == unlist(m.ig$fitted.values))) # == intentionally ignores names.
-
-  m.po <- glm(td, family = poisson)
-  expect_true(is.function(pm <- metamisc:::getPredictMethod(m.po, two.stage = TRUE)))
-  expect_true(all(unlist(pm(m.po, td, coef(m.po))) == unlist(m.po$fitted.values))) # == intentionally ignores names.
-
-  m.q <- glm(td, family = quasi)
-  expect_true(is.function(pm <- metamisc:::getPredictMethod(m.q, two.stage = TRUE)))
-  expect_true(all.equal(unlist(pm(m.q, td, coef(m.q))) ,as.matrix(unlist(m.q$fitted.values)),
-                        use.names = F, check.attributes = F)) # also intentionally ignores names.
-
-  m.qb <- glm(td, family = quasibinomial)
-  expect_true(is.function(pm <- metamisc:::getPredictMethod(m.qb, two.stage = TRUE)))
-  expect_true(all(unlist(pm(m.qb, td, coef(m.qb))) == unlist(m.qb$fitted.values))) # == intentionally ignores names.
-
-  m.qp <- glm(td, family = quasipoisson)
-  expect_true(is.function(pm <- metamisc:::getPredictMethod(m.qp, two.stage = TRUE)))
-  expect_true(all.equal(unlist(pm(m.qp, td, coef(m.qp))) ,as.matrix(unlist(m.qp$fitted.values)),
-                        use.names = F, check.attributes = F)) # also intentionally ignores names.
-})
-
-
+# Arguments
 f <- X1 ~ X2 + X3
 gl <- glm(f, family = binomial, data = td)
 st.i <- td[["X4"]]
@@ -117,25 +75,25 @@ test_that("Stratified models can be cross-validated", {
 
 test_that("A stepwise stratified model can be fitted", {
   # No stepwise
-  expect_is(step0 <- mp.step(formula = f, data = td, to.change = c(""), st.i = st.i, 
+  expect_is(step0 <- mp.step(formula = f, data = td, remaining.changes = c(""), st.i = st.i, 
                              st.u = st.u, folds = folds, family = binomial), "mp.step")
   expect_length(step0$cv, 1)
   expect_is(mp.step.get.best(step0), "mp.cv")
   
   # Main effects
   change.main <- c("X2", "X3")
-  expect_is(step <- mp.step(formula = f, data = td, to.change = change.main, st.i = st.i, 
+  expect_is(step <- mp.step(formula = f, data = td, remaining.changes = change.main, st.i = st.i, 
                             st.u = st.u, folds = folds, family = binomial), "mp.step")
   expect_is(mp.step.get.best(step), "mp.cv")
   
   # Interaction effect
   change.interaction <- c("X2:X3")
-  expect_is(step2 <- mp.step(formula = f, data = td, to.change = change.interaction, st.i = st.i, 
+  expect_is(step2 <- mp.step(formula = f, data = td, remaining.changes = change.interaction, st.i = st.i, 
                              st.u = st.u, folds = folds, family = binomial), "mp.step")
   expect_is(mp.step.get.best(step2), "mp.cv")
   
   # Entire fit
-  expect_is(fit <- mp.fit(formula = f, data = td, to.change = change.main, st.i = st.i, 
+  expect_is(fit <- mp.fit(formula = f, data = td, remaining.changes = change.main, st.i = st.i, 
                 st.u = st.u, folds = folds, family = binomial, max.steps = 3), "mp.fit")
   expect_equal(fit$best.step, "s1") # for this data and seed
 })

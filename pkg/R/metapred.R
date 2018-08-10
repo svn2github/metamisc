@@ -1,16 +1,12 @@
-# TODO  1
+# TODO 1: Thomas' ideas
 # @Valentijn: perhaps better to combine param perfFUN, genFUN and selFUN into one parameter with 3 or 4 distinct options
 # @Valentijn: I suggest to omit intercept recalibration. The intercept issue can be addressed directly by specifying distinct 
 # error functions that do or do not account for mis-calibration in intercept term
-# Add summary.metapred
-# categorical variables
-#   + categorical variables as one or as multiple.
-# add function: areTRUE. st.i == cl may otherwise lead to problems, if st.i has NA
 
-# TODO  2
+# TODO 2: metapred objects
 # add more output for metapred
-# tol
-# centering: now only works for numeric variables
+# Add summary.metapred
+# tol, aka tolerance for stopping.
 # recal.int + interaction gives error: 
 # mp <- metapred(data = DVTipd.reordered, 
 #                            strata = "cluster",
@@ -19,20 +15,25 @@
 #                            recal.int = T)
 # metapred.summaries docs (see glm.summaries {stats}), including subset
 # add stepnumbers to print.metapred or print.fit
-# Write test for new centerCovs function.
 # add fitted.metapred()
+# Write tests for fitted.whatever
+# check what happens for recalibrated mp.cv in fitted.mp.cv
 
-# TODO 3
+# TODO 3: General
+# add function: areTRUE. st.i == cl may otherwise lead to problems, if st.i has NA
 # variances for intercept recalibration.
-# One-stage MA: predStep: is  type = response correct?
 # perf method
 # penalties
 # performance measurement, current is Brier for binomial
 # add more options to penalty step
-# , cl.name in modelStep
-# Remove Reduce() from perfStep, and make perfStep() compatible with multiple data sets (for cvFUN = fixed, or cvFUN = bs)
+# Write test for new centerCovs function.
 
-# Changed:
+# TODO 4: Maybe later
+# One-stage MA: predStep: is  type = response correct?
+# centering: now only centers numeric variables. Should it also work for dummies of categorical variables?
+
+# TODO 5: DONE:
+# categorical variables Done!
 # Added is.metapred()
 # Added more robust tests for stepwise.
 # Automatically remove observations with missing values.
@@ -40,6 +41,8 @@
 #   Valentijn: Done.
 # @Valentijn: You can change default of meta.method to DL. This is a lot faster and has limited implications on estimated means.
 #   Valentijn: Done.
+# , cl.name in modelStep
+# Remove Reduce() from perfStep, and make perfStep() compatible with multiple data sets (for cvFUN = fixed, or cvFUN = bs)
 
 ###### Outline
 ### Top: high-level functions
@@ -118,10 +121,9 @@
 #' "which.max" if high values for \code{genFUN} indicate a good model.
 #' @param ... To pass arguments to estFUN (e.g. family = "binomial"), or other methods.
 #'
-#' @return \code{metapred} A list of class \code{metapred}, containing the final coefficients in \code{coef}, and the stepwise
-#' tree of estimates of the coefficients \code{(coef)}, performance measures \code{(perf)}, generalizability measures
-#' \code{(gen)} in \code{stepwise}, and more.
-#'
+#' @return \code{metapred} A list of class \code{metapred}, containing the final model in \code{$global.model}, and the stepwise
+#' tree of estimates of the coefficients, performance measures, generalizability measures \code{stepwise}.
+#' 
 #' @examples 
 #' data(DVTipd)
 #' DVTipd$cluster <- letters[1:4] # Add a fictional clustering to the data.
@@ -162,7 +164,6 @@ metapred <- function(data, strata, formula = NULL, estFUN = "glm", scope = NULL,
   
   strata.i <- data[, strata]
   strata.u <- sort(unique(strata.i))
-  # data     <- centerData(data, cluster.vec = strata.i, center.which = center) # change for 1 stage? # Deprecated
   if (center)
     data <- centerCovs(data = data, y.name = f2o(formula), cluster.name = strata)
   
@@ -185,30 +186,35 @@ metapred <- function(data, strata, formula = NULL, estFUN = "glm", scope = NULL,
   if (!isTRUE(length(folds$dev) > 0) || !isTRUE(length(folds$dev[[1]]) > 0))
     stop("At least 1 cluster must be used for development.")
   
-  fit <- mp.fit(formula = formula, data = data, to.change = updates, st.i = strata.i, st.u = strata.u, folds = folds,
+  fit <- mp.fit(formula = formula, data = data, remaining.changes = updates, st.i = strata.i, st.u = strata.u, folds = folds,
                 recal.int = recal.int, retest = retest, max.steps = max.steps, tol = 0, 
                 estFUN = estFUN, metaFUN = metaFUN, meta.method = meta.method, predFUN = predFUN, perfFUN = perfFUN,
                 genFUN = genFUN, selFUN = selFUN, ...)
   
   predFUN <- getPredictMethod(fit$stepwise$s0$cv$unchanged, two.stage = TRUE, predFUN = predFUN)
   
-  out <- c(fit, list(call = call, strata = strata, data = data,
+  out <- c(fit, list(call = call, strata = strata, data = data, folds = folds,
                      options = list(cv.k = cv.k, meta.method = meta.method, recal.int = recal.int,
                                     center = center, max.steps = max.steps, retest = retest), # add: tol
-                     FUN = list(cvFUN = cvFUN, predFUN = predFUN, perfFUN = perfFUN, metaFUN = metaFUN, genFUN = genFUN, # perfFUN = perfFUN
+                     FUN = list(cvFUN = cvFUN, predFUN = predFUN, perfFUN = perfFUN, metaFUN = metaFUN, genFUN = genFUN, 
                                 selFUN = selFUN, estFUN = estFUN, estFUN.name = estFUN.name))) 
   class(out) <- c("metapred")
   return(out)
 }
 
-# For prediction of newdata. Not used internally.
+# #' The function \code{summary} can be used to obtain an extensive summary of the stepwise process and the final model. 
+# #' \code{subset(x, select = "best.cv")} can be used to obtain a summary of the model with best generalizability in the
+# #' cross-validation, whereas \code{subset(x, select = "global")} gives a summary of the global model (i.e. fitted on all 
+# #' strata).
+
+# For prediction of newdata. 
 # Object metapred object
-# newdata data.frame, defaults to NULL, which gives the fitted data
+# newdata data.frame, defaults to NULL, which implies the fitted data
 # strata character, name of strata variable in newdata. Defaults to name in fitted object.
 # type character. Type of prediction. This is intended to override the default of glm and lm.
 # ("response" or "link" possible; "terms" not implemented)
 # recal.int logical. Recalibrate the intercept before prediction? Defaults to same as development for metapred object,
-# center locigal, Center covariates, before prediction? Defaults to same as development of metapred object,
+# center logical, Center covariates, before prediction? Defaults to same as development of metapred object,
 # ... For compatibility only.
 #' @author Valentijn de Jong
 #' @importFrom stats predict
@@ -220,18 +226,28 @@ predict.metapred <- function(object, newdata = NULL, strata = NULL, type = "resp
     newdata <- object[["data"]]
   if (is.null(strata))
     strata <- object$strata
-  if (is.null(recal.int))
-    recal.int <- object$options$recal.int
   if (is.null(center))
     center <- object$options$center
-  
-  # newdata <- centerData(newdata, cluster.var = strata, center.which = center) # Deprecated
-  newdata <- centerCovs(data = newdata, y.name = f2o(formula(object)), cluster.name = strata)
-  
+  if (center)
+    newdata <- centerCovs(data = newdata, y.name = f2o(formula(object)), cluster.name = strata)
+  if (is.null(recal.int))
+    recal.int <- object$options$recal.int
   if (isTRUE(recal.int))
     object <- recalibrate(object = object, newdata = newdata)
   
   object$FUN$predFUN(object = object, newdata = newdata, type = type, ...)
+}
+
+#' @author Valentijn de Jong
+#' @importFrom stats fitted
+#' @method fitted   metapred
+#' @export
+fitted.metapred <- function(object, select = "cv", step = NULL, model.change = NULL, ...) {
+  if (isTRUE(select == "cv")) 
+    return(fitted(subset.metapred(x = object, select = select, step = step, model.change = model.change, ...)))
+  if (isTRUE(select == "global"))
+    return(predict.metapred(object = object, newdata = NULL))
+  stop("select must equal 'cv' or 'global'.")
 }
 
 # #' Extract the regression coefficients
@@ -302,131 +318,60 @@ is.metapred <- function(object)
   inherits(object, "metapred")
 
 # Implementation of the subset method
-#' @author Valentijn de Jong
-#' @method subset   metapred
-#' @export
-subset.metapred <- function(x, select = "best", ...) {
-  if (identical(select, "best")) 
-    return(mp.step.get.best(x[["stepwise"]][[x[["best.step"]]]]))
-  if (identical(select, "global"))
-    return(x[["global.model"]])
-  stop("select must equal 'best' or 'global'.")
-}
+# #' @author Valentijn de Jong
+# #' @method subset   metapred
+# #' @export
+# old.subset.metapred <- function(x, select = "best.cv", ...) {
+#   if (identical(select, "best.cv")) 
+#     return(mp.step.get.best(x[["stepwise"]][[x[["best.step"]]]]))
+#   if (identical(select, "global"))
+#     return(x[["global.model"]])
+#   stop("select must equal 'best.cv' or 'global'.")
+# }
 
-### Performance / error functions
-# Error function: Mean Squared Error
-mse <- brier <- function(p, y, data = NULL, ...) mean((p - y)^2)
-
-
-# Error function: Variance of prediction error
-vare <- function(p, y, data = NULL, ...) var(p - y)
-
-absmean <- function(perf.measures, ...) {
-  pm <- unlist(perf.measures)
-  abs(mean(pm))
-}
-
-# Measure 1: Coefficient of variation of prediction error.
-coefVarPred <- function(p, y, data = NULL, abs = TRUE, ...)
-  coefVar(x = p - y, abs = abs, ...) 
-
-### Heterogeneity, generalizability, pooled performance functions
-
-# Measure 1: Coefficient of variation (=scaled sd)
-# In general sense, abs needs not be TRUE, but for metapred it should,
-# such that higher values are worse performance.
-coefVar <- function(x, abs = TRUE, ...) {
-  cv <- sd(x)/mean(x)
-  if (isTRUE(abs)) abs(cv) else cv
-}
-
-coefVarMean <- function(x, abs = TRUE, ...) 
-  coefVar(x, abs = abs) + if (abs) abs(mean(x)) else mean(x)
-
-
-pooledvar <- function(perf.measures, N, ...) {
-  pm <- unlist(perf.measures)
-  pm
-  ## TODO: Extract sample size for each cluster and apply corresponding to the right perf.measures
-  
-}
-
-# Gets the predict method.
-# fit Model fit object.
-# two.stage logical. Is the model a two-stage model?
-# predFUN Optional function, which is immediately returned
+# Select a model from a metapred object
+# select character, name of selection. Either "global" or "cv" (default)
+# step NULL, character or numeric. NULL (default) means best. numeric is converted to stepname.
+# model.change NULL (Default, best change) or character name or (integer) index of model change. 
 # ... For compatibility only.
-getPredictMethod <- function(fit, two.stage = TRUE, predFUN = NULL, ...) {
-  # A user written function may be supplied:
-  if (!is.null(predFUN))
-    if (is.function(predFUN))
-      return(get(predFUN))
-  else stop("predFUN should be a function.")
-  
-  # If two-stage, the fit is used only to extract the link function.
-  # If one-stage, fit's prediction method may be used.
-  if (two.stage) {# Preferably mp.cv.dev should not be here. But it has to.
-    if (inherits(fit, c("glm", "lm", "mp.cv.dev"))) 
-      return(predictGLM)
-    else stop("No prediction method has been implemented for this model type yet for two-stage
-              meta-analysis. You may supply one with the predFUN argument.")
-  } else return(predict)
-}
+subset.metapred <- function(x, select = "cv", step = NULL, model.change = NULL, ...) {
+  # Add addition of data stuff
+  # Select
+  if (identical(select, "global")) {
+    out <- x[["global.model"]]
 
-# Prediction function for two-stage metapred GLM objects
-# object glm model fit object
-# newdata newdata to predict for, of class "data.frame"
-# b vector of coef. Overrides coef of object
-# f formula used for selecting relevant variables from newdata. Overrides object
-# ... For compatibility only.
-# Returns vector of predicted values.
-predictGLM <- function(object, newdata, b = NULL, f = NULL, type = "response", ...) {
-  if (is.null(b)) b <- coef(object)
-  if (is.null(f)) f <- formula(object)
-  X <- model.matrix(stats::as.formula(f), data = newdata)
-  lp <- X %*% b
-  
-  if (identical(type, "response")) {
-    if (is.null(fam <- family(object)))
-      return(lp)
-    else
-      return(fam$linkinv(lp))
-  } else if (identical(type, "link"))
-    return(lp)
-  # if (is.null(object$family)) lp
-  # else object$family$linkinv(lp)
-}
-
-# Univariate Random Effects Meta-Analysis
-# b data.frame or matrix, containing coef
-# v data.frame or matrix, containing variances
-# method Method for meta-analysis.
-# ... Optional arguments for rma().
-#' @importFrom metafor rma
-urma <- function(b, v, method = "DL", ...)
-{
-  if (!(is.data.frame(b) || is.matrix(b)) || !(is.data.frame(v) || is.matrix(v)) )
-    stop("b and v must both be a data.frame or matrix.")
-  if (!identical(dim(b), dim(v)))
-    stop("b and v must have the same dimensions.")
-  
-  meta.b <- meta.se <- rep(NA, ncol(b))
-  for (col in 1:ncol(b)) {
-    r <- metafor::rma(b[ , col] , v[ , col], method = method, ...)
-    meta.b[col]  <- r$beta
-    meta.se[col] <- r$se
+  } else {
+    if (!identical(select, "cv"))
+      stop("select must equal 'cv' or 'global'.")
+    
+    # Step
+    if (is.null(step))
+      step <- x$best.step
+    if (is.numeric(step))
+      step <- getStepName(step)
+    
+    # Model
+    if (is.null(model.change))
+      model.change <- x[["stepwise"]][[step]][["best.change"]]
+    
+    out <- x[["stepwise"]][[step]][["cv"]][[model.change]]
   }
-  
-  meta.v <- meta.se^2
-  
-  names(meta.b) <- names(meta.v) <- names(meta.se) <- colnames(b)
-  list(b = meta.b, v = meta.v, se = meta.se)
+   
+  # This is the real reason for why this function exists. To add this stuff to a mp.cv or mp.global object.
+  # Normally those do not have this data, for memory/performance reasons.
+  out$data    <- x$data
+  out$strata  <- x$strata
+  out$folds   <- x$folds
+  out$FUN     <- x$FUN
+  out$options <- x$options
+
+  out
 }
 
 # Perform fit a model using cross-validation, for metapred
 # formula formula to start with
 # data data.frame, containing dev and val data
-# to.change predictor terms to add or remove
+# remaining.changes predictor terms to add or remove
 # st.i numeric vector, cluster indicators
 # st.u unique values in st.i
 # folds list, folds as in utils
@@ -442,16 +387,16 @@ urma <- function(b, v, method = "DL", ...)
 # genFUN function, function for computing generalizability, defaults to absolute mean.
 # ... options for predictMethod, perfFUN, and genFUN.
 # Returns object of class mp.cv.val, which is a validated mp.cv.dev
-mp.fit <- function(formula, data, to.change, st.i, st.u, folds, recal.int = FALSE, 
+mp.fit <- function(formula, data, remaining.changes, st.i, st.u, folds, recal.int = FALSE, 
                    retest = FALSE, max.steps = 3, tol = 0,
                    estFUN = glm, metaFUN = urma, meta.method = "DL", predFUN = NULL, 
                    perfFUN = mse, genFUN = absmean, selFUN = which.min, ...) {
   out <- steps <- list()
   
   ## Step 0
-  # As to.change = c("") yields unchanged formula.
+  # As remaining.changes = c("") yields unchanged formula.
   step.count <- 0
-  steps[[getStepName(step.count)]] <- mp.step(formula = formula, data = data, to.change = c(""), 
+  steps[[getStepName(step.count)]] <- mp.step(formula = formula, data = data, remaining.changes = c(""), 
                                      st.i = st.i, st.u = st.u, folds = folds, recal.int = recal.int, 
                                      retest = FALSE,
                                      estFUN = glm, metaFUN = urma, meta.method = "DL", predFUN = NULL, 
@@ -459,18 +404,18 @@ mp.fit <- function(formula, data, to.change, st.i, st.u, folds, recal.int = FALS
   steps[[getStepName(step.count)]][["step.count"]] <- step.count
   out[["best.step"]] <- getStepName(step.count)
   current.model <- mp.step.get.best(steps[[1]])
-  current.model[["to.change"]] <- to.change
+  current.model[["remaining.changes"]] <- remaining.changes
   gen.diff <- Inf # TBI
 
   
-  if (!identical(length(to.change), 0L))
+  if (!identical(length(remaining.changes), 0L))
     repeat {
       ## Loop management
       if (isTRUE(gen.diff <= tol)) { # TBI
         out[["stop.reason"]] <- "improvement <= tolerance."
         break
       }
-      if (isTRUE(length(current.model[["to.change"]]) <= 0)) {
+      if (isTRUE(length(current.model[["remaining.changes"]]) <= 0)) {
         out[["stop.reason"]] <- "all changes were implemented."
         break
       }
@@ -482,7 +427,7 @@ mp.fit <- function(formula, data, to.change, st.i, st.u, folds, recal.int = FALS
       
       ## Perform a step
       steps[[getStepName(step.count)]] <- mp.step(formula = current.model[["formula"]], data = data,
-                                                  to.change = current.model[["to.change"]],
+                                                  remaining.changes = current.model[["remaining.changes"]],
                                                   st.i = st.i, st.u = st.u, folds = folds, recal.int = recal.int,
                                                   retest = retest,
                                                   estFUN = glm, metaFUN = urma, meta.method = "DL", predFUN = NULL,
@@ -562,7 +507,7 @@ mp.step.get.best <- function(step, selFUN = which.min, ...)
 # Perform one step in the fitting process of mp.fit
 # formula formula to start with
 # data data.frame, containing dev and val data
-# to.change predictor terms to add or remove
+# remaining.changes predictor terms to add or remove
 # st.i numeric vector, cluster indicators
 # st.u unique values in st.i
 # folds list, folds as in utils
@@ -574,19 +519,19 @@ mp.step.get.best <- function(step, selFUN = which.min, ...)
 # genFUN function, function for computing generalizability, defaults to absolute mean.
 # ... options for predictMethod, perfFUN, and genFUN.
 # Returns object of class mp.cv.val, which is a validated mp.cv.dev
-mp.step <- function(formula, data, to.change, st.i, st.u, folds, recal.int = FALSE, 
+mp.step <- function(formula, data, remaining.changes, st.i, st.u, folds, recal.int = FALSE, 
                     two.stage = TRUE, retest = FALSE,
                     estFUN = glm, metaFUN = urma, meta.method = "DL", predFUN = NULL, 
                     perfFUN = mse, genFUN = absmean, selFUN = which.min, ...) {
   cv <- out <- list()
   out[["start.formula"]] <- formula
   
-  for (fc in seq_along(to.change) )
+  for (fc in seq_along(remaining.changes) )
   {
-    change <- to.change[fc]
+    change <- remaining.changes[fc]
     
     # Produce formula for changes and no changes:
-    if (identical(to.change, "")) {
+    if (identical(remaining.changes, "")) {
       name <- "unchanged"
       new.formula <- formula
     } else {
@@ -600,7 +545,7 @@ mp.step <- function(formula, data, to.change, st.i, st.u, folds, recal.int = FAL
                         estFUN = estFUN, metaFUN = metaFUN, meta.method = meta.method,
                         predFUN = predFUN, perfFUN = perfFUN, genFUN = genFUN, ...)
     # Save changes
-    cv[[name]][["to.change"]]   <- if (retest) to.change else to.change[-fc]
+    cv[[name]][["remaining.changes"]]   <- if (retest) remaining.changes else remaining.changes[-fc]
     cv[[name]][["changed"]]     <- change
   }
   
@@ -668,6 +613,22 @@ mp.global <- function(cv.dev, metaFUN = urma, meta.method = "DL") {
   out
 }
 
+# #' @author Valentijn de Jong
+# #' @method family   mp.global
+# #' @export
+# family.mp.global <- function(object, ...)
+#   object$family
+
+# Fitted? Predict?
+
+#' @author Valentijn de Jong
+#' @method predict   mp.global
+#' @export
+predict.mp.global <- function(object, newdata = NULL, strata = NULL, type = "response", 
+                             recal.int = NULL, center = NULL, ...) 
+  predict.metapred(object = object, newdata = newdata, strata = strata, type = type, 
+                    recal.int = recal.int, center = center, ...)
+
 #' @author Valentijn de Jong
 #' @method print   mp.global
 #' @export
@@ -714,6 +675,28 @@ mp.cv <- function(formula, data, st.i, st.u, folds, recal.int = FALSE, two.stage
   out
 }
 
+# Obtain fitted values of a (\code{subset}ted from metapred) mp.cv object
+# object mp.cv
+# returns list of fitted values, with length equal to number of strata. 
+#' @author Valentijn de Jong
+#' @method fitted   mp.cv
+#' @export
+fitted.mp.cv <- function(object, ...) {
+  data <- object[["data"]]
+  if (is.null(data))
+    stop("Use subset(metapred()) to obtain the cv.")
+  strata <- object$strata
+  center <- object$options$center
+  if (center)
+    data <- centerCovs(data = data, y.name = f2o(formula(object)), cluster.name = strata)
+
+  fitted.mp.cv.dev(object, data = data, folds = object$folds, st.i = data[[object$strata]], ...)
+}
+
+# fitted.mp.cv.val <- function(object, newdata, folds, st.i, recal.int = FALSE, predFUN = NULL, ...) 
+#   fitted.mp.cv.dev(object = object, newdata = newdata, folds = folds, st.i = st.i, predFUN = predFUN)
+
+
 #' @author Valentijn de Jong
 #' @method print   mp.cv
 #' @export
@@ -744,13 +727,14 @@ mp.cv.val <- function(cv.dev, data, st.i, folds, recal.int = FALSE, two.stage = 
   if (isTRUE(recal.int))
     cv.dev <- mp.cv.recal(cv.dev = cv.dev, newdata = data, estFUN = estFUN, folds = folds)
   
-  # Predict outcome 
-  predictMethod <- getPredictMethod(fit = cv.dev, two.stage = two.stage, predFUN = predFUN, ...)
-  p <- list()
-  for (i in seq_len(cv.dev[["n.cv"]]))
-    p[[i]] <- predictMethod(object = cv.dev, newdata = data[folds[["val"]][[i]] == st.i, ], type = "response",
-                            b = coef(cv.dev[["cv"]][[i]]),
-                            f = formula(cv.dev), two.stage = two.stage, ...)
+  # Predict outcome # Moved to fitted.mp.cv.dev()
+  # predictMethod <- getPredictMethod(fit = cv.dev, two.stage = two.stage, predFUN = predFUN, ...)
+  # p <- list()
+  # for (i in seq_len(cv.dev[["n.cv"]]))
+  #   p[[i]] <- predictMethod(object = cv.dev, newdata = data[folds[["val"]][[i]] == st.i, ], type = "response",
+  #                           b = coef(cv.dev[["cv"]][[i]]),
+  #                           f = formula(cv.dev), two.stage = two.stage, ...)
+  p <- fitted.mp.cv.dev(object = cv.dev, data = data, folds = folds, st.i = st.i, predFUN = predFUN) # TBI
   
   # Necessary for performance computation
   outcome <- f2o(formula(cv.dev))
@@ -841,11 +825,35 @@ print.mp.cv.dev <- function(x, ...) {
   print.mp.cv.meta.fit(x[["cv"]])
 }
 
+# Obtain fitted values of a mp.cv.dev object
+# object mp.cv.dev object.
+# Returns list of predicted values, with length equal to number of strata.
 #' @author Valentijn de Jong
-#' @method family   mp.cv.dev
+#' @method fitted   mp.cv.dev
 #' @export
-family.mp.cv.dev <- function(object, ...) 
-  object$family
+fitted.mp.cv.dev <- function(object, data, folds, st.i, predFUN = NULL, ...) {
+  predictMethod <- getPredictMethod(fit = object, two.stage = TRUE, predFUN = predFUN, ...)
+  p <- list()
+  for (i in seq_len(object[["n.cv"]]))
+    p[[i]] <- predictMethod(object = object, 
+                            newdata = data[folds[["val"]][[i]] == st.i, ], 
+                            type = "response",
+                            b = coef(object[["cv"]][[i]]),
+                            f = formula(object), 
+                            two.stage = TRUE, 
+                            ...)
+  # If some other fold method than l1o is applied, this may otherwise cause an error.
+  # better method TBI.
+  if (all(unlist(lapply(folds$val, length)) == 1))
+    names(p) <- unlist(folds$val)
+  p
+}
+
+# #' @author Valentijn de Jong
+# #' @method family   mp.cv.dev
+# #' @export
+# family.mp.cv.dev <- function(object, ...)
+#   object$family
 
 # Recalibrate a mp.meta.fit
 # mp.meta.fit mp.meta.fit
@@ -874,7 +882,8 @@ mp.cv.recal <- function(cv.dev, newdata, folds, estFUN) {
     cv.dev[["cv"]][[i]] <- mp.recal.meta.fit(meta.fit = cv.dev[["cv"]][[i]], 
                                              formula = cv.dev[["formula"]],
                                              newdata = newdata[folds[["val.i"]][[i]] == i, ], 
-                                             estFUN = estFUN, family = if (!is.null(cv.dev$family)) cv.dev$family else NULL)
+                                             estFUN = estFUN, 
+                                             family = if (!is.null(cv.dev$family)) cv.dev$family else NULL)
   cv.dev
 }
 
@@ -884,7 +893,7 @@ mp.cv.recal <- function(cv.dev, newdata, folds, estFUN) {
 # folds list of fold divisions, as given by l1o, or bootstrap in the utils.
 # metaFUN function for estimating meta-analytic models, e.g. urma (this file)
 # meta.method options for metaFUN
-# Returns a list of objects of class mp.cv.meta.fit, which are meta-analytic prediction models
+# Returns an object of class mp.cv.meta.fit, which is a list of meta-analytic prediction models
 
 mp.cv.meta.fit <- function(stratified.fit, folds, metaFUN = urma, meta.method = "DL") {
   out <- list()
@@ -998,3 +1007,21 @@ print.mp.stratum.fit <- function(x, ...) {
   cat("Coefficients: ", "\n")
   print(coef(x))
 }
+
+# Too many args that might not be available for this method. I have abandoned it.
+# predict.mp.stratum.fit <- function(object, newdata = NULL, family = NULL, formula = NULL, method = NULL, type = "response") {
+#   if (!is.null(family))
+#     object$family <- family
+#   if (is.null(formula))
+#     stop("predict.mp.stratum.fit needs a formula")
+#   else
+#     object$formula <- formula
+#   if (is.null(method))
+#     stop("predict.mp.stratum.fit needs a prediction method")
+# 
+#   method(object = object, newdata = newdata, type = type)
+# }
+
+# As I would have had to implement it a million times:
+family.default <- function(object, ...) 
+  object$family
