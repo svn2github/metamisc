@@ -113,26 +113,28 @@ centerCovs <- function(data, y.name, cluster.name) {
 }
 
 
+# Deprecated
 # coerces data set to data.list
 # data data.frame. data set.
 # strata.i numeric. stratum indicators.
 # Returns data.list
-asDataList <- function(data, strata.i) {
-  data.list <- list()
-  strata <- sort(unique(strata.i))
-  for (i in 1:length(strata))
-    data.list[[i]] <- data[strata.i == strata[i], ]
-  names(data.list) <- strata
-  data.list
-}
+# asDataList <- function(data, strata.i) {
+#   data.list <- list()
+#   strata <- sort(unique(strata.i))
+#   for (i in 1:length(strata))
+#     data.list[[i]] <- data[strata.i == strata[i], ]
+#   names(data.list) <- strata
+#   data.list
+# }
 
+# Deprecated
 # gets only the relevant data from a data.list
 # data.list list of data sets
 # ccs numeric. covariate column selection
 # cl numeric. indices of clusters to be selected.
 # returns data.list.
-getDataList <- function(data.list, ccs, cl) 
-  lapply(data.list[cl], getData, predictors = ccs)
+# getDataList <- function(data.list, ccs, cl) 
+#   lapply(data.list[cl], getData, predictors = ccs)
 
 
 # These functions are used for making various names. Any change should be made here, such that
@@ -165,67 +167,72 @@ getclName <- function(st.u)
 getcvName <- function(f, type = NULL)
   paste(type, f, sep = " ")
 
-getCovariateNames <- function(data.list, covariate.columns) {
-  if (!length(covariate.columns))  return(NULL)
-  if (!is.null(colnames(data.list[[1]]))) return(colnames(data.list[[1]])[covariate.columns])
-  warning("Covariate names could not be found.")
-  return(paste("X", covariate.columns - 1, sep = ""))
-}
-
-getModelName <- function(data.list, covariate.columns)
-  if (is.null(name <- getCovariateNames(data.list, covariate.columns) ))
-    return("intercept only") else return(toString(name))
+# Deprecated
+# getCovariateNames <- function(data.list, covariate.columns) {
+#   if (!length(covariate.columns))  return(NULL)
+#   if (!is.null(colnames(data.list[[1]]))) return(colnames(data.list[[1]])[covariate.columns])
+#   warning("Covariate names could not be found.")
+#   return(paste("X", covariate.columns - 1, sep = ""))
+# }
+# Deprecated
+# getModelName <- function(data.list, covariate.columns)
+#   if (is.null(name <- getCovariateNames(data.list, covariate.columns) ))
+#     return("intercept only") else return(toString(name))
 
 getStepName <- function(x)
   paste("s", x, sep = "")
 
-getPredictorNames <- function(f, data)
-  colnames(stats::model.frame.default(formula = f, data = data))[-1]
+# Deprecated
+# getPredictorNames <- function(f, data)
+#   colnames(stats::model.frame.default(formula = f, data = data))[-1]
 
+# Deprecated
 # This one is mostly important for getting the intercept-only formula:
 # data data.frame
 # predictors indices of predictors
 # returns formula
-getFormula <- function(data, predictors = NULL) {
-  if (length(predictors) == 0 || identical(predictors, 0)) {
-    f <- stats::formula(data)
-    f[3] <- 1 # [3] is the right hand side.
-  } else f <- stats::formula(data[ , c(1, predictors)])
-  stats::as.formula(f)
-}
+# getFormula <- function(data, predictors = NULL) {
+#   if (length(predictors) == 0 || identical(predictors, 0)) {
+#     f <- stats::formula(data)
+#     f[3] <- 1 # [3] is the right hand side.
+#   } else f <- stats::formula(data[ , c(1, predictors)])
+#   stats::as.formula(f)
+# }
 
+# Deprecated
 # Gets only the requested data, as well as the response variable.
 # data data.frame or matrix
 # pred.indices indexes of preditor columns
 # Returns data.frame.
-getData <- function(data, pred.indices) {
-  if (!is.data.frame(data) && !is.matrix(data))
-    stop("data must be a data.frame or matrix.")
-  sel <- c(1, pred.indices)
-  d <- data.frame(data[ , sel])
-  names(d) <- names(data)[sel]
-  d
-}
+# getData <- function(data, pred.indices) {
+#   if (!is.data.frame(data) && !is.matrix(data))
+#     stop("data must be a data.frame or matrix.")
+#   sel <- c(1, pred.indices)
+#   d <- data.frame(data[ , sel])
+#   names(d) <- names(data)[sel]
+#   d
+# }
 
+# Deprecated
 # gets formula of for data set. Replacement of formula.data.frame, which returns bogus for
 # 1 column data.frames.
 # data data.frame
 # Returns formula.
-getFullFormula <- function(data) {
-  data <- as.data.frame(data)
-  # if (!is.data.frame(data) && !is.matrix(data))
-  #   stop("data must be a data.frame or matrix.")
-  
-  if (identical(ncol(data), 1L))
-  {
-    xnames <- names(data)[-1]
-    if (identical(length(xnames), 0L))
-      xnames <- "1"
-    left <- paste(names(data)[1], "~")
-    return(paste(left, xnames))
-    
-  } else return(stats::formula(data))
-}
+# getFullFormula <- function(data) {
+#   data <- as.data.frame(data)
+#   # if (!is.data.frame(data) && !is.matrix(data))
+#   #   stop("data must be a data.frame or matrix.")
+#   
+#   if (identical(ncol(data), 1L))
+#   {
+#     xnames <- names(data)[-1]
+#     if (identical(length(xnames), 0L))
+#       xnames <- "1"
+#     left <- paste(names(data)[1], "~")
+#     return(paste(left, xnames))
+#     
+#   } else return(stats::formula(data))
+# }
 
 getCoefs  <- function(fit, ...) {
   if (inherits(fit, "multinom"))
@@ -241,39 +248,43 @@ getVars   <- function(fit, ...) diag(vcov(fit))
 getCoVars <- function(fit, ...) vcov(fit)
 getSE     <- function(fit, ...) sqrt(getVars(fit))
 
+# Deprecated
 # Coerces l to one string
 # l list or vector of strings.
 # returns 1 string, character.
-oneStr <- function(l, sep = "") {
-  if (length(l) > 0) out <- l[[1]] else return("")
-  
-  if (length(l) > 1) {
-    for (i in 2:length(l)) out <- paste(out, l[[i]], sep = sep)
-  }
-  return(out)
-}
+# oneStr <- function(l, sep = "") {
+#   if (length(l) > 0) out <- l[[1]] else return("")
+#   
+#   if (length(l) > 1) {
+#     for (i in 2:length(l)) out <- paste(out, l[[i]], sep = sep)
+#   }
+#   return(out)
+# }
 
+# Deprecated
 # Necessary for making a formula from a model.frame.
 # f formula
 # returns: formula without backticks.
-removeFormulaBackticks <- function(f)
-{
-  g <- gsub("`", "", f)
-  h <- oneStr(list(g[[2]], " ~ ", g[[3]]), sep = "")
-  stats::update.formula(f, h)
-}
+# removeFormulaBackticks <- function(f)
+# {
+#   g <- gsub("`", "", f)
+#   h <- oneStr(list(g[[2]], " ~ ", g[[3]]), sep = "")
+#   stats::update.formula(f, h)
+# }
 
+# Deprecated
 # f formula
 # p.name character. name of predictor
 # Returns: formula
-removePredictor <- function(f, p.name)
-  stats::update.formula(f, paste(". ~ . -", p.name) )
+# removePredictor <- function(f, p.name)
+#   stats::update.formula(f, paste(". ~ . -", p.name) )
 
+# Deprecated
 # f formula
 # p.name list or vector of character names of predictors
 # Returns: formula
-removePredictors <- function(f, p.names)
-  removePredictor(f, paste(oneStr(unlist(p.names), sep = " - "), sep = " - "))
+# removePredictors <- function(f, p.names)
+#   removePredictor(f, paste(oneStr(unlist(p.names), sep = " - "), sep = " - "))
 
 ### The following functions are for generating the folst.u for the cross-validation in metapred
 # st.u Numeric or character vector. Unique names of the strata / clusters.
@@ -357,3 +368,75 @@ successive <- function(st.u, k = NULL, ...) {
 # Returns: data.frame
 remove.na.obs <- function(df) 
   df[apply(df, 1, function(df) sum(is.na(df))) == 0, ]
+
+# Gets the predict method.
+# fit Model fit object.
+# two.stage logical. Is the model a two-stage model?
+# predFUN Optional function, which is immediately returned
+# ... For compatibility only.
+getPredictMethod <- function(fit, two.stage = TRUE, predFUN = NULL, ...) {
+  # A user written function may be supplied:
+  if (!is.null(predFUN))
+    if (is.function(predFUN))
+      return(get(predFUN))
+  else stop("predFUN should be a function.")
+  
+  # If two-stage, the fit is used only to extract the link function.
+  # If one-stage, fit's prediction method may be used.
+  if (two.stage) {# Preferably mp.cv.dev should not be here. But it has to.
+    if (inherits(fit, c("glm", "lm", "mp.cv.dev"))) 
+      return(predictGLM)
+    else stop("No prediction method has been implemented for this model type yet for two-stage
+              meta-analysis. You may supply one with the predFUN argument.")
+  } else return(predict)
+}
+
+# Prediction function for two-stage metapred GLM objects
+# object glm model fit object
+# newdata newdata to predict for, of class "data.frame"
+# b vector of coef. Overrides coef of object
+# f formula used for selecting relevant variables from newdata. Overrides object
+# ... For compatibility only.
+# Returns vector of predicted values.
+predictGLM <- function(object, newdata, b = NULL, f = NULL, type = "response", ...) {
+  if (is.null(b)) b <- coef(object)
+  if (is.null(f)) f <- formula(object)
+  X <- model.matrix(stats::as.formula(f), data = newdata)
+  lp <- X %*% b
+  
+  if (identical(type, "response")) {
+    if (is.null(fam <- family(object)))
+      return(lp)
+    else
+      return(fam$linkinv(lp))
+  } else if (identical(type, "link"))
+    return(lp)
+  # if (is.null(object$family)) lp
+  # else object$family$linkinv(lp)
+}
+
+# Univariate Random Effects Meta-Analysis
+# b data.frame or matrix, containing coef
+# v data.frame or matrix, containing variances
+# method Method for meta-analysis.
+# ... Optional arguments for rma().
+#' @importFrom metafor rma
+urma <- function(b, v, method = "DL", ...)
+{
+  if (!(is.data.frame(b) || is.matrix(b)) || !(is.data.frame(v) || is.matrix(v)) )
+    stop("b and v must both be a data.frame or matrix.")
+  if (!identical(dim(b), dim(v)))
+    stop("b and v must have the same dimensions.")
+  
+  meta.b <- meta.se <- rep(NA, ncol(b))
+  for (col in 1:ncol(b)) {
+    r <- metafor::rma(b[ , col] , v[ , col], method = method, ...)
+    meta.b[col]  <- r$beta
+    meta.se[col] <- r$se
+  }
+  
+  meta.v <- meta.se^2
+  
+  names(meta.b) <- names(meta.v) <- names(meta.se) <- colnames(b)
+  list(b = meta.b, v = meta.v, se = meta.se)
+}

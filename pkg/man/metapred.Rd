@@ -69,9 +69,8 @@ coefficients. Alternatively, choose \code{pooledvar} for a weighted average of v
 \item{...}{To pass arguments to estFUN (e.g. family = "binomial"), or other methods.}
 }
 \value{
-\code{metapred} A list of class \code{metapred}, containing the final coefficients in \code{coef}, and the stepwise
-tree of estimates of the coefficients \code{(coef)}, performance measures \code{(perf)}, generalizability measures
-\code{(gen)} in \code{stepwise}, and more.
+\code{metapred} A list of class \code{metapred}, containing the final model in \code{$global.model}, and the stepwise
+tree of estimates of the coefficients, performance measures, generalizability measures \code{stepwise}.
 }
 \description{
 Generalized stepwise regression for obtaining a prediction model with adequate performance across data sets. Requires
