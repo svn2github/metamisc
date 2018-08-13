@@ -5,19 +5,13 @@
 
 # TODO 2: metapred objects
 # add more output for metapred
-# Add summary.metapred
 # tol, aka tolerance for stopping.
-# recal.int + interaction gives error: 
-# mp <- metapred(data = DVTipd.reordered, 
-#                            strata = "cluster",
-#                            formula = dvt ~ ddimdich * histdvt, 
-#                            family = binomial, 
-#                            recal.int = T)
 # metapred.summaries docs (see glm.summaries {stats}), including subset
 # add stepnumbers to print.metapred or print.fit
-# add fitted.metapred()
 # Write tests for fitted.whatever
+# add docs for fitted.whatever.
 # check what happens for recalibrated mp.cv in fitted.mp.cv
+# add rownames to data, to prevent error/mismatch in fitted.metapred/fitted.mp.cv
 
 # TODO 3: General
 # add function: areTRUE. st.i == cl may otherwise lead to problems, if st.i has NA
@@ -33,7 +27,10 @@
 # centering: now only centers numeric variables. Should it also work for dummies of categorical variables?
 
 # TODO 5: DONE:
+# recal.int + interaction gives error. FIXED.
+# add fitted.metapred(). DONE.
 # categorical variables Done!
+# Add summary.metapred. DONE.
 # Added is.metapred()
 # Added more robust tests for stepwise.
 # Automatically remove observations with missing values.
@@ -162,7 +159,7 @@ metapred <- function(data, strata, formula = NULL, estFUN = "glm", scope = NULL,
   if (is.null(scope)) scope <- f2iof(formula)
   updates <- getFormulaDiffAsChar(formula, scope)
   
-  strata.i <- data[, strata]
+  strata.i <- as.vector(data[, strata])
   strata.u <- sort(unique(strata.i))
   if (center)
     data <- centerCovs(data = data, y.name = f2o(formula), cluster.name = strata)
@@ -183,7 +180,7 @@ metapred <- function(data, strata, formula = NULL, estFUN = "glm", scope = NULL,
   metaFUN <- get(metaFUN)
   
   folds <- cvFUN(strata.u, k = cv.k)
-  if (!isTRUE(length(folds$dev) > 0) || !isTRUE(length(folds$dev[[1]]) > 0))
+  if (!isTRUE(length(folds[["dev"]]) > 0) || !isTRUE(length(folds[["dev"]][[1]]) > 0))
     stop("At least 1 cluster must be used for development.")
   
   fit <- mp.fit(formula = formula, data = data, remaining.changes = updates, st.i = strata.i, st.u = strata.u, folds = folds,
@@ -235,20 +232,72 @@ predict.metapred <- function(object, newdata = NULL, strata = NULL, type = "resp
   if (isTRUE(recal.int))
     object <- recalibrate(object = object, newdata = newdata)
   
-  object$FUN$predFUN(object = object, newdata = newdata, type = type, ...)
+  object$FUN$predFUN(object = object, newdata = newdata, type = type, ...)[, 1] # [, 1] such that a vector is returned.
 }
 
+#' Extract Model Fitted Values
+#' 
+#' Extract the fitted values of a \code{metapred} object. By default returns fitted values of the model in the 
+#' cross-validation procedure.
+#' 
+#' Function still under development, use with caution.
+#' 
+#' Only returns type = "response".
+#' 
 #' @author Valentijn de Jong
 #' @importFrom stats fitted
 #' @method fitted   metapred
+#' @param object object of class metapred 
+#' @param select character. Select fitted values from "cv" (default) or from "global" model.
+#' @param step character or numeric. Name or number of step to select if \code{select} = "cv". Defaults to best step.
+#' @param model.change character or numeric. Name or number of model to select if \code{select} = "cv". Defaults to
+#' best model.
+#' @param as.stratified logical. \code{select} = "cv" determines whether returned predictions are stratified in a list 
+#' (\code{TRUE}, default) or in their original order (\code{FALSE}).
+#' @param type character. Type of fitted value.
+#' @param ... For compatibility only.
 #' @export
-fitted.metapred <- function(object, select = "cv", step = NULL, model.change = NULL, ...) {
-  if (isTRUE(select == "cv")) 
-    return(fitted(subset.metapred(x = object, select = select, step = step, model.change = model.change, ...)))
+fitted.metapred <- function(object, select = "cv", step = NULL, model.change = NULL, 
+                            as.stratified = TRUE, type = "response", ...) {
+  if (isTRUE(select == "cv")) {
+    ftd <- fitted(subset.metapred(x = object, select = select, step = step, model.change = model.change, type = type, ...))
+    if (as.stratified)
+      return(ftd)
+    else {
+      ftd.v <- Reduce(rbind, ftd) #as vector
+      return(ftd.v[match(rownames(ftd.v), rownames(object[["data"]])) ] ) # return to original ordering.
+    }
+  }
+
   if (isTRUE(select == "global"))
-    return(predict.metapred(object = object, newdata = NULL))
+    return(predict.metapred(object = object, newdata = NULL, type = type, ...))
   stop("select must equal 'cv' or 'global'.")
 }
+
+# #' Only returns type = "response".
+# #' @author Valentijn de Jong
+# #' @importFrom stats residuals
+# #' @method residuals   metapred
+# #' @export
+# residuals.metapred <- function(object, select = "cv", step = NULL, model.change = NULL, as.stratified = TRUE, ...) {
+#   y <- object$data[ , f2o(formula(object))]
+#   ftd <- fitted.metapred(object = object, select = select, step = step, 
+#                        model.change = model.change, as.stratified = as.stratified, ...)
+#   if (as.stratified) {
+#     ftd <- fitted(mp, as.stratified = TRUE)
+#     y <- mp$data[ , f2o(formula(mp))]
+#     
+#     st.i <- mp[["data"]][[mp[["strata"]]]]
+#     # now somehow sort them into a list with similar dim and dimnames as ftd, using st.i
+#     
+#     stop("To be implemented")
+#   } else {
+#     y - ftd
+#   }
+# }
+
+
+
 
 # #' Extract the regression coefficients
 # #' 
@@ -608,7 +657,8 @@ print.mp.step <- function(x, show.f = TRUE, ...) {
 # meta.method option for metaFUN
 # ... optional arguments for metaFUN
 mp.global <- function(cv.dev, metaFUN = urma, meta.method = "DL") {
-  out <- c(cv.dev, mp.meta.fit(cv.dev[["stratified.fit"]], metaFUN, meta.method) )
+  out <- c(cv.dev, mp.meta.fit(stratified.fit = cv.dev[["stratified.fit"]], 
+                               metaFUN = metaFUN, meta.method = meta.method) )
   class(out) <- c("mp.global", class(out))
   out
 }
@@ -721,7 +771,8 @@ print.mp.cv <- function(x, ...) {
 # ... options for predictMethod, perfFUN, and genFUN.
 # Returns object of class mp.cv.val, which is a validated mp.cv.dev
 mp.cv.val <- function(cv.dev, data, st.i, folds, recal.int = FALSE, two.stage = TRUE,
-                      estFUN = glm, predFUN = NULL, perfFUN = mse, add.perfFUN = list(), genFUN = absmean, ...) { # add: add.genFUN
+                      estFUN = glm, predFUN = NULL, perfFUN = mse, add.perfFUN = list(), 
+                      genFUN = absmean, ...) { # add: add.genFUN
   # Recalibrate?
   if (isTRUE(recal.int))
     cv.dev <- mp.cv.recal(cv.dev = cv.dev, newdata = data, estFUN = estFUN, folds = folds)
@@ -807,7 +858,8 @@ mp.cv.dev <- function(formula, data, st.i, st.u, folds, two.stage = TRUE,
   out[["n.clusters"]] <- length(out[["stratified.fit"]])
   
   ## cv meta-part
-  out[["cv"]] <- mp.cv.meta.fit(stratified.fit = out[["stratified.fit"]], folds = folds, metaFUN = metaFUN, meta.method = meta.method)
+  out[["cv"]] <- mp.cv.meta.fit(stratified.fit = out[["stratified.fit"]], folds = folds, 
+                                metaFUN = metaFUN, meta.method = meta.method)
   
   out[["n.cv"]] <- length(out$cv)
   class(out) <- "mp.cv.dev"
@@ -1006,7 +1058,8 @@ print.mp.stratum.fit <- function(x, ...) {
 }
 
 # Too many args that might not be available for this method. I have abandoned it.
-# predict.mp.stratum.fit <- function(object, newdata = NULL, family = NULL, formula = NULL, method = NULL, type = "response") {
+# predict.mp.stratum.fit <- function(object, newdata = NULL, family = NULL, 
+# formula = NULL, method = NULL, type = "response") {
 #   if (!is.null(family))
 #     object$family <- family
 #   if (is.null(formula))

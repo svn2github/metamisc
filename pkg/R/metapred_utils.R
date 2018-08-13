@@ -296,7 +296,7 @@ getSE     <- function(fit, ...) sqrt(getVars(fit))
 leaveOneOut <- l1o <- function(st.u, ...) {
   st.u <- sort(st.u)
   if (length(st.u) < 2)
-    stop("iecv not possible for less than 2 data sets.")
+    stop("iecv not possible for fewer than 2 strata.")
   indexes <- seq_len(length(st.u))
   out <- list(dev = list(), dev.i = list(), val = as.list(st.u[indexes]), val.i = as.list(indexes))
   

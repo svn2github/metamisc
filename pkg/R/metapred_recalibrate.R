@@ -15,9 +15,8 @@ computeRecal <- function(object, newdata, b = NULL, f = ~ 1, estFUN = NULL, f.or
   estFUN <- match.fun(estFUN)
 
   # Make offset (linear predictor)
-  pred.mf <- as.matrix(stats::model.frame(formula = if (is.null(f.orig)) formula(object) else f.orig, data = newdata))
-  pred.mf[ , 1] <- 1
-  lp <- pred.mf %*% b
+  X <- model.matrix(if (is.null(f.orig)) formula(object) else as.formula(f.orig), data = newdata)
+  lp <- X %*% b
 
   # offset must be in newdata.
   osdata   <- cbind(newdata, lp)

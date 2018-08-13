@@ -59,6 +59,3 @@ f2o <- function(f)
 # Returns formula, with only intercept on the right hand side.
 f2iof <- function(f)
   formula(paste(f2o(f), "~ 1"))
-
-test <- function(x)
-  stop("Just a test. dont use me.")
