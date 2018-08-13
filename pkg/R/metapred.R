@@ -11,7 +11,7 @@
 # Write tests for fitted.whatever
 # add docs for fitted.whatever.
 # check what happens for recalibrated mp.cv in fitted.mp.cv
-# add rownames to data, to prevent error/mismatch in fitted.metapred/fitted.mp.cv
+# add rownames to data, to prevent error/mismatch in fitted.metapred/fitted.mp.cv # Maybe already fixed by as.data.frame()
 
 # TODO 3: General
 # add function: areTRUE. st.i == cl may otherwise lead to problems, if st.i has NA
@@ -66,7 +66,6 @@
 ### bottom : low level functions
 ###### 
 
-
 #' Generalized Stepwise Regression for prediction models in clustered data
 #'
 #' Generalized stepwise regression for obtaining a prediction model with adequate performance across data sets. Requires
@@ -78,13 +77,12 @@
 #' and evaluating clinical prediction models in an individual participant data meta-analysis. 
 #' \emph{Stat Med}. 2013;32(18):3158-80. 
 #'
-#' @param data data.frame containing the data.
-#' @param strata Name of the strata (e.g. studies or clusters) variable, as character. Used for two-stage MA only.
+#' @param data data.frame containing the data. Note that \code{metapred} removes observations with missing data \emph{listwise},
+#' to ensure that the same data is used in each model.
+#' @param strata Name of the strata (e.g. studies or clusters) variable, as character.
 #' @param formula \code{formula} of the first model to be evaluated. \code{metapred} will start at \code{formula} and update it
 #' using terms of \code{scope}. Defaults to full main effects model, where the first column in \code{data} is assumed to be
-#' the outcome.
-#' \code{metapred} assumes the first column in the data set is the outcome, and all remaining columns
-#' (except \code{strata}) are predictors. See \link[stats]{formula} for formulas in general.
+#' the outcome and all remaining columns (except \code{strata}) predictors. See \link[stats]{formula} for formulas in general.
 #' @param estFUN Function for estimating the model in the first stage. Currently "lm" and "glm" are supported.
 #' @param scope \code{formula}. The difference between \code{formula} and \code{scope} defines the range of models examined in the 
 #' stepwise search. Defaults to NULL, which leads to the intercept-only model. If \code{scope} is nested in \code{formula}, 
@@ -93,33 +91,31 @@
 #' @param retest Logical. Should added (removed) terms be retested for removal (addition)? \code{TRUE} implies bi-directional 
 #' stepwise search.
 #' @param max.steps Integer. Maximum number of steps (additions or removals of terms) to take. Defaults to 1000, which is
-#' essentially as many as it takes. 0 implies no stepwise process.
-#' @param center logical. Should numeric covariates be centered?
-#' @param recal.int Logical. Should the intercept be recalibrated?
+#' essentially as many as it takes. 0 implies no stepwise selection.
+#' @param center logical. Should numeric predictors be centered?
+#' @param recal.int Logical. Should the intercept be recalibrated in each validation?
 #' @param cvFUN Cross-validation method, on the study (i.e. cluster or stratum) level. "
 #' l1o" for leave-one-out cross-validation (default). "bootstrap" for bootstrap. Or "fixed", for one or more data sets
 #' which are only used for validation. A user written function may be supplied as well.
 #' @param cv.k Parameter for cvFUN. For \code{cvFUN="bootstrap"}, this is the number of bootstraps. For \code{cvFUN="fixed"}, 
 #' this is a vector of the indices of the (sorted) data sets. Not used for \code{cvFUN="l1o"}.
 #' @param metaFUN Function for computing the meta-analytic coefficient estimates in two-stage MA. 
-#' Default: \link[metafor]{rma.uni}
-#' from the metafor package is used. Default settings are univariate random effects, estimated with "DL". Method can be
-#' passed trough the \code{meta.method} argument.
+#' By default, \link[metafor]{rma.uni}, from the metafor package is used. Default settings are univariate random effects, 
+#' estimated with "DL". Method can be passed trough the \code{meta.method} argument.
 #' @param meta.method Name of method for meta-analysis. Default is "DL". For more options see \link[metafor]{rma.uni}.
-#' @param predFUN Function for predicting new values. Defaults to the appropriate link functions for two-stage MA where
-#' \code{glm()} or \code{lm()} is used in the first stage. For one-stage models \code{predict()} is used.
+#' @param predFUN Function for predicting new values. Defaults to the predicted probability of the outcome, using the link 
+#' function of \code{glm()} or \code{lm()}.
 #' @param perfFUN Function for computing the performance of the prediction models. Default: mean squared error 
-#' (\code{perfFUN="mse"}).
-#' Other options are \code{"vare"}.
+#' (\code{perfFUN="mse"}).Other options are \code{"vare"}.
 #' @param genFUN Function computing generalizability measure using the performance measures. Default: (absolute) mean  
-#' (\code{genFUN="absmean"}). Choose \code{squareddiff} for a penalty equal to the mean squared differences between 
-#' coefficients. Alternatively, choose \code{pooledvar} for a weighted average of variance terms.
+#' (\code{genFUN="abs.mean"}). Choose \code{squared.diff} for a penalty equal to the mean squared differences between 
+#' coefficients. Alternatively, choose \code{pooled.var} for a weighted average of variance terms.
 #' @param selFUN Function for selecting the best method. Default: lowest value for \code{genFUN}. Should be set to
 #' "which.max" if high values for \code{genFUN} indicate a good model.
-#' @param ... To pass arguments to estFUN (e.g. family = "binomial"), or other methods.
+#' @param ... To pass arguments to estFUN (e.g. family = "binomial"), or to other FUNctions.
 #'
-#' @return \code{metapred} A list of class \code{metapred}, containing the final model in \code{$global.model}, and the stepwise
-#' tree of estimates of the coefficients, performance measures, generalizability measures \code{stepwise}.
+#' @return A list of class \code{metapred}, containing the final model in \code{global.model}, and the stepwise
+#' tree of estimates of the coefficients, performance measures, generalizability measures in \code{stepwise}.
 #' 
 #' @examples 
 #' data(DVTipd)
@@ -127,7 +123,7 @@
 #' #f <- dvt ~ sex + vein + malign
 #' f <- dvt ~ histdvt + ddimdich
 #' # Leaving scope empty implies backwards selection
-#' mp <- metamisc::metapred(DVTipd, strata = "cluster", formula = f, family = binomial)
+#' mp <- metapred(DVTipd, strata = "cluster", formula = f, family = binomial)
 #' 
 #'\dontrun{
 #' # Some additional examples:
@@ -139,7 +135,7 @@
 #'}
 #' # By default, metapred assumes the first column is the outcome.
 #' DVTipd.reordered <- DVTipd[c("dvt", "ddimdich", "histdvt", "cluster")]
-#' mp <- metamisc::metapred(DVTipd.reordered, strata = "cluster", family = binomial)
+#' mp <- metapred(DVTipd.reordered, strata = "cluster", family = binomial)
 #' fitted <- predict(mp, newdata = DVTipd.reordered)
 #' 
 #' 
@@ -167,7 +163,7 @@ metapred <- function(data, strata, formula = NULL, estFUN = "glm", scope = NULL,
   if (is.null(cvFUN))   cvFUN   <- "l1o"
   if (is.null(metaFUN)) metaFUN <- "urma"
   if (is.null(perfFUN)) perfFUN <- "mse"
-  if (is.null(genFUN))  genFUN  <- "absmean"
+  if (is.null(genFUN))  genFUN  <- "abs.mean"
   if (is.null(meta.method)) meta.method <- "DL"
   # Change to "-" when perfFUN <- R2 or some other measure for which greater = better.
   
@@ -190,7 +186,7 @@ metapred <- function(data, strata, formula = NULL, estFUN = "glm", scope = NULL,
   
   predFUN <- getPredictMethod(fit$stepwise$s0$cv$unchanged, two.stage = TRUE, predFUN = predFUN)
   
-  out <- c(fit, list(call = call, strata = strata, data = data, folds = folds,
+  out <- c(fit, list(call = call, strata = strata, data = data, folds = folds, # add nobs and strata.nobs
                      options = list(cv.k = cv.k, meta.method = meta.method, recal.int = recal.int,
                                     center = center, max.steps = max.steps, retest = retest), # add: tol
                      FUN = list(cvFUN = cvFUN, predFUN = predFUN, perfFUN = perfFUN, metaFUN = metaFUN, genFUN = genFUN, 
@@ -295,9 +291,6 @@ fitted.metapred <- function(object, select = "cv", step = NULL, model.change = N
 #     y - ftd
 #   }
 # }
-
-
-
 
 # #' Extract the regression coefficients
 # #' 
@@ -439,7 +432,7 @@ subset.metapred <- function(x, select = "cv", step = NULL, model.change = NULL, 
 mp.fit <- function(formula, data, remaining.changes, st.i, st.u, folds, recal.int = FALSE, 
                    retest = FALSE, max.steps = 3, tol = 0,
                    estFUN = glm, metaFUN = urma, meta.method = "DL", predFUN = NULL, 
-                   perfFUN = mse, genFUN = absmean, selFUN = which.min, ...) {
+                   perfFUN = mse, genFUN = abs.mean, selFUN = which.min, ...) {
   out <- steps <- list()
   
   ## Step 0
@@ -449,7 +442,7 @@ mp.fit <- function(formula, data, remaining.changes, st.i, st.u, folds, recal.in
                                      st.i = st.i, st.u = st.u, folds = folds, recal.int = recal.int, 
                                      retest = FALSE,
                                      estFUN = glm, metaFUN = urma, meta.method = "DL", predFUN = NULL, 
-                                     perfFUN = mse, genFUN = absmean, selFUN = selFUN, ...)
+                                     perfFUN = mse, genFUN = genFUN, selFUN = selFUN, ...)
   steps[[getStepName(step.count)]][["step.count"]] <- step.count
   out[["best.step"]] <- getStepName(step.count)
   current.model <- mp.step.get.best(steps[[1]])
@@ -480,7 +473,7 @@ mp.fit <- function(formula, data, remaining.changes, st.i, st.u, folds, recal.in
                                                   st.i = st.i, st.u = st.u, folds = folds, recal.int = recal.int,
                                                   retest = retest,
                                                   estFUN = glm, metaFUN = urma, meta.method = "DL", predFUN = NULL,
-                                                  perfFUN = mse, genFUN = absmean, selFUN = selFUN, ...)
+                                                  perfFUN = mse, genFUN = genFUN, selFUN = selFUN, ...)
       steps[[getStepName(step.count)]][["step.count"]] <- step.count
       ## Model selection
       # This step
@@ -501,6 +494,8 @@ mp.fit <- function(formula, data, remaining.changes, st.i, st.u, folds, recal.in
   out[["global.model"]] <- mp.global(current.model, metaFUN = metaFUN, meta.method = meta.method)
   out[["stepwise"]] <- steps
   out[["step.count"]] <- step.count
+  out[["nobs.strata"]] <- sapply(out[["global.model"]][["stratified.fit"]], nobs)
+  out[["nobs"]] <- sum(out[["nobs.strata"]])
   class(out) <- "mp.fit"
   
   out
@@ -571,7 +566,7 @@ mp.step.get.best <- function(step, selFUN = which.min, ...)
 mp.step <- function(formula, data, remaining.changes, st.i, st.u, folds, recal.int = FALSE, 
                     two.stage = TRUE, retest = FALSE,
                     estFUN = glm, metaFUN = urma, meta.method = "DL", predFUN = NULL, 
-                    perfFUN = mse, genFUN = absmean, selFUN = which.min, ...) {
+                    perfFUN = mse, genFUN = abs.mean, selFUN = which.min, ...) {
   cv <- out <- list()
   out[["start.formula"]] <- formula
   
@@ -713,13 +708,13 @@ summary.mp.global <- function(object, ...) {
 # and a validated on val folds 
 mp.cv <- function(formula, data, st.i, st.u, folds, recal.int = FALSE, two.stage = TRUE,
                   estFUN = glm, metaFUN = urma, meta.method = "DL", predFUN = NULL, 
-                  perfFUN = mse, genFUN = absmean, ...) {
+                  perfFUN = mse, genFUN = abs.mean, ...) {
   
   out <- mp.cv.dev(formula = formula, data = data, st.i = st.i, st.u = st.u, folds = folds, two.stage = two.stage,
                    estFUN = estFUN, metaFUN = metaFUN, meta.method = meta.method, ...)
   
   out <- mp.cv.val(cv.dev = out, data = data, st.i = st.i, folds = folds, recal.int = recal.int, two.stage = two.stage,
-                   estFUN = glm, predFUN = predFUN, perfFUN = mse, genFUN = absmean, ...)
+                   estFUN = glm, predFUN = predFUN, perfFUN = mse, genFUN = genFUN, ...)
   
   class(out) <- c("mp.cv", class(out))
   out
@@ -772,7 +767,7 @@ print.mp.cv <- function(x, ...) {
 # Returns object of class mp.cv.val, which is a validated mp.cv.dev
 mp.cv.val <- function(cv.dev, data, st.i, folds, recal.int = FALSE, two.stage = TRUE,
                       estFUN = glm, predFUN = NULL, perfFUN = mse, add.perfFUN = list(), 
-                      genFUN = absmean, ...) { # add: add.genFUN
+                      genFUN = abs.mean, ...) { # add: add.genFUN
   # Recalibrate?
   if (isTRUE(recal.int))
     cv.dev <- mp.cv.recal(cv.dev = cv.dev, newdata = data, estFUN = estFUN, folds = folds)
@@ -790,6 +785,7 @@ mp.cv.val <- function(cv.dev, data, st.i, folds, recal.int = FALSE, two.stage = 
   outcome <- f2o(formula(cv.dev))
   
   cv.dev[["perf"]] <- data.frame(matrix(ncol = 2, nrow = cv.dev[["n.cv"]]))
+  cv.dev[["nobs.val"]] <- sapply(p, length)
   row.names(cv.dev[["perf"]]) <- names(cv.dev[["cv"]])
   colnames(cv.dev[["perf"]])  <- c("val.strata", "perf")
   
@@ -805,8 +801,8 @@ mp.cv.val <- function(cv.dev, data, st.i, folds, recal.int = FALSE, two.stage = 
   # ...
   
   # And finally, the generalizability (and mean performance)
-  cv.dev[["gen"]]       <-  genFUN(cv.dev[["perf"]][, "perf"], ...)
-  cv.dev[["mean.perf"]] <- absmean(cv.dev[["perf"]][, "perf"], ...)
+  cv.dev[["gen"]]       <-  genFUN(x = cv.dev[["perf"]][, "perf"], data = data, N = nrow(data), n = cv.dev[["nobs.val"]], ...) 
+  cv.dev[["mean.perf"]] <- abs.mean(cv.dev[["perf"]][, "perf"], ...)
   
   class(cv.dev) <- c("mp.cv.val", class(cv.dev))
   cv.dev
@@ -862,6 +858,7 @@ mp.cv.dev <- function(formula, data, st.i, st.u, folds, two.stage = TRUE,
                                 metaFUN = metaFUN, meta.method = meta.method)
   
   out[["n.cv"]] <- length(out$cv)
+  # out[["nobs.cv"]]
   class(out) <- "mp.cv.dev"
   out
 }
@@ -989,6 +986,8 @@ mp.meta.fit <- function(stratified.fit, metaFUN = urma, meta.method = "DL") {
   
   out[["coefficients"]] <- meta$b
   out[["v"]] <- meta$v
+  out[["nobs.strata"]] <- sapply(stratified.fit, nobs)
+  out[["nobs"]] <- sum(out[["nobs.strata"]])
   
   class(out) <- "mp.meta.fit"
   out
@@ -1044,6 +1043,7 @@ mp.stratum.fit <- function(fit) {
   out[["v"]]            <- getVars(fit)
   out[["covar"]]        <- getCoVars(fit)
   out[["vcov"]]         <- vcov(fit)
+  out[["nobs"]]         <- nobs(fit, use.fallback = TRUE)
   
   class(out) <- "mp.stratum.fit"
   out
