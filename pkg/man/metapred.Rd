@@ -5,10 +5,10 @@
 \title{Generalized Stepwise Regression for prediction models in clustered data}
 \usage{
 metapred(data, strata, formula = NULL, estFUN = "glm", scope = NULL,
-  retest = FALSE, max.steps = 1000, center = TRUE, recal.int = FALSE,
-  cvFUN = NULL, cv.k = NULL, metaFUN = NULL, meta.method = NULL,
-  predFUN = NULL, perfFUN = NULL, genFUN = NULL, selFUN = "which.min",
-  ...)
+  retest = FALSE, max.steps = 1000, center = TRUE,
+  recal.int = FALSE, cvFUN = NULL, cv.k = NULL, metaFUN = NULL,
+  meta.method = NULL, predFUN = NULL, perfFUN = NULL,
+  genFUN = NULL, selFUN = "which.min", ...)
 }
 \arguments{
 \item{data}{data.frame containing the data.}

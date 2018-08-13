@@ -2,7 +2,7 @@
 # ### By convention, all performance measures:
 # # Arguments:
 # p     numeric vector of predicted probabilities
-# y     numeric/integer vector of observed outcome
+# y     numeric/integer vector of observed outcome, of same length as p.
 # ...   for future compatibility
 # 
 # # Return:
@@ -11,6 +11,7 @@
 
 # Error function: Mean Squared Error
 mse <- brier <- function(p, y, ...) mean((p - y)^2)
+
 rmse <- function(p, y, ...)
   sqrt(mse(p = p, y = y, ...))
 
@@ -23,7 +24,7 @@ vare <- function(p, y, ...) var(p - y)
 
 
 # Measure 1: Coefficient of variation of prediction error.
-coefVarPred <- function(p, y, data = NULL, abs = TRUE, ...)
+coefVarPred <- function(p, y, abs = TRUE, ...)
   coefVar(x = p - y, abs = abs, ...) 
 
 ############################## Heterogeneity, generalizability, pooled performance functions ###############################
@@ -33,7 +34,7 @@ coefVarPred <- function(p, y, data = NULL, abs = TRUE, ...)
 # ...   for compatibility.
 #
 # # Possible arguments:
-# N     integer, total sample size
+# N     scalar integer, total sample size
 # n     numeric/integer vector, sample size per strata. Must be same length as x
 # data  Full data set. Use only if other arguments are not enough.
 # 
@@ -57,10 +58,14 @@ coefVar <- function(x, abs = TRUE, ...) {
 coefVarMean <- function(x, abs = TRUE, ...) 
   coefVar(x, abs = abs) + if (abs) abs(mean(x)) else mean(x)
 
+# Measure 2 (?): GINI coefficient
+# No code or import necessary
+# GiniMd(x, na.rm = FALSE)
+
 
 pooledvar <- function(x, n, ...) {
   pm <- unlist(x)
   pm
   ## TODO: Extract sample size for each cluster and apply corresponding to the right perf.measures
-  
+  ## TODO: use rubins rules.
 }
