@@ -77,7 +77,8 @@ pooled.var <- function(x, n, ...) {
   ## TODO: use rubins rules.
 }
 
-rubins.rules <- function(x, ...)
-  x + var(x) * (1 + 1/length(x))
+rubins.rules <- function(x, n, ...)
+  x + var(x) * (1 + 1/n)
+
 
 # squared.diff #a penalty equal to the mean squared differences between coefficients. Alternatively
