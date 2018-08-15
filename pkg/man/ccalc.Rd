@@ -5,7 +5,8 @@
 \title{Calculate the concordance statistic}
 \usage{
 ccalc(cstat, cstat.se, cstat.cilb, cstat.ciub, cstat.cilv, sd.LP, N, O, Po,
-  data, slab, subset, g = NULL, level = 0.95, approx.se.method = 4, ...)
+  data, slab, subset, g = NULL, level = 0.95, approx.se.method = 4,
+  ...)
 }
 \arguments{
 \item{cstat}{vector to specify the estimated c-statistics.}

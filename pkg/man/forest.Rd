@@ -8,8 +8,8 @@ forest(theta, theta.ci.lb, theta.ci.ub, theta.slab, theta.summary,
   theta.summary.ci.lb, theta.summary.ci.ub, theta.summary.pi.lb,
   theta.summary.pi.ub, title, sort = "asc", theme = theme_bw(),
   predint.linetype = 1, xlim, xlab = "", refline = 0,
-  label.summary = "Summary Estimate", label.predint = "Prediction Interval",
-  ...)
+  label.summary = "Summary Estimate",
+  label.predint = "Prediction Interval", ...)
 }
 \arguments{
 \item{theta}{Numeric vector with effect size for each study}

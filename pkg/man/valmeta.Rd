@@ -6,8 +6,8 @@
 \usage{
 valmeta(measure = "cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.se,
   OE.95CI, citl, citl.se, N, O, E, Po, Po.se, Pe, method = "REML",
-  test = "knha", ret.fit = FALSE, verbose = FALSE, slab, n.chains = 4,
-  pars, ...)
+  test = "knha", ret.fit = FALSE, verbose = FALSE, slab,
+  n.chains = 4, pars, ...)
 }
 \arguments{
 \item{measure}{A character string indicating which summary performance measure should be calculated. Options are

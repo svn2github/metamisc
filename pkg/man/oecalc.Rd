@@ -4,8 +4,9 @@
 \alias{oecalc}
 \title{Calculate the total O:E ratio}
 \usage{
-oecalc(OE, OE.se, OE.cilb, OE.ciub, OE.cilv, EO, EO.se, citl, citl.se, N, O, E,
-  Po, Po.se, Pe, data, slab, add = 1/2, g = NULL, level = 0.95, ...)
+oecalc(OE, OE.se, OE.cilb, OE.ciub, OE.cilv, EO, EO.se, citl, citl.se, N,
+  O, E, Po, Po.se, Pe, data, slab, add = 1/2, g = NULL, level = 0.95,
+  ...)
 }
 \arguments{
 \item{OE}{vector with the estimated ratio of total observed versus total expected events}
