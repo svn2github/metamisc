@@ -416,27 +416,27 @@ predictGLM <- function(object, newdata, b = NULL, f = NULL, type = "response", .
 }
 
 # Univariate Random Effects Meta-Analysis
-# b data.frame or matrix, containing coef
-# v data.frame or matrix, containing variances
+# coefficients data.frame or matrix, containing coef
+# variances data.frame or matrix, containing variances
 # method Method for meta-analysis.
 # ... Optional arguments for rma().
 #' @importFrom metafor rma
-urma <- function(b, v, method = "DL", ...)
+urma <- function(coefficients, variances, method = "DL", ...)
 {
-  if (!(is.data.frame(b) || is.matrix(b)) || !(is.data.frame(v) || is.matrix(v)) )
-    stop("b and v must both be a data.frame or matrix.")
-  if (!identical(dim(b), dim(v)))
-    stop("b and v must have the same dimensions.")
+  if (!(is.data.frame(coefficients) || is.matrix(coefficients)) || !(is.data.frame(variances) || is.matrix(variances)) )
+    stop("coefficients and variances must both be a data.frame or matrix.")
+  if (!identical(dim(coefficients), dim(variances)))
+    stop("coefficients and variances must have the same dimensions.")
   
-  meta.b <- meta.se <- rep(NA, ncol(b))
-  for (col in 1:ncol(b)) {
-    r <- metafor::rma(b[ , col] , v[ , col], method = method, ...)
+  meta.b <- meta.se <- rep(NA, ncol(coefficients))
+  for (col in 1:ncol(coefficients)) {
+    r <- metafor::rma(coefficients[ , col] , variances[ , col], method = method, ...)
     meta.b[col]  <- r$beta
     meta.se[col] <- r$se
   }
   
   meta.v <- meta.se^2
   
-  names(meta.b) <- names(meta.v) <- names(meta.se) <- colnames(b)
-  list(b = meta.b, v = meta.v, se = meta.se)
+  names(meta.b) <- names(meta.v) <- names(meta.se) <- colnames(coefficients)
+  list(coefficients = meta.b, variances = meta.v, se = meta.se)
 }
