@@ -12,6 +12,9 @@
 # add docs for fitted.whatever.
 # check what happens for recalibrated mp.cv in fitted.mp.cv
 # add rownames to data, to prevent error/mismatch in fitted.metapred/fitted.mp.cv # Maybe already fixed by as.data.frame()
+# add the unchanged model to the next step's model list. Model comparison will be easier. Subsetting will be easier: this allows
+#   a 'chain' of "changed" predictors to be added, thereby making the output clearer. 
+# change "changed" for global models as well.
 
 # TODO 3: General
 # add function: areTRUE. st.i == cl may otherwise lead to problems, if st.i has NA
@@ -117,6 +120,13 @@
 #' @return A list of class \code{metapred}, containing the final model in \code{global.model}, and the stepwise
 #' tree of estimates of the coefficients, performance measures, generalizability measures in \code{stepwise}.
 #' 
+#' @details Use \link{subset} to obtain an individual prediction model from a \code{metapred} object.
+#' 
+#'  Note that \code{formula.changes} is currently unordered; it does not represent the order of changes in the stepwise 
+#'  procedure.
+#'  
+#'  \code{metapred} is still under development, use with care.
+#' 
 #' @examples 
 #' data(DVTipd)
 #' DVTipd$cluster <- letters[1:4] # Add a fictional clustering to the data.
@@ -146,10 +156,12 @@
 #' @export
 metapred <- function(data, strata, formula = NULL, estFUN = "glm", scope = NULL, retest = FALSE, max.steps = 1000, 
                      center = TRUE, recal.int = FALSE, cvFUN = NULL, cv.k = NULL,  # tol = 0,
-                     metaFUN = NULL, meta.method = NULL, predFUN = NULL, perfFUN = NULL, genFUN = NULL, selFUN = "which.min",
+                     metaFUN = NULL, meta.method = NULL, predFUN = NULL, perfFUN = NULL, genFUN = NULL,
+                     selFUN = "which.min",
                      ...) {
-  call   <- match.call()
-  data   <- remove.na.obs(as.data.frame(data))
+  call <- match.call()
+  dots <- list(...)
+  data <- remove.na.obs(as.data.frame(data))
   
   if (is.null(formula)) formula <- stats::formula(data[ , -which(colnames(data) == strata)])  
   if (is.null(scope)) scope <- f2iof(formula)
@@ -174,23 +186,30 @@ metapred <- function(data, strata, formula = NULL, estFUN = "glm", scope = NULL,
   genFUN  <- get(genFUN)
   selFUN  <- get(selFUN)
   metaFUN <- get(metaFUN)
+  # genFUN.add <- dots$genFUN.add
   
   folds <- cvFUN(strata.u, k = cv.k)
   if (!isTRUE(length(folds[["dev"]]) > 0) || !isTRUE(length(folds[["dev"]][[1]]) > 0))
     stop("At least 1 cluster must be used for development.")
   
+  
+  
   fit <- mp.fit(formula = formula, data = data, remaining.changes = updates, st.i = strata.i, st.u = strata.u, folds = folds,
                 recal.int = recal.int, retest = retest, max.steps = max.steps, tol = 0, 
                 estFUN = estFUN, metaFUN = metaFUN, meta.method = meta.method, predFUN = predFUN, perfFUN = perfFUN,
-                genFUN = genFUN, selFUN = selFUN, ...)
+                genFUN = genFUN, selFUN = selFUN,  ...) # genFUN.add = genFUN.add,
   
   predFUN <- getPredictMethod(fit$stepwise$s0$cv$unchanged, two.stage = TRUE, predFUN = predFUN)
+  formula.final <- fit$global.model$formula
   
   out <- c(fit, list(call = call, strata = strata, data = data, folds = folds, # add nobs and strata.nobs
+                     formula.start = formula, scope = scope, formula = formula.final,
+                     formula.changes = getFormulaDiffAsChar(formula.final, formula), 
+                     # NOTE: formula.changes is currently unordered!
                      options = list(cv.k = cv.k, meta.method = meta.method, recal.int = recal.int,
                                     center = center, max.steps = max.steps, retest = retest), # add: tol
                      FUN = list(cvFUN = cvFUN, predFUN = predFUN, perfFUN = perfFUN, metaFUN = metaFUN, genFUN = genFUN, 
-                                selFUN = selFUN, estFUN = estFUN, estFUN.name = estFUN.name))) 
+                                selFUN = selFUN, estFUN = estFUN, estFUN.name = estFUN.name)))  #, genFUN.add = genFUN.add
   class(out) <- c("metapred")
   return(out)
 }
@@ -246,17 +265,17 @@ predict.metapred <- function(object, newdata = NULL, strata = NULL, type = "resp
 #' @param object object of class metapred 
 #' @param select character. Select fitted values from "cv" (default) or from "global" model.
 #' @param step character or numeric. Name or number of step to select if \code{select} = "cv". Defaults to best step.
-#' @param model.change character or numeric. Name or number of model to select if \code{select} = "cv". Defaults to
+#' @param model character or numeric. Name or number of model to select if \code{select} = "cv". Defaults to
 #' best model.
 #' @param as.stratified logical. \code{select} = "cv" determines whether returned predictions are stratified in a list 
 #' (\code{TRUE}, default) or in their original order (\code{FALSE}).
 #' @param type character. Type of fitted value.
 #' @param ... For compatibility only.
 #' @export
-fitted.metapred <- function(object, select = "cv", step = NULL, model.change = NULL, 
+fitted.metapred <- function(object, select = "cv", step = NULL, model = NULL, 
                             as.stratified = TRUE, type = "response", ...) {
   if (isTRUE(select == "cv")) {
-    ftd <- fitted(subset.metapred(x = object, select = select, step = step, model.change = model.change, type = type, ...))
+    ftd <- fitted(subset.metapred(x = object, select = select, step = step, model = model, type = type, ...))
     if (as.stratified)
       return(ftd)
     else {
@@ -275,10 +294,10 @@ fitted.metapred <- function(object, select = "cv", step = NULL, model.change = N
 # #' @importFrom stats residuals
 # #' @method residuals   metapred
 # #' @export
-# residuals.metapred <- function(object, select = "cv", step = NULL, model.change = NULL, as.stratified = TRUE, ...) {
+# residuals.metapred <- function(object, select = "cv", step = NULL, model = NULL, as.stratified = TRUE, ...) {
 #   y <- object$data[ , f2o(formula(object))]
 #   ftd <- fitted.metapred(object = object, select = select, step = step, 
-#                        model.change = model.change, as.stratified = as.stratified, ...)
+#                        model = model, as.stratified = as.stratified, ...)
 #   if (as.stratified) {
 #     ftd <- fitted(mp, as.stratified = TRUE)
 #     y <- mp$data[ , f2o(formula(mp))]
@@ -371,18 +390,38 @@ is.metapred <- function(object)
 #   stop("select must equal 'best.cv' or 'global'.")
 # }
 
-# Select a model from a metapred object
-# select character, name of selection. Either "global" or "cv" (default)
-# step NULL, character or numeric. NULL (default) means best. numeric is converted to stepname.
-# model.change NULL (Default, best change) or character name or (integer) index of model change. 
-# ... For compatibility only.
-subset.metapred <- function(x, select = "cv", step = NULL, model.change = NULL, ...) {
-  # Add addition of data stuff
+#' Subsetting metapred fits
+#' 
+#' Return a model from the cross-validation procedure or the final 'global' model. Caution: This function is 
+#' still under development.
+#' 
+#' @author Valentijn de Jong
+#' 
+#' @param x metapred object
+#' @param select Which type of model to select: "cv" (default) or "global"
+#' @param step  Which step should be selected? Defaults to the best step. 
+#' numeric is converted to name of the step: 0 for an unchanged model, 1 for the first change... 
+#' @param model Which model change should be selected? NULL (default, best change) or character name of variable
+#' or (integer) index of model change. 
+#' @param ... For compatibility only.
+#' 
+#' @examples 
+#' data(DVTipd)
+#' DVTipd$cluster <- letters[1:4] # Add a fictional clustering to the data.
+#' mp <- metapred(DVTipd, strata = "cluster", formula = dvt ~ histdvt + ddimdich, family = binomial)
+#' subset(mp) # best cross-validated model
+#' subset(mp, select = "global") # Final model fitted on all strata.
+#' subset(mp, step = 1) # The best model of step 1
+#' subset(mp, step = 1, model = "histdvt") # The model in which histdvt was removed, in step 1.
+#' 
+#' @return An object of class \code{mp.cv} for select = "cv" and an object of class \code{mp.global} for select = "global". 
+#' In both cases, additional data is added to the resulting object, thereby making it suitable for further methods.
+#' @export
+subset.metapred <- function(x, select = "cv", step = NULL, model = NULL, ...) {
   # Select
-  if (identical(select, "global")) {
+  if (identical(select, "global"))
     out <- x[["global.model"]]
-
-  } else {
+  else {
     if (!identical(select, "cv"))
       stop("select must equal 'cv' or 'global'.")
     
@@ -393,12 +432,12 @@ subset.metapred <- function(x, select = "cv", step = NULL, model.change = NULL, 
       step <- getStepName(step)
     
     # Model
-    if (is.null(model.change))
-      model.change <- x[["stepwise"]][[step]][["best.change"]]
+    if (is.null(model))
+      model <- x[["stepwise"]][[step]][["best.change"]]
     
-    out <- x[["stepwise"]][[step]][["cv"]][[model.change]]
+    out <- x[["stepwise"]][[step]][["cv"]][[model]]
   }
-   
+  
   # This is the real reason for why this function exists. To add this stuff to a mp.cv or mp.global object.
   # Normally those do not have this data, for memory/performance reasons.
   out$data    <- x$data
@@ -548,6 +587,9 @@ mp.which.best.change <- function(cvs, selFUN = which.min, ...)
 mp.step.get.best <- function(step, selFUN = which.min, ...)
   step[["cv"]][[mp.which.best.change(step[["cv"]], selFUN = selFUN, ...)]]
 
+mp.step.get.change <- function(step, ...)
+  mp.step.get.best(step)[["changed"]]
+
 # Perform one step in the fitting process of mp.fit
 # formula formula to start with
 # data data.frame, containing dev and val data
@@ -589,8 +631,8 @@ mp.step <- function(formula, data, remaining.changes, st.i, st.u, folds, recal.i
                         estFUN = estFUN, metaFUN = metaFUN, meta.method = meta.method,
                         predFUN = predFUN, perfFUN = perfFUN, genFUN = genFUN, ...)
     # Save changes
-    cv[[name]][["remaining.changes"]]   <- if (retest) remaining.changes else remaining.changes[-fc]
-    cv[[name]][["changed"]]     <- change
+    cv[[name]][["remaining.changes"]] <- if (retest) remaining.changes else remaining.changes[-fc]
+    cv[[name]][["changed"]] <- change
   }
   
   out[["best.change"]] <- mp.which.best.change(cv, selFUN = selFUN)
@@ -768,6 +810,8 @@ print.mp.cv <- function(x, ...) {
 mp.cv.val <- function(cv.dev, data, st.i, folds, recal.int = FALSE, two.stage = TRUE,
                       estFUN = glm, predFUN = NULL, perfFUN = mse, add.perfFUN = list(), 
                       genFUN = abs.mean, ...) { # add: add.genFUN
+  dots <- list(...)
+  
   # Recalibrate?
   if (isTRUE(recal.int))
     cv.dev <- mp.cv.recal(cv.dev = cv.dev, newdata = data, estFUN = estFUN, folds = folds)
@@ -797,8 +841,15 @@ mp.cv.val <- function(cv.dev, data, st.i, folds, recal.int = FALSE, two.stage = 
                                        data = data, fit = cv.dev[["cv"]][[i]], ...)) 
   cv.dev[["perf"]][, "perf"] <- as.numeric(cv.dev[["perf"]][, "perf"])
   
-  # Compute additional performance measures.
-  # ...
+  # # Compute additional performance measures.
+  # if (length(genFUN.add <- dots$genFUN.add))
+  #   if (!is.list(genFUN.add)) 
+  #     genFUN.add <- list(genFUN.add)
+  # 
+  # declare something!
+  # for (fun in seq_along(genFUN.add))
+  #   something[...] <- genFUN.add[[fun]](x = cv.dev[["perf"]][, "perf"], data = data, N = nrow(data), n = cv.dev[["nobs.val"]], ...) 
+  #   add names to something:
   
   # And finally, the generalizability (and mean performance)
   cv.dev[["gen"]]       <-  genFUN(x = cv.dev[["perf"]][, "perf"], data = data, N = nrow(data), n = cv.dev[["nobs.val"]], ...) 
@@ -980,13 +1031,13 @@ mp.meta.fit <- function(stratified.fit, metaFUN = urma, meta.method = "DL") {
   out <- list()
   
   b <- coef.mp.stratified.fit(stratified.fit) # again i have to point it to the right method.
-  v <- t(as.data.frame(lapply(stratified.fit, `[[`, "v", drop = FALSE)))
+  variances <- t(as.data.frame(lapply(stratified.fit, `[[`, "variances", drop = FALSE)))
   
-  meta <- metaFUN(b = b, v = v, method = meta.method) 
+  meta <- metaFUN(coefficients = b, variances = variances, method = meta.method) 
   
-  out[["coefficients"]] <- meta$b
-  out[["v"]] <- meta$v
-  out[["nobs.strata"]] <- sapply(stratified.fit, nobs)
+  out[["coefficients"]] <- meta$coefficients
+  out[["variances"]]    <- meta$variances
+  out[["nobs.strata"]]  <- sapply(stratified.fit, nobs)
   out[["nobs"]] <- sum(out[["nobs.strata"]])
   
   class(out) <- "mp.meta.fit"
@@ -1040,7 +1091,7 @@ mp.stratum.fit <- function(fit) {
   out <- list()
   
   out[["coefficients"]] <- getCoefs(fit)
-  out[["v"]]            <- getVars(fit)
+  out[["variances"]]    <- getVars(fit)
   out[["covar"]]        <- getCoVars(fit)
   out[["vcov"]]         <- vcov(fit)
   out[["nobs"]]         <- nobs(fit, use.fallback = TRUE)
@@ -1075,3 +1126,55 @@ print.mp.stratum.fit <- function(x, ...) {
 # As I would have had to implement it a million times:
 family.default <- function(object, ...) 
   object$family
+
+#' Standard error and variances
+#' 
+#' Obtain standard errors or variances of a model fit
+#' 
+#' @aliases variances
+#' 
+#' @author Valentijn de Jong
+#' 
+#' @usage se(object, ...)
+#' variances(object, ...)
+#' 
+#' @param object A model fit object
+#' @param ... other arguments
+#' 
+#' @return For \code{se} the standard errors of \code{object}, and for 
+#' \code{variances} the variances.
+#' @export
+se <- function(object, ...)
+  UseMethod("se", object)
+
+#' @export
+se.default <- function(object, ...)
+  sqrt(variances(object, ...))
+
+#' @export
+variances <- function(object, ...)
+  UseMethod("variances", object)
+
+#' @export
+variances.default <- function(object, ...) {
+  if (!is.null(v <- object$variances))
+    v
+  else 
+    diag(vcov(object, ...))
+}
+
+#' @export
+variances.metapred <- function(object, ...)
+  variances(object[["global.model"]])
+
+#' @export
+variances.mp.cv <- function(object, select = "cv", ...) 
+  variances(object[[select, exact = FALSE]])
+
+#' @export
+variances.mp.stratified.fit <- function(object, ...)
+  t(as.data.frame(lapply(object, variances), check.names = FALSE))
+
+#' @export
+variances.mp.cv.meta.fit <- function(object, ...)
+  variances.mp.stratified.fit(object, ...)

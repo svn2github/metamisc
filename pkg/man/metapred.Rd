@@ -73,6 +73,14 @@ tree of estimates of the coefficients, performance measures, generalizability me
 Generalized stepwise regression for obtaining a prediction model with adequate performance across data sets. Requires
 data from individuals in multiple studies.
 }
+\details{
+Use \link{subset} to obtain an individual prediction model from a \code{metapred} object.
+
+ Note that \code{formula.changes} is currently unordered; it does not represent the order of changes in the stepwise 
+ procedure.
+ 
+ \code{metapred} is still under development, use with care.
+}
 \examples{
 data(DVTipd)
 DVTipd$cluster <- letters[1:4] # Add a fictional clustering to the data.

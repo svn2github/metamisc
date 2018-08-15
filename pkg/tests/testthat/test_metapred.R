@@ -75,14 +75,14 @@ test_that("Stratified models can be cross-validated", {
 
 test_that("A stepwise stratified model can be fitted", {
   # No stepwise
-  expect_is(step0 <- mp.step(formula = f, data = td, remaining.changes = c(""), st.i = st.i, 
+  expect_is(step0 <- metamisc:::mp.step(formula = f, data = td, remaining.changes = c(""), st.i = st.i, 
                              st.u = st.u, folds = folds, family = binomial), "mp.step")
   expect_length(step0$cv, 1)
   expect_is(mp.step.get.best(step0), "mp.cv")
   
   # Main effects
   change.main <- c("X2", "X3")
-  expect_is(step <- mp.step(formula = f, data = td, remaining.changes = change.main, st.i = st.i, 
+  expect_is(step <- metamisc:::mp.step(formula = f, data = td, remaining.changes = change.main, st.i = st.i, 
                             st.u = st.u, folds = folds, family = binomial), "mp.step")
   expect_is(mp.step.get.best(step), "mp.cv")
   
@@ -100,7 +100,7 @@ test_that("A stepwise stratified model can be fitted", {
 
 test_that("metapred produces a model.", {
   # Stepwise, default
-  expect_is(mp <- metapred(data = td, strata = "X4", scope = f, formula = X1 ~ 1, family = binomial), "metapred")
+  expect_is(mp <- metamisc:::metapred(data = td, strata = "X4", scope = f, formula = X1 ~ 1, family = binomial), "metapred")
   expect_identical(mp$step.count, 2) # and: stop.reason == no improvement was possible, but that may change.
   
   # Stepwise, stop because of step.count
@@ -118,7 +118,7 @@ test_that("metapred produces a model.", {
 })
 
 test_that("metapred can handle different distributions.", {
-  expect_true(is.list(mp <- metapred(data = td, strata = "X4", family = binomial))) # binomial
+  expect_true(is.list(mp <- metapred(data = td, strata = "X4", family = binomial) )) # binomial
   expect_true(inherits(mp, "metapred"))
   expect_true(is.list(mp$stepwise))
   expect_true(is.list(mp$FUN))
@@ -174,7 +174,7 @@ test_that("metapred can handle different distributions.", {
 })
 
 test_that("metapred's stepwise is WAD.", {
-  expect_true(is.list(mp <- metamisc:::metapred(data = td, strata = "X4" ))) 
+  expect_true(is.list(mp <- metamisc:::metapred(data = td, strata = "X4") )) 
   expect_true(inherits(mp, "metapred"))
   expect_true(is.list(mp$stepwise))
   expect_true(is.list(mp$FUN))
