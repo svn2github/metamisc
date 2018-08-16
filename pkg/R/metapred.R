@@ -200,14 +200,12 @@ metapred <- function(data, strata, formula = NULL, estFUN = "glm", scope = NULL,
   #               recal.int = recal.int, retest = retest, max.steps = max.steps, tol = 0, 
   #               estFUN = estFUN, metaFUN = metaFUN, meta.method = meta.method, predFUN = predFUN, perfFUN = perfFUN,
   #               genFUN = genFUN, genFUN.add = genFUN.add, selFUN = selFUN, ... = unlist(dots)) # genFUN.add = genFUN.add,
-  mp.dots <<- dots
-  mp.genFUN.add <<- genFUN.add
+
   mp.args <- c(list(formula = formula, data = data, remaining.changes = updates, st.i = strata.i, st.u = strata.u, folds = folds,
                     recal.int = recal.int, retest = retest, max.steps = max.steps, tol = 0, 
                     estFUN = estFUN, metaFUN = metaFUN, meta.method = meta.method, predFUN = predFUN, perfFUN = perfFUN,
                     genFUN = genFUN, genFUN.add = genFUN.add, selFUN = selFUN), dots)
   
-  mp.args <<- mp.args
   fit <- do.call(mp.fit, args = mp.args ) 
   
   predFUN <- getPredictMethod(fit$stepwise$s0$cv$unchanged, two.stage = TRUE, predFUN = predFUN)
