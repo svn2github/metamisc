@@ -186,7 +186,9 @@ metapred <- function(data, strata, formula = NULL, estFUN = "glm", scope = NULL,
   genFUN  <- get(genFUN)
   selFUN  <- get(selFUN)
   metaFUN <- get(metaFUN)
-  # genFUN.add <- dots$genFUN.add
+  
+  genFUN.add <- dots[["genFUN.add"]] 
+  dots[["genFUN.add"]] <- NULL
   
   folds <- cvFUN(strata.u, k = cv.k)
   if (!isTRUE(length(folds[["dev"]]) > 0) || !isTRUE(length(folds[["dev"]][[1]]) > 0))
@@ -194,10 +196,19 @@ metapred <- function(data, strata, formula = NULL, estFUN = "glm", scope = NULL,
   
   
   
-  fit <- mp.fit(formula = formula, data = data, remaining.changes = updates, st.i = strata.i, st.u = strata.u, folds = folds,
-                recal.int = recal.int, retest = retest, max.steps = max.steps, tol = 0, 
-                estFUN = estFUN, metaFUN = metaFUN, meta.method = meta.method, predFUN = predFUN, perfFUN = perfFUN,
-                genFUN = genFUN, selFUN = selFUN,  ...) # genFUN.add = genFUN.add,
+  # fit <- mp.fit(formula = formula, data = data, remaining.changes = updates, st.i = strata.i, st.u = strata.u, folds = folds,
+  #               recal.int = recal.int, retest = retest, max.steps = max.steps, tol = 0, 
+  #               estFUN = estFUN, metaFUN = metaFUN, meta.method = meta.method, predFUN = predFUN, perfFUN = perfFUN,
+  #               genFUN = genFUN, genFUN.add = genFUN.add, selFUN = selFUN, ... = unlist(dots)) # genFUN.add = genFUN.add,
+  mp.dots <<- dots
+  mp.genFUN.add <<- genFUN.add
+  mp.args <- c(list(formula = formula, data = data, remaining.changes = updates, st.i = strata.i, st.u = strata.u, folds = folds,
+                    recal.int = recal.int, retest = retest, max.steps = max.steps, tol = 0, 
+                    estFUN = estFUN, metaFUN = metaFUN, meta.method = meta.method, predFUN = predFUN, perfFUN = perfFUN,
+                    genFUN = genFUN, genFUN.add = genFUN.add, selFUN = selFUN), dots)
+  
+  mp.args <<- mp.args
+  fit <- do.call(mp.fit, args = mp.args ) 
   
   predFUN <- getPredictMethod(fit$stepwise$s0$cv$unchanged, two.stage = TRUE, predFUN = predFUN)
   formula.final <- fit$global.model$formula
@@ -209,7 +220,7 @@ metapred <- function(data, strata, formula = NULL, estFUN = "glm", scope = NULL,
                      options = list(cv.k = cv.k, meta.method = meta.method, recal.int = recal.int,
                                     center = center, max.steps = max.steps, retest = retest), # add: tol
                      FUN = list(cvFUN = cvFUN, predFUN = predFUN, perfFUN = perfFUN, metaFUN = metaFUN, genFUN = genFUN, 
-                                selFUN = selFUN, estFUN = estFUN, estFUN.name = estFUN.name)))  #, genFUN.add = genFUN.add
+                                selFUN = selFUN, estFUN = estFUN, estFUN.name = estFUN.name, genFUN.add = genFUN.add)))
   class(out) <- c("metapred")
   return(out)
 }
@@ -471,7 +482,7 @@ subset.metapred <- function(x, select = "cv", step = NULL, model = NULL, ...) {
 mp.fit <- function(formula, data, remaining.changes, st.i, st.u, folds, recal.int = FALSE, 
                    retest = FALSE, max.steps = 3, tol = 0,
                    estFUN = glm, metaFUN = urma, meta.method = "DL", predFUN = NULL, 
-                   perfFUN = mse, genFUN = abs.mean, selFUN = which.min, ...) {
+                   perfFUN = mse, genFUN = abs.mean, genFUN.add = list(), selFUN = which.min, ...) {
   out <- steps <- list()
   
   ## Step 0
@@ -481,7 +492,8 @@ mp.fit <- function(formula, data, remaining.changes, st.i, st.u, folds, recal.in
                                      st.i = st.i, st.u = st.u, folds = folds, recal.int = recal.int, 
                                      retest = FALSE,
                                      estFUN = glm, metaFUN = urma, meta.method = "DL", predFUN = NULL, 
-                                     perfFUN = mse, genFUN = genFUN, selFUN = selFUN, ...)
+                                     perfFUN = mse, genFUN = genFUN, genFUN.add = genFUN.add, 
+                                     selFUN = selFUN, ...)
   steps[[getStepName(step.count)]][["step.count"]] <- step.count
   out[["best.step"]] <- getStepName(step.count)
   current.model <- mp.step.get.best(steps[[1]])
@@ -512,7 +524,8 @@ mp.fit <- function(formula, data, remaining.changes, st.i, st.u, folds, recal.in
                                                   st.i = st.i, st.u = st.u, folds = folds, recal.int = recal.int,
                                                   retest = retest,
                                                   estFUN = glm, metaFUN = urma, meta.method = "DL", predFUN = NULL,
-                                                  perfFUN = mse, genFUN = genFUN, selFUN = selFUN, ...)
+                                                  perfFUN = mse, genFUN = genFUN, genFUN.add = genFUN.add,
+                                                  selFUN = selFUN, ...)
       steps[[getStepName(step.count)]][["step.count"]] <- step.count
       ## Model selection
       # This step
@@ -608,7 +621,8 @@ mp.step.get.change <- function(step, ...)
 mp.step <- function(formula, data, remaining.changes, st.i, st.u, folds, recal.int = FALSE, 
                     two.stage = TRUE, retest = FALSE,
                     estFUN = glm, metaFUN = urma, meta.method = "DL", predFUN = NULL, 
-                    perfFUN = mse, genFUN = abs.mean, selFUN = which.min, ...) {
+                    perfFUN = mse, genFUN = abs.mean, genFUN.add = list(), 
+                    selFUN = which.min, ...) {
   cv <- out <- list()
   out[["start.formula"]] <- formula
   
@@ -629,7 +643,8 @@ mp.step <- function(formula, data, remaining.changes, st.i, st.u, folds, recal.i
     cv[[name]] <- mp.cv(formula = new.formula, data = data, st.i = st.i, st.u = st.u,
                         folds = folds, recal.int = recal.int,
                         estFUN = estFUN, metaFUN = metaFUN, meta.method = meta.method,
-                        predFUN = predFUN, perfFUN = perfFUN, genFUN = genFUN, ...)
+                        predFUN = predFUN, perfFUN = perfFUN, genFUN = genFUN,
+                        genFUN.add = genFUN.add, ...)
     # Save changes
     cv[[name]][["remaining.changes"]] <- if (retest) remaining.changes else remaining.changes[-fc]
     cv[[name]][["changed"]] <- change
@@ -750,13 +765,12 @@ summary.mp.global <- function(object, ...) {
 # and a validated on val folds 
 mp.cv <- function(formula, data, st.i, st.u, folds, recal.int = FALSE, two.stage = TRUE,
                   estFUN = glm, metaFUN = urma, meta.method = "DL", predFUN = NULL, 
-                  perfFUN = mse, genFUN = abs.mean, ...) {
-  
+                  perfFUN = mse, genFUN = abs.mean, genFUN.add = list(), ...) {
   out <- mp.cv.dev(formula = formula, data = data, st.i = st.i, st.u = st.u, folds = folds, two.stage = two.stage,
                    estFUN = estFUN, metaFUN = metaFUN, meta.method = meta.method, ...)
   
   out <- mp.cv.val(cv.dev = out, data = data, st.i = st.i, folds = folds, recal.int = recal.int, two.stage = two.stage,
-                   estFUN = glm, predFUN = predFUN, perfFUN = mse, genFUN = genFUN, ...)
+                   estFUN = glm, predFUN = predFUN, perfFUN = mse, genFUN = genFUN, genFUN.add = genFUN.add, ...)
   
   class(out) <- c("mp.cv", class(out))
   out
@@ -808,8 +822,8 @@ print.mp.cv <- function(x, ...) {
 # ... options for predictMethod, perfFUN, and genFUN.
 # Returns object of class mp.cv.val, which is a validated mp.cv.dev
 mp.cv.val <- function(cv.dev, data, st.i, folds, recal.int = FALSE, two.stage = TRUE,
-                      estFUN = glm, predFUN = NULL, perfFUN = mse, add.perfFUN = list(), 
-                      genFUN = abs.mean, ...) { # add: add.genFUN
+                      estFUN = glm, predFUN = NULL, perfFUN = mse, add.perfFUN = list(), # add.perfFUN = list()
+                      genFUN = abs.mean, genFUN.add = list(), ...) {
   dots <- list(...)
   
   # Recalibrate?
@@ -842,19 +856,23 @@ mp.cv.val <- function(cv.dev, data, st.i, folds, recal.int = FALSE, two.stage = 
   cv.dev[["perf"]][, "perf"] <- as.numeric(cv.dev[["perf"]][, "perf"])
   
   # # Compute additional performance measures.
-  # if (length(genFUN.add <- dots$genFUN.add))
-  #   if (!is.list(genFUN.add)) 
-  #     genFUN.add <- list(genFUN.add)
-  # 
-  # declare something!
-  # for (fun in seq_along(genFUN.add))
-  #   something[...] <- genFUN.add[[fun]](x = cv.dev[["perf"]][, "perf"], data = data, N = nrow(data), n = cv.dev[["nobs.val"]], ...) 
-  #   add names to something:
+  # TBI
   
   # And finally, the generalizability (and mean performance)
-  cv.dev[["gen"]]       <-  genFUN(x = cv.dev[["perf"]][, "perf"], data = data, N = nrow(data), n = cv.dev[["nobs.val"]], ...) 
-  cv.dev[["mean.perf"]] <- abs.mean(cv.dev[["perf"]][, "perf"], ...)
+  cv.dev[["gen"]]       <- genFUN(x   = cv.dev[["perf"]][, "perf"], data = data, N = nrow(data), n = cv.dev[["nobs.val"]], ...) 
+  cv.dev[["mean.perf"]] <- abs.mean(x = cv.dev[["perf"]][, "perf"], ...)
   
+  # Optionally, additional generalizability measures
+  if (length(genFUN.add <- dots[["genFUN.add"]]))
+    if (!is.list(genFUN.add))
+      genFUN.add <- list(genFUN.add)
+  
+  gen.add <- list()
+    for (fun.id in seq_along(genFUN.add))
+      gen.add[[names(genFUN.add)[[fun.id]]]] <- genFUN.add[[fun.id]](x = cv.dev[["perf"]][, "perf"], data = data, N = nrow(data), n = cv.dev[["nobs.val"]], ...)
+  
+  cv.dev[["gen.add"]] <- gen.add
+    
   class(cv.dev) <- c("mp.cv.val", class(cv.dev))
   cv.dev
 }
@@ -1127,7 +1145,7 @@ print.mp.stratum.fit <- function(x, ...) {
 family.default <- function(object, ...) 
   object$family
 
-#' Standard error and variances
+#' Standard errors and variances
 #' 
 #' Obtain standard errors or variances of a model fit
 #' 
