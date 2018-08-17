@@ -3,8 +3,11 @@
 # recalibrate() is to be used by predict.metapred() and is exported.
 # object Model fit object, of class glm, lm or metapred
 # newdata Data to use for recalibration.
+# wholefit should whole fit be returned?
 
-computeRecal <- function(object, newdata, b = NULL, f = ~ 1, estFUN = NULL, f.orig = NULL,  ...) {
+# To be replaced with one or two more basic functions: 1 for whole fit, 1 for returning coefficients only.
+
+computeRecal <- function(object, newdata, b = NULL, f = ~ 1, estFUN = NULL, f.orig = NULL, wholefit = FALSE,  ...) {
   dots <- list(...)
   if (is.null(b)) b <- coef(object)
   if (is.null(estFUN)) {
@@ -24,14 +27,59 @@ computeRecal <- function(object, newdata, b = NULL, f = ~ 1, estFUN = NULL, f.or
   if (is.null(object$family))
   { 
     if (!is.null(dots[["family"]])) {
-      br <- coef(estFUN(f, data = osdata, offset = lp, family = dots[["family"]]))
+      refit <- estFUN(f, data = osdata, offset = lp, family = dots[["family"]])
     } else 
-      br <- coef(estFUN(f, data = osdata, offset = lp))
+      refit <- estFUN(f, data = osdata, offset = lp)
   } else 
-    br <- coef(estFUN(f, data = osdata, offset = lp, family = object$family))
+    refit <- estFUN(f, data = osdata, offset = lp, family = object$family)
   
-  br
+  if (isTRUE(wholefit))
+    return(refit)
+  else
+    return(coef(refit))
 }
+
+# p vector of predicted probs or outcomes
+# y outcome vector
+# estFUN estimation function
+# family family
+# which is "intercept" or "slope".
+# ... For compatibility only
+pred.recal <- function(p, y, estFUN, family = gaussian, which = "intercept", ...) {
+  if (is.character(family))  # Taken directly from glm()
+    family <- get(family, mode = "function", envir = parent.frame())
+  if (is.function(family)) 
+    family <- family()
+  if (is.null(family$family)) {
+    print(family)
+    stop("'family' not recognized")
+  }
+  
+  estFUN <- match.fun(estFUN)
+  lp <- family$linkfun(p)
+  alpha <- rep(mean(lp), length(lp))
+  data <- data.frame(y = y, lp = lp, alpha = alpha)
+  
+  if (identical(which, "intercept"))
+    return(estFUN(formula = y ~ 1,  data = data, family = family, offset = lp))
+  if (identical(which, "slope"))
+    return(estFUN(formula = y ~ lp, data = data, family = family, offset = alpha))
+  if (identical(which, "add.slope"))
+    return(estFUN(formula = y ~ lp - 1, data = data, family = family, offset = lp))
+}
+
+# gl.recal <- pred.recal(predict(gl, type = "response"), gl$data$X1, "glm", binomial)
+# int.recal <- (gl.recal)[[1]][[1]]
+# all.equal(int.recal, 0) # intercept recalibration works.
+
+# gl.recal <- pred.recal(predict(gl, type = "response"), gl$data$X1, "glm", binomial, which = "slope")
+# slo.recal <- gl.recal[[1]][[2]]
+# all.equal(slo.recal, 1) # Perfect
+
+# gl.recal <- metamisc:::pred.recal(predict(gl, type = "response"), gl$data$X1, "glm", binomial, which = "add.slope")
+# slo.recal <- gl.recal[[1]][[2]]
+# all.equal(slo.recal, 1) #
+
 
 
 ## Split this into two functions.

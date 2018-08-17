@@ -110,9 +110,9 @@
 #' function of \code{glm()} or \code{lm()}.
 #' @param perfFUN Function for computing the performance of the prediction models. Default: mean squared error 
 #' (\code{perfFUN="mse"}).Other options are \code{"vare"}.
-#' @param genFUN Function computing generalizability measure using the performance measures. Default: (absolute) mean  
-#' (\code{genFUN="abs.mean"}). Choose \code{squared.diff} for a penalty equal to the mean squared differences between 
-#' coefficients. Alternatively, choose \code{pooled.var} for a weighted average of variance terms.
+#' @param genFUN Function or list of (named) functions for computing generalizability of the performance. 
+#' Default: (absolute) mean (\code{genFUN="abs.mean"}). Choose \code{coef.var} for the coefficient of variation. If a list,
+#' only the first is used for model selection.
 #' @param selFUN Function for selecting the best method. Default: lowest value for \code{genFUN}. Should be set to
 #' "which.max" if high values for \code{genFUN} indicate a good model.
 #' @param ... To pass arguments to estFUN (e.g. family = "binomial"), or to other FUNctions.
@@ -160,7 +160,7 @@ metapred <- function(data, strata, formula = NULL, estFUN = "glm", scope = NULL,
                      selFUN = "which.min",
                      ...) {
   call <- match.call()
-  dots <- list(...)
+  # dots <- list(...)
   data <- remove.na.obs(as.data.frame(data))
   
   if (is.null(formula)) formula <- stats::formula(data[ , -which(colnames(data) == strata)])  
@@ -182,31 +182,29 @@ metapred <- function(data, strata, formula = NULL, estFUN = "glm", scope = NULL,
   estFUN.name <- estFUN
   estFUN  <- match.fun(estFUN)
   cvFUN   <- get(cvFUN)
-  perfFUN <- get(perfFUN)
-  genFUN  <- get(genFUN)
+  # perfFUN <- get(perfFUN)
+  # genFUN  <- get(genFUN) # now happens in mp.cv.val
   selFUN  <- get(selFUN)
   metaFUN <- get(metaFUN)
   
-  genFUN.add <- dots[["genFUN.add"]] 
-  dots[["genFUN.add"]] <- NULL
+  # genFUN.add <- dots[["genFUN.add"]] 
+  # dots[["genFUN.add"]] <- NULL
   
   folds <- cvFUN(strata.u, k = cv.k)
   if (!isTRUE(length(folds[["dev"]]) > 0) || !isTRUE(length(folds[["dev"]][[1]]) > 0))
     stop("At least 1 cluster must be used for development.")
   
+  fit <- mp.fit(formula = formula, data = data, remaining.changes = updates, st.i = strata.i, st.u = strata.u, folds = folds,
+                recal.int = recal.int, retest = retest, max.steps = max.steps, tol = 0,
+                estFUN = estFUN, metaFUN = metaFUN, meta.method = meta.method, predFUN = predFUN, perfFUN = perfFUN,
+                genFUN = genFUN, selFUN = selFUN, ...)
   
-  
-  # fit <- mp.fit(formula = formula, data = data, remaining.changes = updates, st.i = strata.i, st.u = strata.u, folds = folds,
-  #               recal.int = recal.int, retest = retest, max.steps = max.steps, tol = 0, 
-  #               estFUN = estFUN, metaFUN = metaFUN, meta.method = meta.method, predFUN = predFUN, perfFUN = perfFUN,
-  #               genFUN = genFUN, genFUN.add = genFUN.add, selFUN = selFUN, ... = unlist(dots)) # genFUN.add = genFUN.add,
-
-  mp.args <- c(list(formula = formula, data = data, remaining.changes = updates, st.i = strata.i, st.u = strata.u, folds = folds,
-                    recal.int = recal.int, retest = retest, max.steps = max.steps, tol = 0, 
-                    estFUN = estFUN, metaFUN = metaFUN, meta.method = meta.method, predFUN = predFUN, perfFUN = perfFUN,
-                    genFUN = genFUN, genFUN.add = genFUN.add, selFUN = selFUN), dots)
-  
-  fit <- do.call(mp.fit, args = mp.args ) 
+  # mp.args <- c(list(formula = formula, data = data, remaining.changes = updates, st.i = strata.i, st.u = strata.u, folds = folds,
+  #                   recal.int = recal.int, retest = retest, max.steps = max.steps, tol = 0, 
+  #                   estFUN = estFUN, metaFUN = metaFUN, meta.method = meta.method, predFUN = predFUN, perfFUN = perfFUN,
+  #                   genFUN = genFUN, selFUN = selFUN), dots)
+  # 
+  # fit <- do.call(mp.fit, args = mp.args ) 
   
   predFUN <- getPredictMethod(fit$stepwise$s0$cv$unchanged, two.stage = TRUE, predFUN = predFUN)
   formula.final <- fit$global.model$formula
@@ -217,8 +215,8 @@ metapred <- function(data, strata, formula = NULL, estFUN = "glm", scope = NULL,
                      # NOTE: formula.changes is currently unordered!
                      options = list(cv.k = cv.k, meta.method = meta.method, recal.int = recal.int,
                                     center = center, max.steps = max.steps, retest = retest), # add: tol
-                     FUN = list(cvFUN = cvFUN, predFUN = predFUN, perfFUN = perfFUN, metaFUN = metaFUN, genFUN = genFUN, 
-                                selFUN = selFUN, estFUN = estFUN, estFUN.name = estFUN.name, genFUN.add = genFUN.add)))
+                     FUN = list(cvFUN = cvFUN, predFUN = predFUN, perfFUN = get(perfFUN), metaFUN = metaFUN, genFUN = genFUN, 
+                                selFUN = selFUN, estFUN = estFUN, estFUN.name = estFUN.name)))
   class(out) <- c("metapred")
   return(out)
 }
@@ -480,7 +478,7 @@ subset.metapred <- function(x, select = "cv", step = NULL, model = NULL, ...) {
 mp.fit <- function(formula, data, remaining.changes, st.i, st.u, folds, recal.int = FALSE, 
                    retest = FALSE, max.steps = 3, tol = 0,
                    estFUN = glm, metaFUN = urma, meta.method = "DL", predFUN = NULL, 
-                   perfFUN = mse, genFUN = abs.mean, genFUN.add = list(), selFUN = which.min, ...) {
+                   perfFUN = mse, genFUN = abs.mean, selFUN = which.min, ...) {
   out <- steps <- list()
   
   ## Step 0
@@ -489,9 +487,8 @@ mp.fit <- function(formula, data, remaining.changes, st.i, st.u, folds, recal.in
   steps[[getStepName(step.count)]] <- mp.step(formula = formula, data = data, remaining.changes = c(""), 
                                      st.i = st.i, st.u = st.u, folds = folds, recal.int = recal.int, 
                                      retest = FALSE,
-                                     estFUN = glm, metaFUN = urma, meta.method = "DL", predFUN = NULL, 
-                                     perfFUN = mse, genFUN = genFUN, genFUN.add = genFUN.add, 
-                                     selFUN = selFUN, ...)
+                                     estFUN = glm, metaFUN = metaFUN, meta.method = meta.method, predFUN = predFUN, 
+                                     perfFUN = perfFUN, genFUN = genFUN, selFUN = selFUN, ...)
   steps[[getStepName(step.count)]][["step.count"]] <- step.count
   out[["best.step"]] <- getStepName(step.count)
   current.model <- mp.step.get.best(steps[[1]])
@@ -521,9 +518,8 @@ mp.fit <- function(formula, data, remaining.changes, st.i, st.u, folds, recal.in
                                                   remaining.changes = current.model[["remaining.changes"]],
                                                   st.i = st.i, st.u = st.u, folds = folds, recal.int = recal.int,
                                                   retest = retest,
-                                                  estFUN = glm, metaFUN = urma, meta.method = "DL", predFUN = NULL,
-                                                  perfFUN = mse, genFUN = genFUN, genFUN.add = genFUN.add,
-                                                  selFUN = selFUN, ...)
+                                                  estFUN = glm, metaFUN = metaFUN, meta.method = meta.method, predFUN = predFUN,
+                                                  perfFUN = perfFUN, genFUN = genFUN, selFUN = selFUN, ...)
       steps[[getStepName(step.count)]][["step.count"]] <- step.count
       ## Model selection
       # This step
@@ -619,8 +615,7 @@ mp.step.get.change <- function(step, ...)
 mp.step <- function(formula, data, remaining.changes, st.i, st.u, folds, recal.int = FALSE, 
                     two.stage = TRUE, retest = FALSE,
                     estFUN = glm, metaFUN = urma, meta.method = "DL", predFUN = NULL, 
-                    perfFUN = mse, genFUN = abs.mean, genFUN.add = list(), 
-                    selFUN = which.min, ...) {
+                    perfFUN = mse, genFUN = abs.mean, selFUN = which.min, ...) {
   cv <- out <- list()
   out[["start.formula"]] <- formula
   
@@ -641,8 +636,7 @@ mp.step <- function(formula, data, remaining.changes, st.i, st.u, folds, recal.i
     cv[[name]] <- mp.cv(formula = new.formula, data = data, st.i = st.i, st.u = st.u,
                         folds = folds, recal.int = recal.int,
                         estFUN = estFUN, metaFUN = metaFUN, meta.method = meta.method,
-                        predFUN = predFUN, perfFUN = perfFUN, genFUN = genFUN,
-                        genFUN.add = genFUN.add, ...)
+                        predFUN = predFUN, perfFUN = perfFUN, genFUN = genFUN, ...)
     # Save changes
     cv[[name]][["remaining.changes"]] <- if (retest) remaining.changes else remaining.changes[-fc]
     cv[[name]][["changed"]] <- change
@@ -697,8 +691,8 @@ print.mp.step <- function(x, show.f = TRUE, ...) {
   cat("\n")
   Change.to.model <- names(x[["cv"]])
   Generalizability <- sapply(x[["cv"]], `[[`, "gen")
-  Mean.performance <- sapply(x[["cv"]], `[[`, "mean.perf")
-  print(data.frame(Change.to.model, Generalizability, Mean.performance), row.names = FALSE)
+  # Mean.performance <- sapply(x[["cv"]], `[[`, "mean.perf")
+  print(data.frame(Change.to.model, Generalizability), row.names = FALSE) # , Mean.performance
 }
 
 # Turn a cross-validated model into a full or 'global' model
@@ -763,12 +757,12 @@ summary.mp.global <- function(object, ...) {
 # and a validated on val folds 
 mp.cv <- function(formula, data, st.i, st.u, folds, recal.int = FALSE, two.stage = TRUE,
                   estFUN = glm, metaFUN = urma, meta.method = "DL", predFUN = NULL, 
-                  perfFUN = mse, genFUN = abs.mean, genFUN.add = list(), ...) {
+                  perfFUN = mse, genFUN = abs.mean, ...) {
   out <- mp.cv.dev(formula = formula, data = data, st.i = st.i, st.u = st.u, folds = folds, two.stage = two.stage,
                    estFUN = estFUN, metaFUN = metaFUN, meta.method = meta.method, ...)
   
   out <- mp.cv.val(cv.dev = out, data = data, st.i = st.i, folds = folds, recal.int = recal.int, two.stage = two.stage,
-                   estFUN = glm, predFUN = predFUN, perfFUN = mse, genFUN = genFUN, genFUN.add = genFUN.add, ...)
+                   estFUN = estFUN, predFUN = predFUN, perfFUN = perfFUN, genFUN = genFUN, ...)
   
   class(out) <- c("mp.cv", class(out))
   out
@@ -820,56 +814,149 @@ print.mp.cv <- function(x, ...) {
 # ... options for predictMethod, perfFUN, and genFUN.
 # Returns object of class mp.cv.val, which is a validated mp.cv.dev
 mp.cv.val <- function(cv.dev, data, st.i, folds, recal.int = FALSE, two.stage = TRUE,
-                      estFUN = glm, predFUN = NULL, perfFUN = mse, add.perfFUN = list(), # add.perfFUN = list()
-                      genFUN = abs.mean, genFUN.add = list(), ...) {
-  dots <- list(...)
+                      estFUN = glm, predFUN = NULL, perfFUN = mse, 
+                      genFUN = abs.mean, ...) {
+  # dots <- list(...)
+  perfFUN.name <- if (is.character(perfFUN)) perfFUN else "Performance"
+  perfFUN <- match.fun(perfFUN)
   
   # Recalibrate?
   if (isTRUE(recal.int))
     cv.dev <- mp.cv.recal(cv.dev = cv.dev, newdata = data, estFUN = estFUN, folds = folds)
   
-  # Predict outcome # Moved to fitted.mp.cv.dev()
-  # predictMethod <- getPredictMethod(fit = cv.dev, two.stage = two.stage, predFUN = predFUN, ...)
-  # p <- list()
-  # for (i in seq_len(cv.dev[["n.cv"]]))
-  #   p[[i]] <- predictMethod(object = cv.dev, newdata = data[folds[["val"]][[i]] == st.i, ], type = "response",
-  #                           b = coef(cv.dev[["cv"]][[i]]),
-  #                           f = formula(cv.dev), two.stage = two.stage, ...)
+  # Predict outcome
   p <- fitted.mp.cv.dev(object = cv.dev, data = data, folds = folds, st.i = st.i, predFUN = predFUN) # TBI
+  cv.dev[["nobs.val"]] <- sapply(p, length)
   
   # Necessary for performance computation
   outcome <- f2o(formula(cv.dev))
   
-  cv.dev[["perf"]] <- data.frame(matrix(ncol = 2, nrow = cv.dev[["n.cv"]]))
-  cv.dev[["nobs.val"]] <- sapply(p, length)
-  row.names(cv.dev[["perf"]]) <- names(cv.dev[["cv"]])
-  colnames(cv.dev[["perf"]])  <- c("val.strata", "perf")
   
+  # # New, experimental
   # Compute performance for predictor selection
   # perFUN receives args that might be useful, but not necessary for defaults
-  for (i in seq_len(cv.dev[["n.cv"]])) 
-    cv.dev[["perf"]][i, ] <- c(getclName(folds[["val"]][[i]]), 
-                               perfFUN(p[[i]], data[folds[["val"]][[i]] == st.i, outcome],
-                                       data = data, fit = cv.dev[["cv"]][[i]], ...)) 
-  cv.dev[["perf"]][, "perf"] <- as.numeric(cv.dev[["perf"]][, "perf"])
+  perf.val <- perf.str <- list()
+
+  for (i in seq_len(cv.dev[["n.cv"]])) {
+    perf.str[[length(perf.str) + 1]] <- getclName(folds[["val"]][[i]])
+    perf.val[[length(perf.val) + 1]] <- perfFUN(p[[i]], data[folds[["val"]][[i]] == st.i, outcome], data = data,
+                                                fit = cv.dev[["cv"]][[i]], estFUN = estFUN, ...)
+  }
+  names(perf.val) <- apply(as.matrix(folds[["val"]]), 1, getclName)
+  # call ci in genFUN
+  # write ci.default or whatever that returns null
+  # check for is.null
+
+  cv.dev[["perf"]] <- data.frame(val.strata = unlist(perf.str), perf = sapply(perf.val, `[[`, 1))
+  class(perf.val) <- c("listofperf", class(perf.val))
+  row.names(cv.dev[["perf"]]) <- names(cv.dev[["cv"]])
+  cv.dev[["perf"]][, "perf"]  <- as.numeric(cv.dev[["perf"]][, "perf"]) # saved for later, not used here.
   
+  # Old
+  # cv.dev[["perf"]] <- data.frame(matrix(ncol = 2, nrow = cv.dev[["n.cv"]]))
+  # row.names(cv.dev[["perf"]]) <- names(cv.dev[["cv"]])
+  # colnames(cv.dev[["perf"]])  <- c("val.strata", "perf")
+  # 
+  # # Compute performance for predictor selection
+  # # perFUN receives args that might be useful, but not necessary for defaults
+  # for (i in seq_len(cv.dev[["n.cv"]])) {
+  #   cv.dev[["perf"]][i, ] <- c(getclName(folds[["val"]][[i]]),
+  #                              perfFUN(p[[i]], data[folds[["val"]][[i]] == st.i, outcome],
+  #                                      data = data, fit = cv.dev[["cv"]][[i]], ...))
+  # }
+  # cv.dev <<- cv.dev
+  # cv.dev[["perf"]][, "perf"] <- as.numeric(cv.dev[["perf"]][, "perf"])
+  # 
   # # Compute additional performance measures.
   # TBI
   
+  # Generalizibility
+  if (!is.list(genFUN)) 
+    genFUN <- list(genFUN)
+  
+  # Names of generalizability measures
+  if (identical(length(names(genFUN)), length(genFUN))) {
+    gen.names <- names(genFUN)
+  } else if (all(sapply(genFUN, is.character))) {
+    gen.names <- unlist(genFUN)
+  } else
+    gen.names <- as.character(seq_along(genFUN))
+  
+  # Computation of generalizability
+  gen.all <- rep(NA, length(genFUN))
+  
+  perf.val <<- perf.val
+  for (fun.id in seq_along(genFUN)) { # Single brackets intended!
+    genfun <- match.fun(genFUN[[fun.id]])
+    gv <- genfun(x = perf.val, data = data, N = nrow(data), n = cv.dev[["nobs.val"]],
+                 coef = coef(cv.dev[["stratified.fit"]]), coef.se = se(cv.dev[["stratified.fit"]]),
+                 title = paste("Model: ~", as.character(formula(cv.dev))[3]), perfFUN.name = perfFUN.name, ...)
+    gen.all[[fun.id]] <- if (is.null(gv)) NaN else gv # foo[[bar]] <- NULL is not allowed
+  }
+
+  # Old, where n was still a vector.  
+  # for (fun.id in seq_along(genFUN)) { # Single brackets intended!
+  #   genfun <- match.fun(genFUN[[fun.id]])
+  #   gv <- genfun(x = cv.dev[["perf"]][, "perf"], data = data, N = nrow(data), n = cv.dev[["nobs.val"]],
+  #                coef = coef(cv.dev[["stratified.fit"]]), coef.se = se(cv.dev[["stratified.fit"]]), ...)
+  #   gen.all[[fun.id]] <- if (is.null(gv)) NaN else gv # foo[[bar]] <- NULL is not allowed
+  # }
+  
+  names(gen.all) <- gen.names
+  cv.dev[["gen.all"]] <- gen.all
+  cv.dev[["gen"]] <- gen.all[[1]]
+  
+  # Works, but not efficient.
+  # # Generalizibility by which selection occurs.
+  # genfun <- match.fun(genFUN[[1]])
+  # cv.dev[["gen"]]       <- genfun(x   = cv.dev[["perf"]][, "perf"], data = data, N = nrow(data), n = cv.dev[["nobs.val"]], ...) 
+  # cv.dev[["mean.perf"]] <- abs.mean(x = cv.dev[["perf"]][, "perf"], ...)
+  # 
+  # # Additional Generalizibility measures.
+  # gen.all <- rep(NA, length(genFUN))
+  # gen.all[[1]] <- cv.dev[["gen"]]
+  # 
+  # for (fun.id in seq_along(genFUN)[-1]) { # Single brackets intended!
+  #   genfun <- match.fun(genFUN[[fun.id]])
+  #   gv <- genfun(x = cv.dev[["perf"]][, "perf"], data = data, N = nrow(data), n = cv.dev[["nobs.val"]], ...)
+  #   gen.all[[fun.id]] <- if (is.null(gv)) NaN else gv
+  # }
+  # 
+  # names(gen.all) <- gen.names
+  # cv.dev[["gen.all"]] <- gen.all
+  # 
+  
+  # Works, but print does not
+  # gen.all <- list()
+  # gen.all[[1]] <- cv.dev[["gen"]]
+  # 
+  # for (fun.id in seq_along(genFUN)[-1]) { # Single brackets intended!
+  #   genfun <- match.fun(genFUN[[fun.id]])
+  #   gen.all[[fun.id]] <- genfun(x = cv.dev[["perf"]][, "perf"], data = data, N = nrow(data), n = cv.dev[["nobs.val"]], ...)
+  # }
+  # 
+  # names(gen.all) <- gen.names
+  # cv.dev[["gen.all"]] <- gen.all
+
+  # Old
   # And finally, the generalizability (and mean performance)
-  cv.dev[["gen"]]       <- genFUN(x   = cv.dev[["perf"]][, "perf"], data = data, N = nrow(data), n = cv.dev[["nobs.val"]], ...) 
-  cv.dev[["mean.perf"]] <- abs.mean(x = cv.dev[["perf"]][, "perf"], ...)
-  
-  # Optionally, additional generalizability measures
-  if (length(genFUN.add <- dots[["genFUN.add"]]))
-    if (!is.list(genFUN.add))
-      genFUN.add <- list(genFUN.add)
-  
-  gen.add <- list()
-    for (fun.id in seq_along(genFUN.add))
-      gen.add[[names(genFUN.add)[[fun.id]]]] <- genFUN.add[[fun.id]](x = cv.dev[["perf"]][, "perf"], data = data, N = nrow(data), n = cv.dev[["nobs.val"]], ...)
-  
-  cv.dev[["gen.add"]] <- gen.add
+  # cv.dev[["gen"]]       <- genFUN(x   = cv.dev[["perf"]][, "perf"], data = data, N = nrow(data), n = cv.dev[["nobs.val"]], ...) 
+  # cv.dev[["mean.perf"]] <- abs.mean(x = cv.dev[["perf"]][, "perf"], ...)
+  # 
+  # # Optionally, additional generalizability measures
+  # if (length(genFUN.add <- dots[["genFUN.add"]]))
+  #   if (!is.list(genFUN.add))
+  #     genFUN.add <- list(genFUN.add)
+  # 
+  # # print(genFUN.add)
+  # gen.all <- list()
+  #   for (fun.id in seq_along(genFUN.add)) {
+  #     gen.all[[fun.id]] <- genFUN.add[[fun.id]](x = cv.dev[["perf"]][, "perf"], data = data, N = nrow(data), n = cv.dev[["nobs.val"]], ...)
+  #     
+  #   }
+  # names(gen.all) <- names(genFUN.add)
+  # 
+  # cv.dev[["gen.all"]] <- gen.all
     
   class(cv.dev) <- c("mp.cv.val", class(cv.dev))
   cv.dev
@@ -883,10 +970,15 @@ print.mp.cv.val <- function(x, ...) {
     cat("Cross-validation at stratum level yields the following performance: \n")
     print(x[["perf"]])
   }
-  if (!is.null(x[["gen"]])) {
+  # if (!is.null(x[["gen"]])) {
+  #   cat("\n")
+  #   cat("Generalizability value:",  x[["gen"]], "\n")
+  # }
+  if (!is.null(x[["gen.all"]]))
     cat("\n")
-    cat("Generalizability value:",  x[["gen"]], "\n")
-  }
+    cat("Generalizability:\n")
+    print(x[["gen.all"]])
+    cat("\n")
 }
 
 # Make a new meta-model to be cross-validated for metapred
@@ -1153,6 +1245,7 @@ family.default <- function(object, ...)
 #' 
 #' @usage se(object, ...)
 #' variances(object, ...)
+#' ci(object, ...)
 #' 
 #' @param object A model fit object
 #' @param ... other arguments
@@ -1194,3 +1287,41 @@ variances.mp.stratified.fit <- function(object, ...)
 #' @export
 variances.mp.cv.meta.fit <- function(object, ...)
   variances.mp.stratified.fit(object, ...)
+
+#' #' @export
+#' ci <- function(object, ...)
+#'   UseMethod("ci", object)
+
+# #' @export # Not necessary.
+# ci.lm <- function(object, quant = qnorm, conf = .95, ...) { # To be implemented in some other class. Temporarily for lm.
+#   ses <- se(object, ...)
+#   coefs <- coef(object, ...)
+#   z <- quant(1 - (1 - .95)/2) # z or t
+#   data.frame("ci.lb" = coefs - z * ses, "estimate" = coefs, "ci.ub" = coefs + z * ses)
+# }
+
+#' @importFrom pROC ci
+#' @export
+confint.listofperf <- function(object, parm, level, ...) {
+  if (inherits(object[[1]], "lm")) {
+    z <- lapply(object, confint)
+    return(data.frame(theta       = sapply(object, `[[`, 1),
+                      theta.ci.lb = sapply(z, `[[`, 1),
+                      theta.ci.ub = sapply(z, `[[`, 2)
+                      ))
+  }
+  if (inherits(object[[1]], "auc")) {
+    z <- lapply(object, pROC::ci)
+    return(data.frame(
+      theta       = sapply(z, `[[`, 2),
+      theta.ci.lb = sapply(z, `[[`, 1),
+      theta.ci.ub = sapply(z, `[[`, 3)
+    ))
+  }
+  stop("confint.listofperf does not recognize the object.")
+}
+
+#' @export
+unlist.listofperf <- function(x, ...) 
+  sapply(x, `[[`, 1)
+  

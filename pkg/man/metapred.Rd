@@ -56,9 +56,9 @@ function of \code{glm()} or \code{lm()}.}
 \item{perfFUN}{Function for computing the performance of the prediction models. Default: mean squared error 
 (\code{perfFUN="mse"}).Other options are \code{"vare"}.}
 
-\item{genFUN}{Function computing generalizability measure using the performance measures. Default: (absolute) mean
-(\code{genFUN="abs.mean"}). Choose \code{squared.diff} for a penalty equal to the mean squared differences between 
-coefficients. Alternatively, choose \code{pooled.var} for a weighted average of variance terms.}
+\item{genFUN}{Function or list of (named) functions for computing generalizability of the performance. 
+Default: (absolute) mean (\code{genFUN="abs.mean"}). Choose \code{coef.var} for the coefficient of variation. If a list,
+only the first is used for model selection.}
 
 \item{selFUN}{Function for selecting the best method. Default: lowest value for \code{genFUN}. Should be set to
 "which.max" if high values for \code{genFUN} indicate a good model.}

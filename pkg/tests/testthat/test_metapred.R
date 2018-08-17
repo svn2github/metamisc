@@ -17,7 +17,7 @@ f <- X1 ~ X2 + X3
 gl <- glm(f, family = binomial, data = td)
 st.i <- td[["X4"]]
 st.u <- sort(unique(st.i))
-folds <- l1o(st.u)
+folds <- metamisc:::l1o(st.u)
 
 # Ideally these would be separated into 3 tests, but they use each other's objects, which are cleaned up by test_that.
 test_that("Stratified models can be estimated and MA.", {
@@ -42,18 +42,19 @@ test_that("Stratified models can be estimated and MA.", {
 
 test_that("Stratified models can be cross-validated", {
   # CV: development
-  expect_is(cv.dev <- mp.cv.dev(formula = f, data = td, st.i = st.i, st.u = st.u, folds = folds, 
-                                estFUN = glm, metaFUN = urma, meta.method = "DL", family = binomial), "mp.cv.dev")
+  expect_is(cv.dev <- metamisc:::mp.cv.dev(formula = f, data = td, st.i = st.i, st.u = st.u, folds = folds, 
+                                estFUN = glm, metaFUN = metamisc:::urma, meta.method = "DL", family = binomial)
+            , "mp.cv.dev")
   expect_equal(family(cv.dev), binomial())
   expect_equal(getPredictMethod(fit = cv.dev, two.stage = TRUE), metamisc:::predictGLM)
   
   # CV: recalibration
   # Note: double recalibration sadly removes the previous original coefs and should not be done.
-  expect_is(cv.recal  <- mp.cv.recal(cv.dev = cv.dev, newdata = td, folds = folds, estFUN = glm), "mp.cv.dev")
-  expect_is(cv.recal2 <- mp.cv.recal(cv.recal, td, folds, glm), "mp.cv.dev")
+  expect_is(cv.recal  <- metamisc:::mp.cv.recal(cv.dev = cv.dev, newdata = td, folds = folds, estFUN = glm), "mp.cv.dev")
+  expect_is(cv.recal2 <- metamisc:::mp.cv.recal(cv.recal, td, folds, glm), "mp.cv.dev")
   
   # CV: validation
-  expect_is(cv.val <- mp.cv.val(cv.dev = cv.dev, data = td, st.i = st.i, folds = folds), "mp.cv.dev")
+  expect_is(cv.val <- metamisc:::mp.cv.val(cv.dev = cv.dev, data = td, st.i = st.i, folds = folds), "mp.cv.dev")
   expect_is(cv.val, "mp.cv.val")
   
   # CV: validation with recalibration
@@ -115,6 +116,29 @@ test_that("metapred produces a model.", {
   # The error below is the intended message. Somehow it is not shown in this test.
   expect_error(mp <- metapred(data = td, strata = "X5", scope = f, formula = f, family = binomial) ) #,
                # "Error in `[.data.frame`(data, , strata) : undefined columns selected")
+})
+
+test_that("metapred can handle different perfFUN", {
+  expect_is(mp <- metamisc:::metapred(td, strata = "X4", scope = f, formula = f, family = binomial, perfFUN = "auc"
+                                      , selFUN = "which.max")
+            , "metapred")
+})
+
+test_that("metapred can handle multiple genFUN.", {
+  genFUN <- list(abs.mean = "abs.mean", coef.var.mean = "coef.var.mean")
+  expect_is(mp <- metamisc:::metapred(data = td, strata = "X4", scope = f, formula = f, family = binomial, genFUN = genFUN)
+            , "metapred")
+  
+  genFUN <- list(abs.mean = "abs.mean", nf = function(x, ...) NULL)
+  expect_is(mp <- metamisc:::metapred(data = td, strata = "X4", scope = f, formula = f, family = binomial, genFUN = genFUN)
+            , "metapred")
+  genFUN <- list(abs.mean = "abs.mean", plot = "plot")
+  
+  td3 <- rbind(td, td)
+  td3$X4[(nrow(td) + 1):nrow(td3)] <- 2 # necessary for valmeta and forestplot.
+  expect_is(mp <- metamisc:::metapred(td3, strata = "X4", scope = f, formula = f, family = binomial, perfFUN = "auc", selFUN = "which.max",
+                                      genFUN = genFUN)
+            , "metapred")
 })
 
 test_that("metapred can handle different distributions.", {

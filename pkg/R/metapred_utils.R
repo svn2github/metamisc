@@ -330,8 +330,7 @@ bs <- bootstrap <- function(st.u, k = NULL, ...) {
   list(dev = dev, dev.i = dev.i , val = val, val.i = val.i)
 }
 
-fixed <- function(st.u, k = NULL, ...)
-{
+fixed <- function(st.u, k = NULL, ...) {
   st.u <- sort(st.u)
   if (length(st.u) < 2)
     stop("Selecting a validation set is impossible for < 2 data sets.")
@@ -339,6 +338,14 @@ fixed <- function(st.u, k = NULL, ...)
     k <- length(st.u)
   indexes <- seq_len(length(st.u))
   list(dev = list(st.u[-k]), dev.i = list(indexes[-k]), val = list(st.u[k]), val.i = list(indexes[k]))
+}
+
+ws <- within.sample <- function(st.u, ...) { # Necessary for testing recalibration functions.
+  st.u <- sort(st.u)
+  if (length(st.u) < 2)
+    stop("Selecting a validation set is impossible for < 2 data sets.")
+  indexes <- seq_len(length(st.u))
+  list(dev = as.list(st.u[indexes]), dev.i = as.list(indexes), val = as.list(st.u[indexes]), val.i = as.list(indexes))
 }
 
 successive <- function(st.u, k = NULL, ...) {
@@ -440,3 +447,10 @@ urma <- function(coefficients, variances, method = "DL", ...)
   names(meta.b) <- names(meta.v) <- names(meta.se) <- colnames(coefficients)
   list(coefficients = meta.b, variances = meta.v, se = meta.se)
 }
+
+
+which.abs.min <- function(x) 
+  which.min(abs(x))
+
+which.abs.max <- function(x)
+  which.max(abs(x))
