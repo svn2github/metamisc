@@ -454,3 +454,9 @@ which.abs.min <- function(x)
 
 which.abs.max <- function(x)
   which.max(abs(x))
+
+#' @author Valentijn de Jong
+#' @method unlist   listofperf
+#' @export
+unlist.listofperf <- function(x, ...) 
+  sapply(x, `[[`, 1)

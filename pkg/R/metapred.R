@@ -1239,13 +1239,12 @@ family.default <- function(object, ...)
 #' 
 #' Obtain standard errors or variances of a model fit
 #' 
-#' @aliases variances
+#' @aliases variances ci
 #' 
 #' @author Valentijn de Jong
 #' 
 #' @usage se(object, ...)
 #' variances(object, ...)
-#' ci(object, ...)
 #' 
 #' @param object A model fit object
 #' @param ... other arguments
@@ -1288,27 +1287,18 @@ variances.mp.stratified.fit <- function(object, ...)
 variances.mp.cv.meta.fit <- function(object, ...)
   variances.mp.stratified.fit(object, ...)
 
-#' #' @export
-#' ci <- function(object, ...)
-#'   UseMethod("ci", object)
-
-# #' @export # Not necessary.
-# ci.lm <- function(object, quant = qnorm, conf = .95, ...) { # To be implemented in some other class. Temporarily for lm.
-#   ses <- se(object, ...)
-#   coefs <- coef(object, ...)
-#   z <- quant(1 - (1 - .95)/2) # z or t
-#   data.frame("ci.lb" = coefs - z * ses, "estimate" = coefs, "ci.ub" = coefs + z * ses)
-# }
-
+#' @author Valentijn de Jong
+#' @method ci   listofperf
 #' @importFrom pROC ci
 #' @export
-confint.listofperf <- function(object, parm, level, ...) {
+ci.listofperf <- function(...) {
+  object <- list(...)$object
   if (inherits(object[[1]], "lm")) {
     z <- lapply(object, confint)
     return(data.frame(theta       = sapply(object, `[[`, 1),
                       theta.ci.lb = sapply(z, `[[`, 1),
                       theta.ci.ub = sapply(z, `[[`, 2)
-                      ))
+    ))
   }
   if (inherits(object[[1]], "auc")) {
     z <- lapply(object, pROC::ci)
@@ -1318,10 +1308,30 @@ confint.listofperf <- function(object, parm, level, ...) {
       theta.ci.ub = sapply(z, `[[`, 3)
     ))
   }
-  stop("confint.listofperf does not recognize the object.")
+  stop("ci.listofperf does not recognize the object.")
 }
+# confint.listofperf <- function(object, ...) {
+#   if (inherits(object[[1]], "lm")) {
+#     z <- lapply(object, confint, parm = parm, level = level)
+#     return(data.frame(theta       = sapply(object, `[[`, 1),
+#                       theta.ci.lb = sapply(z, `[[`, 1),
+#                       theta.ci.ub = sapply(z, `[[`, 2)
+#                       ))
+#   }
+#   if (inherits(object[[1]], "auc")) {
+#     z <- lapply(object, pROC::ci)
+#     return(data.frame(
+#       theta       = sapply(z, `[[`, 2),
+#       theta.ci.lb = sapply(z, `[[`, 1),
+#       theta.ci.ub = sapply(z, `[[`, 3)
+#     ))
+#   }
+#   stop("confint.listofperf does not recognize the object.")
+# }
 
-#' @export
-unlist.listofperf <- function(x, ...) 
-  sapply(x, `[[`, 1)
+# #' @importFrom pROC ci
+# #' @export
+# confint.auc <- function(object, parm, level, ...) {
+#   
+# }
   
