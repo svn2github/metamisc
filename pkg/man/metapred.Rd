@@ -2,9 +2,9 @@
 % Please edit documentation in R/metapred.R
 \name{metapred}
 \alias{metapred}
-\title{Generalized Stepwise Regression for prediction models in clustered data}
+\title{Generalized Stepwise Regression for Prediction Models in Clustered Data}
 \usage{
-metapred(data, strata, formula = NULL, estFUN = "glm", scope = NULL,
+metapred(data, strata, formula, estFUN = "glm", scope = NULL,
   retest = FALSE, max.steps = 1000, center = TRUE,
   recal.int = FALSE, cvFUN = NULL, cv.k = NULL, metaFUN = NULL,
   meta.method = NULL, predFUN = NULL, perfFUN = NULL,
@@ -37,9 +37,9 @@ essentially as many as it takes. 0 implies no stepwise selection.}
 
 \item{recal.int}{Logical. Should the intercept be recalibrated in each validation?}
 
-\item{cvFUN}{Cross-validation method, on the study (i.e. cluster or stratum) level. "
-l1o" for leave-one-out cross-validation (default). "bootstrap" for bootstrap. Or "fixed", for one or more data sets
-which are only used for validation. A user written function may be supplied as well.}
+\item{cvFUN}{Cross-validation method, on the study (i.e. cluster or stratum) level. "l1o" for leave-one-out cross-validation 
+(default). "bootstrap" for bootstrap. Or "fixed", for one or more data sets which are only used for validation. A user written 
+function may be supplied as well.}
 
 \item{cv.k}{Parameter for cvFUN. For \code{cvFUN="bootstrap"}, this is the number of bootstraps. For \code{cvFUN="fixed"}, 
 this is a vector of the indices of the (sorted) data sets. Not used for \code{cvFUN="l1o"}.}
@@ -54,7 +54,9 @@ estimated with "DL". Method can be passed trough the \code{meta.method} argument
 function of \code{glm()} or \code{lm()}.}
 
 \item{perfFUN}{Function for computing the performance of the prediction models. Default: mean squared error 
-(\code{perfFUN="mse"}).Other options are \code{"vare"}.}
+(\code{perfFUN="mse"}).Other options are \code{"var.e"} (variance of prediction error), \code{"auc"} (area under the curve),
+\code{"cal.int"} (calibration intercept), and \code{"cal.slope"} (multiplicative calibration slope) and \code{"cal.add.slope"}
+(additive calibration slope).}
 
 \item{genFUN}{Function or list of (named) functions for computing generalizability of the performance. 
 Default: (absolute) mean (\code{genFUN="abs.mean"}). Choose \code{coef.var} for the coefficient of variation. If a list,
@@ -74,7 +76,7 @@ Generalized stepwise regression for obtaining a prediction model with adequate p
 data from individuals in multiple studies.
 }
 \details{
-Use \link{subset} to obtain an individual prediction model from a \code{metapred} object.
+Use \link{subset.metapred} to obtain an individual prediction model from a \code{metapred} object.
 
  Note that \code{formula.changes} is currently unordered; it does not represent the order of changes in the stepwise 
  procedure.

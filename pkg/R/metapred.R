@@ -69,7 +69,7 @@
 ### bottom : low level functions
 ###### 
 
-#' Generalized Stepwise Regression for prediction models in clustered data
+#' Generalized Stepwise Regression for Prediction Models in Clustered Data
 #'
 #' Generalized stepwise regression for obtaining a prediction model with adequate performance across data sets. Requires
 #' data from individuals in multiple studies.
@@ -97,9 +97,9 @@
 #' essentially as many as it takes. 0 implies no stepwise selection.
 #' @param center logical. Should numeric predictors be centered?
 #' @param recal.int Logical. Should the intercept be recalibrated in each validation?
-#' @param cvFUN Cross-validation method, on the study (i.e. cluster or stratum) level. "
-#' l1o" for leave-one-out cross-validation (default). "bootstrap" for bootstrap. Or "fixed", for one or more data sets
-#' which are only used for validation. A user written function may be supplied as well.
+#' @param cvFUN Cross-validation method, on the study (i.e. cluster or stratum) level. "l1o" for leave-one-out cross-validation 
+#' (default). "bootstrap" for bootstrap. Or "fixed", for one or more data sets which are only used for validation. A user written 
+#' function may be supplied as well.
 #' @param cv.k Parameter for cvFUN. For \code{cvFUN="bootstrap"}, this is the number of bootstraps. For \code{cvFUN="fixed"}, 
 #' this is a vector of the indices of the (sorted) data sets. Not used for \code{cvFUN="l1o"}.
 #' @param metaFUN Function for computing the meta-analytic coefficient estimates in two-stage MA. 
@@ -109,7 +109,9 @@
 #' @param predFUN Function for predicting new values. Defaults to the predicted probability of the outcome, using the link 
 #' function of \code{glm()} or \code{lm()}.
 #' @param perfFUN Function for computing the performance of the prediction models. Default: mean squared error 
-#' (\code{perfFUN="mse"}).Other options are \code{"vare"}.
+#' (\code{perfFUN="mse"}).Other options are \code{"var.e"} (variance of prediction error), \code{"auc"} (area under the curve),
+#' \code{"cal.int"} (calibration intercept), and \code{"cal.slope"} (multiplicative calibration slope) and \code{"cal.add.slope"}
+#' (additive calibration slope).
 #' @param genFUN Function or list of (named) functions for computing generalizability of the performance. 
 #' Default: (absolute) mean (\code{genFUN="abs.mean"}). Choose \code{coef.var} for the coefficient of variation. If a list,
 #' only the first is used for model selection.
@@ -120,7 +122,7 @@
 #' @return A list of class \code{metapred}, containing the final model in \code{global.model}, and the stepwise
 #' tree of estimates of the coefficients, performance measures, generalizability measures in \code{stepwise}.
 #' 
-#' @details Use \link{subset} to obtain an individual prediction model from a \code{metapred} object.
+#' @details Use \link{subset.metapred} to obtain an individual prediction model from a \code{metapred} object.
 #' 
 #'  Note that \code{formula.changes} is currently unordered; it does not represent the order of changes in the stepwise 
 #'  procedure.
@@ -154,16 +156,15 @@
 #' @importFrom stats formula var
 #'
 #' @export
-metapred <- function(data, strata, formula = NULL, estFUN = "glm", scope = NULL, retest = FALSE, max.steps = 1000, 
+metapred <- function(data, strata, formula, estFUN = "glm", scope = NULL, retest = FALSE, max.steps = 1000, 
                      center = TRUE, recal.int = FALSE, cvFUN = NULL, cv.k = NULL,  # tol = 0,
                      metaFUN = NULL, meta.method = NULL, predFUN = NULL, perfFUN = NULL, genFUN = NULL,
                      selFUN = "which.min",
                      ...) {
   call <- match.call()
-  # dots <- list(...)
   data <- remove.na.obs(as.data.frame(data))
   
-  if (is.null(formula)) formula <- stats::formula(data[ , -which(colnames(data) == strata)])  
+  if (missing(formula) || is.null(formula)) formula <- stats::formula(data[ , -which(colnames(data) == strata)])  
   if (is.null(scope)) scope <- f2iof(formula)
   updates <- getFormulaDiffAsChar(formula, scope)
   
@@ -180,7 +181,7 @@ metapred <- function(data, strata, formula = NULL, estFUN = "glm", scope = NULL,
   # Change to "-" when perfFUN <- R2 or some other measure for which greater = better.
   
   estFUN.name <- estFUN
-  estFUN  <- match.fun(estFUN)
+  estFUN  <- get(estFUN)
   cvFUN   <- get(cvFUN)
   # perfFUN <- get(perfFUN)
   # genFUN  <- get(genFUN) # now happens in mp.cv.val
