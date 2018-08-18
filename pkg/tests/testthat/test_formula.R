@@ -1,4 +1,4 @@
-context("formula functions for metapred")
+context("metapred 0. formula functions")
 
 # necessary for testing
 f0    <- formula(y ~ 1)

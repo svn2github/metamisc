@@ -1,4 +1,4 @@
-context("recalibrate metapred or other class")
+context("metapred 4. recalibrate")
 
 
 ### Some stuff necessary for testing

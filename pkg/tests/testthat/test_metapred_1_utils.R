@@ -1,4 +1,4 @@
-context("utility functions for metapred")
+context("metapred 1. utility functions")
 
 
 ### Some stuff necessary for testing
