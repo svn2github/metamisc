@@ -139,7 +139,7 @@ plot.listofperf <- function(x, ...) { # xlab tbi from perfFUN
   if (is.null(names(x))) # The # is to show users that the numbers are not their own. (no longer necessary)
     names(x) <- paste("#", seq_along(x), sep = "") 
   
-  z <- ci.listofperf(x, ...)
+  z <- ci.listofperf(object = x, ...)
     
   if (inherits(x[[1]], "auc")) { # To be replaced by child function.
     vm <- valmeta(measure = "cstat", cstat = z$theta, cstat.95CI = z[, c("theta.ci.lb", "theta.ci.ub")])

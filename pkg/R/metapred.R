@@ -1291,8 +1291,8 @@ variances.mp.cv.meta.fit <- function(object, ...)
 #' @method ci   listofperf
 #' @importFrom pROC ci
 #' @export
-ci.listofperf <- function(...) {
-  object <- list(...)$object
+ci.listofperf <- function(object, ...) {
+  # object <- list(...)$object  
   if (inherits(object[[1]], "lm")) {
     z <- lapply(object, confint)
     return(data.frame(theta       = sapply(object, `[[`, 1),
@@ -1308,7 +1308,7 @@ ci.listofperf <- function(...) {
       theta.ci.ub = sapply(z, `[[`, 3)
     ))
   }
-  stop("ci.listofperf does not recognize the object.")
+  stop(paste("ci.listofperf does not recognize objects of class", class(object)))
 }
 # confint.listofperf <- function(object, ...) {
 #   if (inherits(object[[1]], "lm")) {
