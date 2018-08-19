@@ -634,13 +634,14 @@ mp.step <- function(formula, data, remaining.changes, st.i, st.u, folds, recal.i
     }
     
     # Run
+    # change.name is now saved here and used elsewhere. To be simplified..
     cv[[name]] <- mp.cv(formula = new.formula, data = data, st.i = st.i, st.u = st.u,
                         folds = folds, recal.int = recal.int,
                         estFUN = estFUN, metaFUN = metaFUN, meta.method = meta.method,
-                        predFUN = predFUN, perfFUN = perfFUN, genFUN = genFUN, ...)
+                        predFUN = predFUN, perfFUN = perfFUN, genFUN = genFUN, change = change, ...) 
     # Save changes
     cv[[name]][["remaining.changes"]] <- if (retest) remaining.changes else remaining.changes[-fc]
-    cv[[name]][["changed"]] <- change
+    # cv[[name]][["changed"]] <- change
   }
   
   out[["best.change"]] <- mp.which.best.change(cv, selFUN = selFUN)
@@ -758,9 +759,9 @@ summary.mp.global <- function(object, ...) {
 # and a validated on val folds 
 mp.cv <- function(formula, data, st.i, st.u, folds, recal.int = FALSE, two.stage = TRUE,
                   estFUN = glm, metaFUN = urma, meta.method = "DL", predFUN = NULL, 
-                  perfFUN = mse, genFUN = abs.mean, ...) {
+                  perfFUN = mse, genFUN = abs.mean, change = NULL, ...) {
   out <- mp.cv.dev(formula = formula, data = data, st.i = st.i, st.u = st.u, folds = folds, two.stage = two.stage,
-                   estFUN = estFUN, metaFUN = metaFUN, meta.method = meta.method, ...)
+                   estFUN = estFUN, metaFUN = metaFUN, meta.method = meta.method, change = change, ...)
   
   out <- mp.cv.val(cv.dev = out, data = data, st.i = st.i, folds = folds, recal.int = recal.int, two.stage = two.stage,
                    estFUN = estFUN, predFUN = predFUN, perfFUN = perfFUN, genFUN = genFUN, ...)
@@ -889,9 +890,12 @@ mp.cv.val <- function(cv.dev, data, st.i, folds, recal.int = FALSE, two.stage = 
   perf.val <<- perf.val
   for (fun.id in seq_along(genFUN)) { # Single brackets intended!
     genfun <- match.fun(genFUN[[fun.id]])
+    # gv <- genfun(x = perf.val, data = data, N = nrow(data), n = cv.dev[["nobs.val"]], #old plot title
+    #              coef = coef(cv.dev[["stratified.fit"]]), coef.se = se(cv.dev[["stratified.fit"]]),
+    #              title = paste("Model: ~", as.character(formula(cv.dev))[3]), perfFUN.name = perfFUN.name, ...)
     gv <- genfun(x = perf.val, data = data, N = nrow(data), n = cv.dev[["nobs.val"]],
                  coef = coef(cv.dev[["stratified.fit"]]), coef.se = se(cv.dev[["stratified.fit"]]),
-                 title = paste("Model: ~", as.character(formula(cv.dev))[3]), perfFUN.name = perfFUN.name, ...)
+                 title = paste("Model change: ~", cv.dev[["changed"]]), perfFUN.name = perfFUN.name, ...)
     gen.all[[fun.id]] <- if (is.null(gv)) NaN else gv # foo[[bar]] <- NULL is not allowed
   }
 
@@ -995,7 +999,7 @@ print.mp.cv.val <- function(x, ...) {
 # meta.method character, option for metaFUN
 # Returns mp.cv.dev, which is a list of meta-analytic models developed on dev folds
 mp.cv.dev <- function(formula, data, st.i, st.u, folds, two.stage = TRUE, 
-                      estFUN = glm, metaFUN = urma, meta.method = "DL", ...) {
+                      estFUN = glm, metaFUN = urma, meta.method = "DL", change = NULL, ...) {
   out <- list(...) # possibly contains family
   if (!is.null(out$family)) {
     if (is.character(out$family)) # Ensure that family is the output of family(). Taken directly from glm.
@@ -1008,6 +1012,7 @@ mp.cv.dev <- function(formula, data, st.i, st.u, folds, two.stage = TRUE,
     }
   }
   out[["formula"]] <- formula
+  out[["changed"]] <- change
   
   ## Cluster part 
   out[["stratified.fit"]] <- mp.stratified.fit(formula = formula, data = data, st.i = st.i, st.u = st.u, estFUN = estFUN, ...)  
