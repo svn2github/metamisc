@@ -176,7 +176,6 @@ plot.listofperf <- function(x, ...) { # xlab tbi from perfFUN
                          theta.summary.ci.ub = ci.ub,
                          theta.summary.pi.lb = pi.lb,
                          theta.summary.pi.ub = pi.ub,
-                         sort  = FALSE, 
                          xlab  = xlab,
                          ...)
   plot(fp)
