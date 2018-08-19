@@ -43,7 +43,7 @@ computeRecal <- function(object, newdata, b = NULL, f = ~ 1, estFUN = NULL, f.or
 # y outcome vector
 # estFUN estimation function
 # family family
-# which is "intercept" or "slope".
+# which is "intercept" or "slope" or "add.slope".
 # ... For compatibility only
 pred.recal <- function(p, y, estFUN, family = gaussian, which = "intercept", ...) {
   if (is.character(family))  # Taken directly from glm()
@@ -57,28 +57,30 @@ pred.recal <- function(p, y, estFUN, family = gaussian, which = "intercept", ...
   
   estFUN <- match.fun(estFUN)
   lp <- family$linkfun(p)
-  alpha <- rep(mean(lp), length(lp))
-  data <- data.frame(y = y, lp = lp, alpha = alpha)
+  data <- data.frame(y = y, lp = lp)
   
   if (identical(which, "intercept"))
-    return(estFUN(formula = y ~ 1,  data = data, family = family, offset = lp))
+    out <- estFUN(formula = y ~ 1,  data = data, family = family, offset = lp)
   if (identical(which, "slope"))
-    return(estFUN(formula = y ~ lp, data = data, family = family, offset = alpha))
+    out <- estFUN(formula = y ~ lp + 1, data = data, family = family)
   if (identical(which, "add.slope"))
-    return(estFUN(formula = y ~ lp - 1, data = data, family = family, offset = lp))
+    out <- estFUN(formula = y ~ lp + 1, data = data, family = family, offset = lp)
+  
+  class(out) <- c("recal", class(out))
+  out
 }
 
-# gl.recal <- pred.recal(predict(gl, type = "response"), gl$data$X1, "glm", binomial)
+# gl.recal <-  metamisc:::pred.recal(predict(gl, type = "response"), gl$data$X1, "glm", binomial)
 # int.recal <- (gl.recal)[[1]][[1]]
 # all.equal(int.recal, 0) # intercept recalibration works.
-
-# gl.recal <- pred.recal(predict(gl, type = "response"), gl$data$X1, "glm", binomial, which = "slope")
-# slo.recal <- gl.recal[[1]][[2]]
+# 
+# gl.recal <- metamisc:::pred.recal(predict(gl, type = "response"), gl$data$X1, "glm", binomial, which = "slope")
+# slo.recal <- gl.recal[[1]][2]
 # all.equal(slo.recal, 1) # Perfect
-
+# 
 # gl.recal <- metamisc:::pred.recal(predict(gl, type = "response"), gl$data$X1, "glm", binomial, which = "add.slope")
-# slo.recal <- gl.recal[[1]][[2]]
-# all.equal(slo.recal, 1) #
+# slo.recal <- gl.recal[[1]][2]
+# all.equal(slo.recal, 0) #
 
 
 

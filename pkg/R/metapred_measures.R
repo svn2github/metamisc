@@ -15,13 +15,8 @@ mse <- brier <- function(p, y, ...) mean((p - y)^2)
 rmse <- function(p, y, ...)
   sqrt(mse(p = p, y = y, ...))
 
-
-
-
 # Error function: Variance of prediction error
 var.e <- function(p, y, ...) var(p - y)
-
-
 
 # Measure 1: Coefficient of variation of prediction error.
 coef.var.pred <- function(p, y, abs = TRUE, ...)
@@ -40,19 +35,35 @@ calibration.intercept <- cal.int <- function(p, y, estFUN, family, ...)
   pred.recal(p = p, y = y, estFUN = estFUN, family = family, which = "intercept")
 
 # Slope.only is a trick to make this functin work for metapred.
-# Slope.only should otherwise always be false!
+# Slope.only should otherwise always be false! Also: this messes up the variances,
+# making meta-analysis impossible!
 # multiplicative slope!
 calibration.slope <- cal.slope <- function(p, y, estFUN, family, slope.only = TRUE, ...) {
+  # refit <- pred.recal(p = p, y = y, estFUN = estFUN, family = family, which = "slope")
+  # if (slope.only) {
+  #   refit[[1]] <- refit[[1]][[2]]
+  # }
+  # refit
+  
   refit <- pred.recal(p = p, y = y, estFUN = estFUN, family = family, which = "slope")
   if (slope.only) {
-    refit[[1]] <- refit[[1]][[2]]
+    refit[[1]] <- refit[[1]][2]
+    refit$variances <- variances(refit)[2]
   }
   refit
 }
 
 # additive slope!
-calibration.add.slope <- cal.add.slope <- function(p, y, estFUN, family, ...) 
-  pred.recal(p = p, y = y, estFUN = estFUN, family = family, which = "add.slope")
+calibration.add.slope <- cal.add.slope <- function(p, y, estFUN, family, slope.only = TRUE, ...)  {
+  
+  refit <- pred.recal(p = p, y = y, estFUN = estFUN, family = family, which = "add.slope")
+  if (slope.only) {
+    refit[[1]] <- refit[[1]][2]
+    refit$variances <- variances(refit)[2]
+  }
+  refit
+}
+  
 
 
 
@@ -62,7 +73,8 @@ calibration.add.slope <- cal.add.slope <- function(p, y, estFUN, family, ...)
 ############################## Heterogeneity, generalizability, pooled performance functions ###############################
 # ### By convention, all generalizability measures:
 # # Required arguments:
-# x       list ofperformance in different strata
+# x       list of class "listofperf", list of performance in different strata. 
+#           Note that it has its own unlist method. Practically all (except plot) should call unlist first!
 # ...     for compatibility.
 #
 # # Possible arguments, that are always passed through successfully:
@@ -88,13 +100,13 @@ abs.mean <- function(x, ...)
 # In general sense, abs needs not be TRUE, but for metapred it should,
 # such that higher values are worse performance.
 coef.var <- function(x, abs = TRUE, ...) {
-  x <- sapply(x, `[[`, 1) ### back to unlist? now that a method has been implemented?!
+  x <- unlist(x) ### back to unlist? now that a method has been implemented?!
   cv <- sd(x)/mean(x)
   if (isTRUE(abs)) abs(cv) else cv
 }
 
 coef.var.mean <- function(x, abs = TRUE, ...)  {
-  x <- sapply(x, `[[`, 1)
+  x <- unlist(x)
   coef.var(x, abs = abs) + if (abs) abs(mean(x)) else mean(x)
 }
   
@@ -105,27 +117,24 @@ coef.var.mean <- function(x, abs = TRUE, ...)  {
 
 
 weighted.abs.mean <- function(x, n, ...) 
-  abs.mean(x <- sapply(x, `[[`, 1) * sqrt(n - 1)) / sum(sqrt(n - 1))
+  abs.mean(x <- unlist(x) * sqrt(n - 1)) / sum(sqrt(n - 1))
 
 
 pooled.var <- function(x, n, ...) {
-  pm <- x <- sapply(x, `[[`, 1)
-  pm
+  x <- unlist(x)
+  
   ## TODO: Extract sample size for each cluster and apply corresponding to the right performance measures
   ## TODO: use rubins rules.
 }
 
 rubins.rules <- function(x, n, ...) {
-  x <- sapply(x, `[[`, 1)
+  x <- unlist(x)
   x + var(x) * (1 + 1/n)
 }
 
-
-
-
 # squared.diff #a penalty equal to the mean squared differences 
 squared.diff <- function(x, ...) {
-  x <- x <- sapply(x, `[[`, 1)
+  x <- unlist(x)
   mse(x, mean(x))
 }
 

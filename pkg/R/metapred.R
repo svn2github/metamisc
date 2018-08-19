@@ -1294,6 +1294,14 @@ variances.mp.cv.meta.fit <- function(object, ...)
 #' @export
 ci.listofperf <- function(object, ...) {
   # object <- list(...)$object  
+  if (inherits(object[[1]], "recal")) {
+    z <- lapply(object, ci.recal)
+    return(data.frame(
+      theta       = sapply(z, `[[`, 2),
+      theta.ci.lb = sapply(z, `[[`, 1),
+      theta.ci.ub = sapply(z, `[[`, 3)
+    ))
+  }
   if (inherits(object[[1]], "lm")) {
     z <- lapply(object, confint)
     return(data.frame(theta       = sapply(object, `[[`, 1),
@@ -1335,4 +1343,13 @@ ci.listofperf <- function(object, ...) {
 # confint.auc <- function(object, parm, level, ...) {
 #   
 # }
+
+#' @export
+ci.recal <- function(object, conf = .95, ...) { # To be implemented in some other class. Temporarily for lm.
+  ses <- se(object, ...)
+  coefs <- coef(object, ...)
+  z <- qt(1 - (1 - .95)/2, df = object$df.residual) # z = t distributed
+  data.frame("ci.lb" = coefs - z * ses, "estimate" = coefs, "ci.ub" = coefs + z * ses)
+}
+
   
