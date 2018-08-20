@@ -35,8 +35,7 @@ calibration.intercept <- cal.int <- function(p, y, estFUN, family, ...)
   pred.recal(p = p, y = y, estFUN = estFUN, family = family, which = "intercept")
 
 # Slope.only is a trick to make this functin work for metapred.
-# Slope.only should otherwise always be false! Also: this messes up the variances,
-# making meta-analysis impossible!
+# Slope.only should otherwise always be false!
 # multiplicative slope!
 calibration.slope <- cal.slope <- function(p, y, estFUN, family, slope.only = TRUE, ...) {
   # refit <- pred.recal(p = p, y = y, estFUN = estFUN, family = family, which = "slope")
@@ -122,14 +121,14 @@ weighted.abs.mean <- function(x, n, ...)
 
 pooled.var <- function(x, n, ...) {
   x <- unlist(x)
-  
   ## TODO: Extract sample size for each cluster and apply corresponding to the right performance measures
   ## TODO: use rubins rules.
 }
 
+## Correctly implemented??!?!?
 rubins.rules <- function(x, n, ...) {
   x <- unlist(x)
-  x + var(x) * (1 + 1/n)
+  mean(x) + var(x) * (1 + 1/sum(n)) 
 }
 
 # squared.diff #a penalty equal to the mean squared differences 

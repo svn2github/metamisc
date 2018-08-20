@@ -890,12 +890,14 @@ mp.cv.val <- function(cv.dev, data, st.i, folds, recal.int = FALSE, two.stage = 
   perf.val <<- perf.val
   for (fun.id in seq_along(genFUN)) { # Single brackets intended!
     genfun <- match.fun(genFUN[[fun.id]])
+    title <- if (length(cv.dev[["changed"]]) && nchar(cv.dev[["changed"]])) paste("Model change: ~", 
+                                                                                  cv.dev[["changed"]]) else gen.names[[1]]
     # gv <- genfun(x = perf.val, data = data, N = nrow(data), n = cv.dev[["nobs.val"]], #old plot title
     #              coef = coef(cv.dev[["stratified.fit"]]), coef.se = se(cv.dev[["stratified.fit"]]),
     #              title = paste("Model: ~", as.character(formula(cv.dev))[3]), perfFUN.name = perfFUN.name, ...)
     gv <- genfun(x = perf.val, data = data, N = nrow(data), n = cv.dev[["nobs.val"]],
                  coef = coef(cv.dev[["stratified.fit"]]), coef.se = se(cv.dev[["stratified.fit"]]),
-                 title = paste("Model change: ~", cv.dev[["changed"]]), perfFUN.name = perfFUN.name, ...)
+                 title = title, perfFUN.name = perfFUN.name, ...)
     gen.all[[fun.id]] <- if (is.null(gv)) NaN else gv # foo[[bar]] <- NULL is not allowed
   }
 
