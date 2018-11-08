@@ -23,7 +23,7 @@ coef.var.pred <- function(p, y, abs = TRUE, ...)
   coef.var(x = p - y, abs = abs, ...) 
 
 #' @importFrom pROC auc
-auc <- function(p, y, ...) {
+auc <- AUC <- AUROC <-  function(p, y, ...) {
   if (is.matrix(p))
     p <- p[, 1]
   if (is.matrix(y))
@@ -35,7 +35,8 @@ calibration.intercept <- cal.int <- function(p, y, estFUN, family, ...)
   pred.recal(p = p, y = y, estFUN = estFUN, family = family, which = "intercept")
 
 # Slope.only is a trick to make this functin work for metapred.
-# Slope.only should otherwise always be false!
+# Slope.only should otherwise always be false! Also: this messes up the variances,
+# making meta-analysis impossible!
 # multiplicative slope!
 calibration.slope <- cal.slope <- function(p, y, estFUN, family, slope.only = TRUE, ...) {
   # refit <- pred.recal(p = p, y = y, estFUN = estFUN, family = family, which = "slope")
@@ -64,11 +65,6 @@ calibration.add.slope <- cal.add.slope <- function(p, y, estFUN, family, slope.o
 }
   
 
-
-
-
-
-
 ############################## Heterogeneity, generalizability, pooled performance functions ###############################
 # ### By convention, all generalizability measures:
 # # Required arguments:
@@ -94,6 +90,10 @@ calibration.add.slope <- cal.add.slope <- function(p, y, estFUN, family, slope.o
 abs.mean <- function(x, ...)
   abs(mean(unlist(x))) 
 
+## also possible the other way around (e.g. for cal slopes and intercepts)
+mean.abs <- function(x, ...) 
+  mean(abs(unlist(x)))
+
 
 # Measure 1: Coefficient of variation (=scaled sd)
 # In general sense, abs needs not be TRUE, but for metapred it should,
@@ -111,9 +111,16 @@ coef.var.mean <- function(x, abs = TRUE, ...)  {
   
 
 # Measure 2 (?): GINI coefficient
-# No code or import necessary
-# GiniMd(x, na.rm = FALSE)
+# #' @importFrom Hmisc GiniMd
+GiniMd <- function(x, ...) 
+  GiniMd(unlist(x), na.rm = T)
 
+# Also from Hmisc:
+gmd <- function(x, ...) {
+  x <- unlist(x)
+  n <- length(x)
+  sum(outer(x, x, function(a, b) abs(a - b))) / n / (n - 1)
+}
 
 weighted.abs.mean <- function(x, n, ...) 
   abs.mean(x <- unlist(x) * sqrt(n - 1)) / sum(sqrt(n - 1))
@@ -121,14 +128,14 @@ weighted.abs.mean <- function(x, n, ...)
 
 pooled.var <- function(x, n, ...) {
   x <- unlist(x)
+  
   ## TODO: Extract sample size for each cluster and apply corresponding to the right performance measures
   ## TODO: use rubins rules.
 }
 
-## Correctly implemented??!?!?
-rubins.rules <- function(x, n, ...) {
+pooled.var <- function(x, n, ...) {
   x <- unlist(x)
-  mean(x) + var(x) * (1 + 1/sum(n)) 
+  mean(x) + var(x) * (1 + 1/length(n))
 }
 
 # squared.diff #a penalty equal to the mean squared differences 
@@ -137,19 +144,37 @@ squared.diff <- function(x, ...) {
   mse(x, mean(x))
 }
 
+# Mean of largest half of values
+mean.of.large <- function(x, ...) {
+  x <- unlist(x)
+  mean(x[x >= median(x)])
+}
+
+
 # New, for auc and intercept, and slope tbi
 #  Forest plot of list of performance measures. Currently only works for auc from the pROC package.
 #' @importFrom metafor rma.uni
 #' @export
-plot.listofperf <- function(x, ...) { # xlab tbi from perfFUN
-  xlab <- paste(list(...)$perfFUN.name, "in validation strata")
-  
+plot.listofperf <- function(x, pfn, ...) { # xlab tbi from perfFUN
+  # print("get perf name")
+  # print("pfn:")
+  # print(pfn)
+  # print("...:")
+  # print(list(...))
+  # if (!is.null(pfn <- list(...)$pfn) && is.character(pfn)) {
+    xlab <- paste(pfn, "in validation strata")
+  # } else {
+    # xlab <- "Performance in validation strata."  
+  # }
+  # print("get strata names")
   if (is.null(names(x))) # The # is to show users that the numbers are not their own. (no longer necessary)
     names(x) <- paste("#", seq_along(x), sep = "") 
-  
+  # print("compute ci now:")
   z <- ci.listofperf(object = x, ...)
-    
+  # z <<- z
+  # print("meta-analyze performance:")
   if (inherits(x[[1]], "auc")) { # To be replaced by child function.
+    # print("by valmeta")
     vm <- valmeta(measure = "cstat", cstat = z$theta, cstat.95CI = z[, c("theta.ci.lb", "theta.ci.ub")])
     est <- vm$est
     ci.lb <- vm$ci.lb
@@ -157,6 +182,7 @@ plot.listofperf <- function(x, ...) { # xlab tbi from perfFUN
     pi.lb <- vm$pi.lb
     pi.ub <- vm$pi.ub
   } else if (inherits(x[[1]], "lm")) {
+    # print("by rma.uni")
     mf <- predict(metafor::rma.uni(yi = sapply(x, coef), vi = sapply(x, variances))) # NOTE: DOES IT USE t or normal dist???
     est <- mf$pred
     ci.lb <- mf$ci.lb
@@ -165,7 +191,7 @@ plot.listofperf <- function(x, ...) { # xlab tbi from perfFUN
     pi.ub <- mf$cr.ub
   }
 
-  
+  # print("Make forest plot.")
   fp <- metamisc::forest(theta       = z$theta,
                          theta.ci.lb = z$theta.ci.lb,
                          theta.ci.ub = z$theta.ci.ub,

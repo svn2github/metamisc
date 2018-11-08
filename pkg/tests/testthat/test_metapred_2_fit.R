@@ -65,9 +65,9 @@ test_that("Stratified models can be cross-validated", {
   expect_true(all(class(cv) == c("mp.cv", "mp.cv.val", "mp.cv.dev")))
   
   # Global model
-  expect_is(global <- mp.global(cv.val, urma), "mp.global")
-  expect_is(global <- mp.global(cv, urma), "mp.global")
-  expect_is(global <- mp.global(cv.val.recal, urma), "mp.global")
+  expect_is(global <- mp.global.2st(cv.val, urma), "mp.global")
+  expect_is(global <- mp.global.2st(cv, urma), "mp.global")
+  expect_is(global <- mp.global.2st(cv.val.recal, urma), "mp.global")
 })
 
 test_that("A stepwise stratified model can be fitted", {

@@ -383,14 +383,15 @@ remove.na.obs <- function(df)
 # ... For compatibility only.
 getPredictMethod <- function(fit, two.stage = TRUE, predFUN = NULL, ...) {
   # A user written function may be supplied:
-  if (!is.null(predFUN))
-    if (is.function(predFUN))
-      return(get(predFUN))
-  else stop("predFUN should be a function.")
-  
+  if (!is.null(predFUN)) {
+    if (is.function(predFUN)) {
+      return(predFUN)
+    } else return(get(as.character(predFUN), mode = "function"))
+  }
+
   # If two-stage, the fit is used only to extract the link function.
   # If one-stage, fit's prediction method may be used.
-  if (two.stage) {# Preferably mp.cv.dev should not be here. But it has to.
+  if (two.stage) {# Preferably mp.cv.dev should not be here. But it currently has to.
     if (inherits(fit, c("glm", "lm", "mp.cv.dev"))) 
       return(predictGLM)
     else stop("No prediction method has been implemented for this model type yet for two-stage
@@ -409,6 +410,9 @@ predictGLM <- function(object, newdata, b = NULL, f = NULL, type = "response", .
   if (is.null(b)) b <- coef(object)
   if (is.null(f)) f <- formula(object)
   X <- model.matrix(stats::as.formula(f), data = newdata)
+  X <<- X
+  b <<- b
+  
   lp <- X %*% b
   
   if (identical(type, "response")) {
@@ -455,8 +459,23 @@ which.abs.min <- function(x)
 which.abs.max <- function(x)
   which.max(abs(x))
 
+which.1 <- function(x)
+  which.abs.min(x - 1)
+
 #' @author Valentijn de Jong
 #' @method unlist   listofperf
 #' @export
 unlist.listofperf <- function(x, ...) 
   sapply(x, `[[`, 1)
+
+
+# Safe way of getting a function. 
+# For some reason, this function can find functions that match.fun cannot.
+# x function or character name thereof
+# Returns function or error.
+get.function <- function(x, ...) {
+  if (is.function(x))
+    return(x)
+  else
+    return(get(as.character(x), mode = "function"))
+}

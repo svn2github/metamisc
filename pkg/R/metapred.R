@@ -15,9 +15,10 @@
 # add the unchanged model to the next step's model list. Model comparison will be easier. Subsetting will be easier: this allows
 #   a 'chain' of "changed" predictors to be added, thereby making the output clearer. 
 # change "changed" for global models as well.
+# If max.steps and scope = formula are supplied, no stopping reason is given.
 
 # TODO 3: General
-# add function: areTRUE. st.i == cl may otherwise lead to problems, if st.i has NA
+# add function: areTRUE. st.i == cl may otherwise lead to problems, if st.i has NA. Replaced with %in%. Now solved?
 # variances for intercept recalibration.
 # perf method
 # penalties
@@ -163,6 +164,7 @@ metapred <- function(data, strata, formula, estFUN = "glm", scope = NULL, retest
                      ...) {
   call <- match.call()
   data <- remove.na.obs(as.data.frame(data))
+  if(is.null(stratified <- list(...)$stratified) ) stratified <- TRUE
   
   if (missing(formula) || is.null(formula)) formula <- stats::formula(data[ , -which(colnames(data) == strata)])  
   if (is.null(scope)) scope <- f2iof(formula)
@@ -173,20 +175,20 @@ metapred <- function(data, strata, formula, estFUN = "glm", scope = NULL, retest
   if (center)
     data <- centerCovs(data = data, y.name = f2o(formula), cluster.name = strata)
   
-  if (is.null(cvFUN))   cvFUN   <- "l1o"
-  if (is.null(metaFUN)) metaFUN <- "urma"
-  if (is.null(perfFUN)) perfFUN <- "mse"
-  if (is.null(genFUN))  genFUN  <- "abs.mean"
+  if (is.null(cvFUN))   cvFUN   <- l1o
+  if (is.null(metaFUN)) metaFUN <- urma
+  if (is.null(perfFUN)) perfFUN <- mse
+  if (is.null(genFUN))  genFUN  <- abs.mean
   if (is.null(meta.method)) meta.method <- "DL"
   # Change to "-" when perfFUN <- R2 or some other measure for which greater = better.
   
   estFUN.name <- estFUN
-  estFUN  <- get(estFUN)
-  cvFUN   <- get(cvFUN)
+  estFUN  <- get.function(estFUN)
+  cvFUN   <- get.function(cvFUN)
   # perfFUN <- get(perfFUN)
   # genFUN  <- get(genFUN) # now happens in mp.cv.val
-  selFUN  <- get(selFUN)
-  metaFUN <- get(metaFUN)
+  selFUN  <- get.function(selFUN)
+  metaFUN <- get.function(metaFUN)
   
   # genFUN.add <- dots[["genFUN.add"]] 
   # dots[["genFUN.add"]] <- NULL
@@ -215,8 +217,8 @@ metapred <- function(data, strata, formula, estFUN = "glm", scope = NULL, retest
                      formula.changes = getFormulaDiffAsChar(formula.final, formula), 
                      # NOTE: formula.changes is currently unordered!
                      options = list(cv.k = cv.k, meta.method = meta.method, recal.int = recal.int,
-                                    center = center, max.steps = max.steps, retest = retest), # add: tol
-                     FUN = list(cvFUN = cvFUN, predFUN = predFUN, perfFUN = get(perfFUN), metaFUN = metaFUN, genFUN = genFUN, 
+                                    center = center, max.steps = max.steps, retest = retest, stratified = stratified), # add: tol
+                     FUN = list(cvFUN = cvFUN, predFUN = predFUN, perfFUN = get.function(perfFUN), metaFUN = metaFUN, genFUN = genFUN, 
                                 selFUN = selFUN, estFUN = estFUN, estFUN.name = estFUN.name)))
   class(out) <- c("metapred")
   return(out)
@@ -286,10 +288,8 @@ fitted.metapred <- function(object, select = "cv", step = NULL, model = NULL,
     ftd <- fitted(subset.metapred(x = object, select = select, step = step, model = model, type = type, ...))
     if (as.stratified)
       return(ftd)
-    else {
-      ftd.v <- Reduce(rbind, ftd) #as vector
-      return(ftd.v[match(rownames(ftd.v), rownames(object[["data"]])) ] ) # return to original ordering.
-    }
+    ftd.v <- Reduce(rbind, ftd) #as vector
+    return(ftd.v[match(rownames(ftd.v), rownames(object[["data"]])) ] ) # return to original ordering.
   }
 
   if (isTRUE(select == "global"))
@@ -333,9 +333,8 @@ fitted.metapred <- function(object, select = "cv", step = NULL, model = NULL,
 #' @export
 coef.metapred <- function(object, stratified = FALSE, ...) {
   if (stratified) 
-    coef(object$global.model$stratified.fit)
-  else
-    coef(object$global.model)
+    return(coef(object$global.model$stratified.fit))
+  return(coef(object$global.model))
 }
 
 # Note returned formula is for the final model!
@@ -488,7 +487,7 @@ mp.fit <- function(formula, data, remaining.changes, st.i, st.u, folds, recal.in
   steps[[getStepName(step.count)]] <- mp.step(formula = formula, data = data, remaining.changes = c(""), 
                                      st.i = st.i, st.u = st.u, folds = folds, recal.int = recal.int, 
                                      retest = FALSE,
-                                     estFUN = glm, metaFUN = metaFUN, meta.method = meta.method, predFUN = predFUN, 
+                                     estFUN = estFUN, metaFUN = metaFUN, meta.method = meta.method, predFUN = predFUN, 
                                      perfFUN = perfFUN, genFUN = genFUN, selFUN = selFUN, ...)
   steps[[getStepName(step.count)]][["step.count"]] <- step.count
   out[["best.step"]] <- getStepName(step.count)
@@ -519,7 +518,7 @@ mp.fit <- function(formula, data, remaining.changes, st.i, st.u, folds, recal.in
                                                   remaining.changes = current.model[["remaining.changes"]],
                                                   st.i = st.i, st.u = st.u, folds = folds, recal.int = recal.int,
                                                   retest = retest,
-                                                  estFUN = glm, metaFUN = metaFUN, meta.method = meta.method, predFUN = predFUN,
+                                                  estFUN = estFUN, metaFUN = metaFUN, meta.method = meta.method, predFUN = predFUN,
                                                   perfFUN = perfFUN, genFUN = genFUN, selFUN = selFUN, ...)
       steps[[getStepName(step.count)]][["step.count"]] <- step.count
       ## Model selection
@@ -538,10 +537,23 @@ mp.fit <- function(formula, data, remaining.changes, st.i, st.u, folds, recal.in
     }
   
   # Return a global model and the stepwise list
-  out[["global.model"]] <- mp.global(current.model, metaFUN = metaFUN, meta.method = meta.method)
+  stfd <- list(...)$stratified
+  if (is.null(stfd) || isTRUE(stfd)) {
+    out[["global.model"]] <- mp.global.2st(current.model, metaFUN = metaFUN, meta.method = meta.method)
+    out[["nobs.strata"]] <- sapply(out[["global.model"]][["stratified.fit"]], nobs)
+    # print("2 stage used.")
+  } else {
+    out[["global.model"]] <- c(mp.global.1st(formula = formula(current.model), data = data, 
+                                             estFUN = estFUN, ...), # strata = strata, to be added for random effects.
+                               current.model)
+    # print("1 stage used")
+  }
+    
+  
   out[["stepwise"]] <- steps
   out[["step.count"]] <- step.count
-  out[["nobs.strata"]] <- sapply(out[["global.model"]][["stratified.fit"]], nobs)
+  
+  out <<- out
   out[["nobs"]] <- sum(out[["nobs.strata"]])
   class(out) <- "mp.fit"
   
@@ -702,10 +714,25 @@ print.mp.step <- function(x, show.f = TRUE, ...) {
 # metaFUN function for meta-analysis
 # meta.method option for metaFUN
 # ... optional arguments for metaFUN
-mp.global <- function(cv.dev, metaFUN = urma, meta.method = "DL") {
+mp.global.2st <- function(cv.dev, metaFUN = urma, meta.method = "DL") {
+  
   out <- c(cv.dev, mp.meta.fit(stratified.fit = cv.dev[["stratified.fit"]], 
                                metaFUN = metaFUN, meta.method = meta.method) )
+  
   class(out) <- c("mp.global", class(out))
+  out
+}
+
+mp.global.1st <- function(formula, data, strata = NULL, estFUN = "glm", ...) {
+  # Here somehow decide between passing strata (for mixed models) or not doing so (for glm).
+  # Current is just for glm:
+  dots <- list(...)
+  dots$stratified <- NULL
+  args <- c(list(formula = formula, data = data), dots)
+  fit <- do.call(estFUN, args)
+  out <- mp.stratum.fit(fit)
+  out[["nobs.strata"]] <- nobs(out) # To be removed??
+  class(out) <- c("mp.global", "mp.stratum.fit") # "mp.global.1st" ?! or not?
   out
 }
 
@@ -819,7 +846,8 @@ mp.cv.val <- function(cv.dev, data, st.i, folds, recal.int = FALSE, two.stage = 
                       estFUN = glm, predFUN = NULL, perfFUN = mse, 
                       genFUN = abs.mean, ...) {
   # dots <- list(...)
-  perfFUN.name <- if (is.character(perfFUN)) perfFUN else "Performance"
+  pfn <- if (is.character(perfFUN)) perfFUN else "Performance"
+  # print(pfn)
   perfFUN <- match.fun(perfFUN)
   
   # Recalibrate?
@@ -890,14 +918,12 @@ mp.cv.val <- function(cv.dev, data, st.i, folds, recal.int = FALSE, two.stage = 
   perf.val <<- perf.val
   for (fun.id in seq_along(genFUN)) { # Single brackets intended!
     genfun <- match.fun(genFUN[[fun.id]])
-    title <- if (length(cv.dev[["changed"]]) && nchar(cv.dev[["changed"]])) paste("Model change: ~", 
-                                                                                  cv.dev[["changed"]]) else gen.names[[1]]
     # gv <- genfun(x = perf.val, data = data, N = nrow(data), n = cv.dev[["nobs.val"]], #old plot title
     #              coef = coef(cv.dev[["stratified.fit"]]), coef.se = se(cv.dev[["stratified.fit"]]),
     #              title = paste("Model: ~", as.character(formula(cv.dev))[3]), perfFUN.name = perfFUN.name, ...)
     gv <- genfun(x = perf.val, data = data, N = nrow(data), n = cv.dev[["nobs.val"]],
                  coef = coef(cv.dev[["stratified.fit"]]), coef.se = se(cv.dev[["stratified.fit"]]),
-                 title = title, perfFUN.name = perfFUN.name, ...)
+                 title = paste("Model change: ~", cv.dev[["changed"]]), pfn = as.character(pfn), ...)
     gen.all[[fun.id]] <- if (is.null(gv)) NaN else gv # foo[[bar]] <- NULL is not allowed
   }
 
@@ -1001,7 +1027,7 @@ print.mp.cv.val <- function(x, ...) {
 # meta.method character, option for metaFUN
 # Returns mp.cv.dev, which is a list of meta-analytic models developed on dev folds
 mp.cv.dev <- function(formula, data, st.i, st.u, folds, two.stage = TRUE, 
-                      estFUN = glm, metaFUN = urma, meta.method = "DL", change = NULL, ...) {
+                      estFUN = glm, metaFUN = urma, meta.method = "DL", change = NULL, stratified = TRUE, ...) {
   out <- list(...) # possibly contains family
   if (!is.null(out$family)) {
     if (is.character(out$family)) # Ensure that family is the output of family(). Taken directly from glm.
@@ -1016,15 +1042,21 @@ mp.cv.dev <- function(formula, data, st.i, st.u, folds, two.stage = TRUE,
   out[["formula"]] <- formula
   out[["changed"]] <- change
   
-  ## Cluster part 
-  out[["stratified.fit"]] <- mp.stratified.fit(formula = formula, data = data, st.i = st.i, st.u = st.u, estFUN = estFUN, ...)  
-  out[["n.clusters"]] <- length(out[["stratified.fit"]])
+  if (stratified) {
+    ## Cluster part 
+    out[["stratified.fit"]] <- mp.stratified.fit(formula = formula, data = data, st.i = st.i, st.u = st.u, 
+                                                 estFUN = estFUN, ...)  
+    out[["n.clusters"]] <- length(out[["stratified.fit"]])
+    
+    ## cv meta-part
+    out[["cv"]] <- mp.cv.meta.fit(stratified.fit = out[["stratified.fit"]], folds = folds, 
+                                  metaFUN = metaFUN, meta.method = meta.method)
+  } else {
+    out[["cv"]] <- mp.1st.fit(formula = formula, data = data, st.i = st.i, st.u = st.u, folds = folds,
+                              estFUN = estFUN, ...)
+  }
   
-  ## cv meta-part
-  out[["cv"]] <- mp.cv.meta.fit(stratified.fit = out[["stratified.fit"]], folds = folds, 
-                                metaFUN = metaFUN, meta.method = meta.method)
-  
-  out[["n.cv"]] <- length(out$cv)
+  out[["n.cv"]] <- length(out[["cv"]])
   # out[["nobs.cv"]]
   class(out) <- "mp.cv.dev"
   out
@@ -1035,7 +1067,8 @@ mp.cv.dev <- function(formula, data, st.i, st.u, folds, two.stage = TRUE,
 #' @method print   mp.cv.dev
 #' @export
 print.mp.cv.dev <- function(x, ...) {
-  print.mp.stratified.fit(x[["stratified.fit"]]) 
+  if (!is.null(x[["stratified.fit"]]))
+    print.mp.stratified.fit(x[["stratified.fit"]]) 
   cat("\n")
   print.mp.cv.meta.fit(x[["cv"]])
 }
@@ -1069,6 +1102,21 @@ fitted.mp.cv.dev <- function(object, data, folds, st.i, predFUN = NULL, ...) {
 # #' @export
 # family.mp.cv.dev <- function(object, ...)
 #   object$family
+
+# Estimate a one-stage or non-stratified model on the develoment (!) strata.
+mp.1st.fit <- function(formula, data, st.i, st.u, folds, estFUN, ...) {
+  out <- list()
+  
+  for (fo in seq_along(folds[["dev.i"]])) {
+    fit <- estFUN(formula = formula, 
+                  data = data[st.i %in% folds[["dev"]][[fo]], ],
+                  ...)
+    out[[getclName(folds[["dev"]][[fo]])]] <- mp.stratum.fit(fit) 
+  }
+  
+  class(out) <- "mp.1st.fit"
+  out
+}
 
 # Recalibrate a mp.meta.fit
 # mp.meta.fit mp.meta.fit
@@ -1105,14 +1153,14 @@ mp.cv.recal <- function(cv.dev, newdata, folds, estFUN) {
 # This function selects the right fold for development, and calls the fitting function.
 # stratified.fit list of mp.stratum.fit objects
 # folds list of fold divisions, as given by l1o, or bootstrap in the utils.
-# metaFUN function for estimating meta-analytic models, e.g. urma (this file)
+# metaFUN function for estimating meta-analytic models, e.g. urma (in utils)
 # meta.method options for metaFUN
 # Returns an object of class mp.cv.meta.fit, which is a list of meta-analytic prediction models
 mp.cv.meta.fit <- function(stratified.fit, folds, metaFUN = urma, meta.method = "DL") {
   out <- list()
   
   for (fo in seq_along(folds[["dev.i"]]))
-    out[[getclName(folds[["dev"]][[fo]])]] <- mp.meta.fit(stratified.fit = stratified.fit[folds[["dev.i"]][[fo]]], 
+    out[[getclName(folds[["dev"]][[fo]])]] <- mp.meta.fit(stratified.fit = stratified.fit[folds[["dev.i"]][[fo]]],
                                                           metaFUN = metaFUN, meta.method = meta.method)
   class(out) <- "mp.cv.meta.fit"
   out
@@ -1179,8 +1227,13 @@ print.mp.meta.fit <- function(x, ...) {
 mp.stratified.fit <- function(formula, data, st.i, st.u, estFUN, ...) {
   out <- list()
   
+  # for (st.this in st.u)
+  #   out[[getclName(st.this)]] <- mp.stratum.fit(estFUN(formula = formula, data = data[st.i == st.this, ], ...) )
+  
+  # Replace with: (?)
+  # for (st.this in sort(unique(unlist(folds[["dev"]]) )) )
   for (st.this in st.u)
-    out[[getclName(st.this)]] <- mp.stratum.fit(estFUN(formula = formula, data = data[st.i == st.this, ], ...) )
+    out[[getclName(st.this)]] <- mp.stratum.fit(estFUN(formula = formula, data = data[st.i %in% st.this, ], ...) )
   
   class(out) <- "mp.stratified.fit"
   out
@@ -1274,9 +1327,8 @@ variances <- function(object, ...)
 #' @export
 variances.default <- function(object, ...) {
   if (!is.null(v <- object$variances))
-    v
-  else 
-    diag(vcov(object, ...))
+    return(v)
+  return(diag(vcov(object, ...)))
 }
 
 #' @export
