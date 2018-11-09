@@ -1376,6 +1376,14 @@ ci.listofperf <- function(object, ...) {
       theta.ci.ub = sapply(z, `[[`, 3)
     ))
   }
+  if (inherits(object[[1]], "mse")) {
+    z <- lapply(object, ci.mse)
+    return(data.frame(
+      theta       = sapply(z, `[[`, 2),
+      theta.ci.lb = sapply(z, `[[`, 1),
+      theta.ci.ub = sapply(z, `[[`, 3)
+    ))
+  }
   stop(paste("ci.listofperf does not recognize objects of class", class(object)))
 }
 # confint.listofperf <- function(object, ...) {
@@ -1411,4 +1419,10 @@ ci.recal <- function(object, conf = .95, ...) { # To be implemented in some othe
   data.frame("ci.lb" = coefs - z * ses, "estimate" = coefs, "ci.ub" = coefs + z * ses)
 }
 
-  
+#' @export
+ci.mse <- function(object, conf = .95, ...) { 
+  ses <- se(object, ...)
+  est <- object[["est"]]
+  z <- qt(1 - (1 - .95)/2, df = object$n - 1) # z = t distributed
+  data.frame("ci.lb" = est - z * ses, "estimate" = est, "ci.ub" = est + z * ses)
+}  

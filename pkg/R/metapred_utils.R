@@ -479,3 +479,17 @@ get.function <- function(x, ...) {
   else
     return(get(as.character(x), mode = "function"))
 }
+
+
+### Maybe this is futile:
+#' @author Valentijn de Jong
+#' @method nobs   survreg
+#' @export
+nobs.survreg <- function(object, ...)
+  object$N
+
+#' @author Valentijn de Jong
+#' @method nobs   flexsurvreg
+#' @export
+nobs.flexsurvreg <- function(object, ...)
+  object$N

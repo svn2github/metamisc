@@ -63,6 +63,28 @@ calibration.add.slope <- cal.add.slope <- function(p, y, estFUN, family, slope.o
   }
   refit
 }
+
+mse.with.se <- function(p, y, se.method = "asymptotic", bs.n = 10000, ...) {
+  er <- p - y
+  est <- mean(er^2)
+  out <- data.frame(est = est, se = NA, variances = NA)
+  out$n <- n <- length(p)
+  
+  if (se.method == "bootstrap") {
+    ses <- rep(NA, bs.n)
+    for (i in seq_len(bs.n))
+      ses[i] <- mean(sample(er, length(er), replace = T)^2)
+    out$se <- sd(ses)
+    out$variances <- out$se^2
+  } else if (se.method == "asymptotic") {
+    # https://journals.ametsoc.org/doi/full/10.1175/2007WAF2007049.1
+    out$variances <- var(er^2)/n
+    out$se <- sqrt(out$variances)
+  }
+  
+  class(out) <- c("mse", class(out))
+  out
+}
   
 
 ############################## Heterogeneity, generalizability, pooled performance functions ###############################
@@ -189,7 +211,16 @@ plot.listofperf <- function(x, pfn, ...) { # xlab tbi from perfFUN
     ci.ub <- mf$ci.ub
     pi.lb <- mf$cr.lb
     pi.ub <- mf$cr.ub
+  } else if (inherits(x[[1]], "mse")) {
+    # print("by rma.uni")
+    mf <- predict(metafor::rma.uni(yi = sapply(x, `[[`, "est"), vi = sapply(x, variances))) # NOTE: DOES IT USE t or normal dist???
+    est <- mf$pred
+    ci.lb <- mf$ci.lb
+    ci.ub <- mf$ci.ub
+    pi.lb <- mf$cr.lb
+    pi.ub <- mf$cr.ub
   }
+  
 
   # print("Make forest plot.")
   fp <- metamisc::forest(theta       = z$theta,
