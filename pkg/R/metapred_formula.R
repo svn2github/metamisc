@@ -17,25 +17,6 @@ updateFormula <- function(f, x) {
                                        sep = " ", collapse = " "), sep = " "  ) )
 }
 
-# # Multiple updates to one formula, leading to different formulas
-# # f formula
-# # xx vector of updates
-# # Returns list of formulas.
-# updatesFormula <- function(f, xx) {
-#   out <- list()
-#   for (i in seq_along(xx) )
-#     out[[i]] <- updateFormula(f, xx[i])
-#   out
-# }
-
-
-# Deprecated
-# formulaAdd <- function(f, x) 
-#   update.formula(f, paste("~ .", paste("+", as.character(x) , sep = " ", collapse = " "), sep = " "  ) )
-# formulaRemove <- function(f, x)
-#   update.formula(f, paste("~ .", paste("-", as.character(x) , sep = " ", collapse = " "), sep = " "  ) )
-
-
 # Differences in vectors of characters
 # x, y vector
 # returns ordered vector of symmetric difference between x and y
@@ -59,6 +40,3 @@ f2o <- function(f)
 # Returns formula, with only intercept on the right hand side.
 f2iof <- function(f)
   formula(paste(f2o(f), "~ 1"))
-
-test <- function(x)
-  "dont use me"
