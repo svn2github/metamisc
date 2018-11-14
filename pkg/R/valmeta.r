@@ -150,11 +150,11 @@
 #' with(EuroSCORE, valmeta(measure="OE", O=n.events, E=e.events))        
 #' with(EuroSCORE, valmeta(measure="OE", Po=Po, Pe=Pe, N=n))
 #' 
+#' \dontrun{
 #' # One-stage meta-analysis of the total O:E ratio (random effects)
 #' with(EuroSCORE, valmeta(measure="OE", O=n.events, E=e.events, method="ML",
 #'                         pars=list(model.oe="poisson/log")))
 #' 
-#' \dontrun{
 #' # Bayesian random effects meta-analysis of the c-statistic
 #' fit2 <- with(EuroSCORE, valmeta(cstat=c.index, cstat.se=se.c.index, 
 #'                                 cstat.95CI=cbind(c.index.95CIl,c.index.95CIu),
@@ -819,7 +819,6 @@ print.valmeta <- function(x, ...) {
 #' @author Thomas Debray <thomas.debray@gmail.com>
 #' 
 #' @import metafor
-#' @import ellipse
 #' @import ggplot2
 #' @importFrom stats reorder
 #' @return An object of class \code{ggplot}
