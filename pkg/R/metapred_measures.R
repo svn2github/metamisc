@@ -1,3 +1,6 @@
+# TODO:
+# add transforms to fema
+
 ##############################                Performance / error functions                  ###############################
 # ### By convention, all performance measures:
 # # Arguments:
@@ -5,22 +8,52 @@
 # y     numeric/integer vector of observed outcome, of same length as p.
 # ...   for future compatibility
 # 
-# # Return:
-# numeric of length 1.
+# # Return, either:
+# numeric of length 1. (old version)
+# Or:
+# object of class "mp.perf", where the first element, [[1]], is the estimate of performance
+# Note that performance functions that do not produce normally distributed statistics,
+# such as the auc, should not have "mp.perf" as its first class! The first class is used as a
+# check of necessity of conversion to another scale.
+
 ##############################                
 
-# Error function: Mean Squared Error
-mse <- brier <- function(p, y, ...) mean((p - y)^2)
+# Error function: Mean Squared Error # Replaced! See below!
+# mse <- brier <- function(p, y, ...) mean((p - y)^2)
 
-rmse <- function(p, y, ...)
-  sqrt(mse(p = p, y = y, ...))
+# rmse <- function(p, y, ...)
+  # sqrt(mse(p = p, y = y, ...))
 
 # Error function: Variance of prediction error
-var.e <- function(p, y, ...) var(p - y)
+# var.e <- function(p, y, ...) 
+#   var(p - y, ...)
 
+# library(moments)
+var.e <- var.e.with.se <- function(p, y, ...) 
+  var.with.se(p - y)
+
+# Necessary for var of var estimation.
+# See https://math.stackexchange.com/questions/72975/variance-of-sample-variance
+# and https://en.wikipedia.org/wiki/Variance , section Distribution of the sample variance
+# and moments:kurtosis
+sigma4 <- function(x, ...) 
+  mean((x - mean(x, ...))^2, ...)^2
+
+# Asymptotically unbiased estimate of variance of sample variance.
+# https://math.stackexchange.com/questions/72975/variance-of-sample-variance
+# x vector
+# Returns variance, and se and variance of variance
+var.with.se <- function(x, ...) {
+  est <- var(x)
+  v <-  2 * sigma4(x) / (length(x) - 1)
+  out <- data.frame(estimate = est, se = sqrt(v), variances = v, n = length(x))
+  class(out) <- "mp.perf"
+  out
+}
 # Measure 1: Coefficient of variation of prediction error.
+  # abs logical absolute value
 coef.var.pred <- function(p, y, abs = TRUE, ...)
-  coef.var(x = p - y, abs = abs, ...) 
+  coef.var(x = p - y, abs = abs) 
 
 #' @importFrom pROC auc
 auc <- AUC <- AUROC <-  function(p, y, ...) {
@@ -47,8 +80,9 @@ calibration.slope <- cal.slope <- function(p, y, estFUN, family, slope.only = TR
   
   refit <- pred.recal(p = p, y = y, estFUN = estFUN, family = family, which = "slope")
   if (slope.only) {
-    refit[[1]] <- refit[[1]][2]
+    refit$estimate <- refit[[1]] <- refit[[1]][2]
     refit$variances <- variances(refit)[2]
+    class(refit) <- "mp.perf" # This should make it call the right confint method.
   }
   refit
 }
@@ -58,16 +92,22 @@ calibration.add.slope <- cal.add.slope <- function(p, y, estFUN, family, slope.o
   
   refit <- pred.recal(p = p, y = y, estFUN = estFUN, family = family, which = "add.slope")
   if (slope.only) {
-    refit[[1]] <- refit[[1]][2]
+    refit$estimate <- refit[[1]] <- refit[[1]][2]
     refit$variances <- variances(refit)[2]
+    class(refit) <- "mp.perf" # This should make it call the right confint method.
   }
   refit
 }
 
-mse.with.se <- function(p, y, se.method = "asymptotic", bs.n = 10000, ...) {
+
+# se.method character name of method for se calculation
+# bs.n integer number of bootstrap samples
+# ... Compatiblility only
+# For asymptotic, see https://journals.ametsoc.org/doi/full/10.1175/2007WAF2007049.1
+mse <- brier <- mse.with.se <- function(p, y, se.method = "asymptotic", bs.n = 10000, ...) {
   er <- p - y
   est <- mean(er^2)
-  out <- data.frame(est = est, se = NA, variances = NA)
+  out <- data.frame(estimate = est, se = NA, variances = NA)
   out$n <- n <- length(p)
   
   if (se.method == "bootstrap") {
@@ -77,27 +117,86 @@ mse.with.se <- function(p, y, se.method = "asymptotic", bs.n = 10000, ...) {
     out$se <- sd(ses)
     out$variances <- out$se^2
   } else if (se.method == "asymptotic") {
-    # https://journals.ametsoc.org/doi/full/10.1175/2007WAF2007049.1
     out$variances <- var(er^2)/n
     out$se <- sqrt(out$variances)
   }
   
-  class(out) <- c("mse", class(out))
+  class(out) <- c("mp.perf", class(out))
   out
 }
+
+#' @export
+coef.mp.perf <- function(object, ...) 
+  object$estimate
+
+# Object mp.perf object
+# use.fallback ignored
+# compatibility only
+#' @export
+nobs.mp.perf <- function(object, use.fallback = FALSE, ...) 
+  object$n
+
+# Object mp.perf object
+# parm "estimate" is the only viable obtion
+# level confidence level
+#' @export
+confint.mp.perf <- function(object, parm = "estimate", level = .95, ...) { 
+  ses <- se(object, ...)
+  est <- object[[parm]]
+  if(level < 0 || level > 1)
+    stop("Impossible confidence level. Possible levels: 0 < level < 1")
+  z <- qt(1 - (1 - level)/2, df = object$n - 1) # z = t distributed
+  data.frame("ci.lb" = est - z * ses,"ci.ub" = est + z * ses)
+}
+
+# Object pROC::auc object
+# parm "estimate" is the only viable obtion
+# level ignored
+# ... passed on to pROC::ci
+#' @export
+confint.auc <- function(object, parm = "estimate", level = .95, method = "delong", ...) {
+  if(level < 0 || level > 1)
+    stop("Impossible confidence level. Possible levels: 0 < level < 1")
+  bounds <- pROC::ci(object, method = method)
+  data.frame("ci.lb" = bounds[1],"ci.ub" = bounds[3]) # 2 is the point estimate.
+}
+
+# A generic function that calls the generic confint method
+# Note that it does not have the parm parameter, because this never changes in metapred.
+# Returns the confidence intervals with the specified names: ci.lb and ci.ub
+get_confint <- function(object, level = 0.95, ...) {
+  ci.bounds <- confint(object = object, level = level, ...)
+  out <- data.frame(ci.lb = NA, ci.ub = NA)
   
+  if (any(names(ci.bounds) == "ci.lb"))
+    out$ci.lb <- ci.bounds[["ci.lb"]]
+  else if (any(names(ci.bounds) == "2.5 %"))
+    out$ci.lb <- ci.bounds[["2.5 %"]]
+  
+  if (any(names(ci.bounds) == "ci.ub"))
+    out$ci.ub <- ci.bounds[["ci.ub"]]
+  else if (any(names(ci.bounds) == "2.5 %"))
+    out$ci.ub <- ci.bounds[["2.5 %"]]
+  
+  out
+}
+
+# m <- metamisc:::auc(runif(50, 0, 1), rbinom(50, 1, .5))
+# aucci <- pROC:::ci(m)
+# aucci <- pROC:::ci(m, method = "bootstrap")
+# metamisc:::confint.auc(m)
+
 
 ############################## Heterogeneity, generalizability, pooled performance functions ###############################
 # ### By convention, all generalizability measures:
-# # Required arguments:
+# # Current required arguments:
+# object  data.frame containing at least a column with'perf', and preferably more statistics.
+# # Required arguments: (OLD)
 # x       list of class "listofperf", list of performance in different strata. 
 #           Note that it has its own unlist method. Practically all (except plot) should call unlist first!
 # ...     for compatibility.
 #
 # # Possible arguments, that are always passed through successfully:
-# N       scalar integer, total sample size
-# n       named numeric/integer vector, sample size per strata. Has same length as x. (OR CHANGE  TO LIST AS WELL??)
-# data    Full data set. Use only if other arguments are not enough.
 # coef    data.frame containing coefficients of stratified models. Rows are strata, columns are coefs.
 # coef.se data.frame containing se of coefficients of stratified models. Rows are strata, columns are coefs.
 #
@@ -109,72 +208,124 @@ mse.with.se <- function(p, y, se.method = "asymptotic", bs.n = 10000, ...) {
 ##############################   
 
 # Measure 0: mean
-abs.mean <- function(x, ...)
-  abs(mean(unlist(x))) 
+abs.mean <- function(object, ...)
+  abs(mean(object$perf)) 
 
 ## also possible the other way around (e.g. for cal slopes and intercepts)
-mean.abs <- function(x, ...) 
-  mean(abs(unlist(x)))
-
+mean.abs <- function(object, ...) 
+  mean(abs(object$perf))
 
 # Measure 1: Coefficient of variation (=scaled sd)
 # In general sense, abs needs not be TRUE, but for metapred it should,
 # such that higher values are worse performance.
 coef.var <- function(x, abs = TRUE, ...) {
-  x <- unlist(x) ### back to unlist? now that a method has been implemented?!
+  x <- unlist(x) 
   cv <- sd(x)/mean(x)
   if (isTRUE(abs)) abs(cv) else cv
 }
 
-coef.var.mean <- function(x, abs = TRUE, ...)  {
-  x <- unlist(x)
+# var.x.mean.with.se <- function(x, abs = TRUE, ...) {
+#   x <- unlist(x) 
+#   v <- var.with.se(x)
+#   s2 <- v$estimate
+#   vs2 <- v$variances
+#   # s <- sqrt(v$estimate)
+#   
+#   m <- mean(x)
+#   vm <- v$variances / length(x)
+#   
+#   est <- s2 * mean(x)
+#   vest <- vs2 * vm + vs2 * m^2 + vm * s2^2
+#   
+#   out <- data.frame(estimate = est, variances = vest, se = sqrt(vest), n = length(x))
+#   if (isTRUE(abs)) abs(out) else out
+# }
+
+coef.var.with.se <- function(object, abs = TRUE, ...) 
+  cbind(data.frame(estimate = coef.var(object$perf)), bootstrap.se(object, coef.var))
+
+
+bootstrap.se <- function(object, fun, k = 2000, ...) {
+  x <- unlist(object$perf)
+  fun <- match.fun(fun)
+  
+  est <- rep(NA, k)
+  for (i in seq_len(k)) {
+    est[i] <- fun(sample(x, size = length(x), replace = TRUE))
+  }
+  v <- var(est)
+  out <- data.frame(variances = v, se = sqrt(v), n = length(x), k = k)
+  class(out) <- c("mp.perf", class(out))
+  out
+}
+
+coef.var.mean <- function(object, abs = TRUE, ...)  {
+  x <- unlist(object$perf)
   coef.var(x, abs = abs) + if (abs) abs(mean(x)) else mean(x)
 }
   
 
 # Measure 2 (?): GINI coefficient
 # #' @importFrom Hmisc GiniMd
-GiniMd <- function(x, ...) 
-  GiniMd(unlist(x), na.rm = T)
+GiniMd <- function(object, ...) 
+  GiniMd(object$perf, na.rm = T)
 
 # Also from Hmisc:
-gmd <- function(x, ...) {
-  x <- unlist(x)
+gmd <- function(object, ...) {
+  x <- object$perf
   n <- length(x)
   sum(outer(x, x, function(a, b) abs(a - b))) / n / (n - 1)
 }
 
-weighted.abs.mean <- function(x, n, ...) 
-  abs.mean(x <- unlist(x) * sqrt(n - 1)) / sum(sqrt(n - 1))
+weighted.abs.mean <- function(object, ...) 
+  abs(mean((object$perf * object$n))) / sum(object$n)
 
-
-pooled.var <- function(x, n, ...) {
-  x <- unlist(x)
-  
-  ## TODO: Extract sample size for each cluster and apply corresponding to the right performance measures
-  ## TODO: use rubins rules.
+# Fixed-Effects Meta-Analysis, Inverse Variance Method.
+# NOTE: AUC is on wrong scale!!
+fema <- function(object, ...) {
+  # if (object$class[[1]] == "auc") {
+  #   x <- logit(object$perf)
+  #   v <- some other transform (object$var)
+  # }
+  # return(inv.logit(sum(unlist(x) / unlist(v)) / sum(1/unlist(v)) ))
+  # else
+  x <- object$perf
+  v <- object$var
+  sum(unlist(x) / unlist(v)) / sum(1/unlist(v))
 }
 
-pooled.var <- function(x, n, ...) {
-  x <- unlist(x)
-  mean(x) + var(x) * (1 + 1/length(n))
+rema.beta <- function(object, ...) 
+  rema.perf(object, ...)$est
+
+# valmeta does not produce tau!
+# so rema.tau cannot be used on auc!
+rema.tau <- function(object, ...)
+  rema.perf(object, ...)$tau # Note: Intentionally selects tau2 if only that one is available.
+
+# pooled.var <- function(x, n, ...) {
+#   x <- unlist(x)
+#   ## TODO: Extract sample size for each cluster and apply corresponding to the right performance measures
+#   ## TODO: use rubins rules.
+# }
+
+pooled.var <- function(object, ...) {
+  x <- unlist(object$perf)
+  mean(x) + var(x) * (1 + 1/length(nrow(object)))
 }
 
 # squared.diff #a penalty equal to the mean squared differences 
-squared.diff <- function(x, ...) {
-  x <- unlist(x)
+squared.diff <- function(object, ...) {
+  x <- unlist(object$perf)
   mse(x, mean(x))
 }
 
 # Mean of largest half of values
-mean.of.large <- function(x, ...) {
-  x <- unlist(x)
+mean.of.large <- function(object, ...) {
+  x <- unlist(object$perf)
   mean(x[x >= median(x)])
 }
 
-
-# New, for auc and intercept, and slope tbi
-#  Forest plot of list of performance measures. Currently only works for auc from the pROC package.
+#  Forest plot of list of performance measures: AUC, cal intercept or slope, or mse/brier.
 #' @importFrom metafor rma.uni
 #' @export
 plot.listofperf <- function(x, pfn, ...) { # xlab tbi from perfFUN
@@ -197,30 +348,26 @@ plot.listofperf <- function(x, pfn, ...) { # xlab tbi from perfFUN
   # print("meta-analyze performance:")
   if (inherits(x[[1]], "auc")) { # To be replaced by child function.
     # print("by valmeta")
-    vm <- valmeta(measure = "cstat", cstat = z$theta, cstat.95CI = z[, c("theta.ci.lb", "theta.ci.ub")])
-    est <- vm$est
-    ci.lb <- vm$ci.lb
-    ci.ub <- vm$ci.ub
-    pi.lb <- vm$pi.lb
-    pi.ub <- vm$pi.ub
-  } else if (inherits(x[[1]], "lm")) {
+    ma <- valmeta(measure = "cstat", cstat = z$theta, cstat.95CI = z[, c("theta.ci.lb", "theta.ci.ub")])
+    est <- ma$est
+    pi.lb <- ma$pi.lb
+    pi.ub <- ma$pi.ub
+  } else if (inherits(x[[1]], c("lm"))) { # 
     # print("by rma.uni")
-    mf <- predict(metafor::rma.uni(yi = sapply(x, coef), vi = sapply(x, variances))) # NOTE: DOES IT USE t or normal dist???
-    est <- mf$pred
-    ci.lb <- mf$ci.lb
-    ci.ub <- mf$ci.ub
-    pi.lb <- mf$cr.lb
-    pi.ub <- mf$cr.ub
+    ma <- predict(metafor::rma.uni(yi = sapply(x, coef), vi = sapply(x, variances))) # NOTE: DOES IT USE t or normal dist???
+    est <- ma$pred
+    pi.lb <- ma$cr.lb
+    pi.ub <- ma$cr.ub
   } else if (inherits(x[[1]], "mse")) {
-    # print("by rma.uni")
-    mf <- predict(metafor::rma.uni(yi = sapply(x, `[[`, "est"), vi = sapply(x, variances))) # NOTE: DOES IT USE t or normal dist???
-    est <- mf$pred
-    ci.lb <- mf$ci.lb
-    ci.ub <- mf$ci.ub
-    pi.lb <- mf$cr.lb
-    pi.ub <- mf$cr.ub
+  #   # print("by rma.uni")
+    ma <- predict(metafor::rma.uni(yi = sapply(x, `[[`, "estimate"), vi = sapply(x, variances))) # NOTE: DOES IT USE t or normal dist???
+    est <- ma$pred
+    pi.lb <- ma$cr.lb
+    pi.ub <- ma$cr.ub
   }
-  
+  # This is the same for both methods:
+  ci.lb <- ma$ci.lb
+  ci.ub <- ma$ci.ub
 
   # print("Make forest plot.")
   fp <- metamisc::forest(theta       = z$theta,
@@ -238,164 +385,77 @@ plot.listofperf <- function(x, pfn, ...) { # xlab tbi from perfFUN
   NaN
 }
 
-# Old, for auc only
-# #  Forest plot of list of performance measures. Currently only works for auc from the pROC package.
-# #' @importFrom pROC ci
-# #' @export
-# plot.listofperf <- function(x, ...) { # xlab tbi from perfFUN
-#   xlab <- paste(list(...)$perfFUN.name, "in validation strata")
-#   
-#   if (is.null(names(x))) # The # is to show users that the numbers are not their own. (no longer necessary)
-#     names(x) <- paste("#", seq_along(x), sep = "") 
-#   
-#   if (in)
-# 
-#   z <- lapply(x, pROC::ci)  
-#   theta       <- sapply(z, `[[`, 2)
-#   theta.ci.lb <- sapply(z, `[[`, 1)
-#   theta.ci.ub <- sapply(z, `[[`, 3)
-#   
-#   vm <- valmeta(measure = "cstat", cstat = theta, cstat.95CI = data.frame(theta.ci.lb, theta.ci.ub))
-#   
-#   fp <- metamisc::forest(theta       = theta,
-#                          theta.ci.lb = theta.ci.lb,
-#                          theta.ci.ub = theta.ci.ub,
-#                          theta.slab  = names(x),
-#                          theta.summary = vm$est,
-#                          theta.summary.ci.lb = vm$ci.lb,
-#                          theta.summary.ci.ub = vm$ci.ub,
-#                          theta.summary.pi.lb = vm$pi.lb,
-#                          theta.summary.pi.ub = vm$pi.ub,
-#                          sort  = FALSE, 
-#                          xlab  = xlab,
-#                          ...)
-#   plot(fp)
-#   NaN
-# }
+# x mp.cv.val object
+# y ignored, compatibility only
+#' @export
+plot.mp.cv.val <- function(x, y, ...)
+  plot.listofperf(x$perf.full, x$perf.name, ...)
 
-#' ##############################               OLD, x is still vector here                     ###############################
+#' @importFrom metafor rma
+rema.perf <- function(object, ...) {
+  if (object$class[[1]] == "mp.perf" || object$class[[1]] == "recal") {
+    ma <- metafor::rma.uni(yi = object$perf, vi = object$var) # NOTE: DOES IT USE t or normal dist???
+    pred.int <- predict(ma)
+    return(list(est = ma$b,     
+                pi.lb = pred.int$cr.lb,
+                pi.ub = pred.int$cr.ub,
+                ci.lb = ma$ci.lb,
+                ci.ub = ma$ci.ub,
+                tau2  = ma$tau2))
+  } else if (object$class[[1]] == "auc") {
+    ma <- valmeta(measure = "cstat", cstat = object$perf, cstat.95CI = as.matrix(object[, c("ci.lb", "ci.ub")]))
+    return(list(est = ma$est,
+                pi.lb = ma$pi.lb,
+                pi.ub = ma$pi.ub,
+                ci.lb = ma$ci.lb,
+                ci.ub = ma$ci.ub)) # valmeta does not produce tau!
+  }
+  stop("class not recognized")
+}
+
+rema.mp.cv.val <- function(object, ...)
+  rema.perf(object$perf)
+
+forest.metapred <- function(object, ...)
+  forest.mp.cv.val(subset(object))
+
+forest.mp.cv.val <- function(object, ...)
+  forest.perf(object$perf, xlab = object$perf.name, ...)
+
+forest.perf <- function(object, ...) {
+  ma <- rema.perf(object)
+  fp <- metamisc::forest(theta       = object$perf,
+                         theta.ci.lb = object$ci.lb,
+                         theta.ci.ub = object$ci.ub,
+                         theta.slab  = object$val.strata,
+                         theta.summary       = ma$est,
+                         theta.summary.ci.lb = ma$ci.lb,
+                         theta.summary.ci.ub = ma$ci.ub,
+                         theta.summary.pi.lb = ma$pi.lb,
+                         theta.summary.pi.ub = ma$pi.ub,
+                         ...)
+  plot(fp)
+  NaN # To be replaced with fp, when metapred() can handle it.
+}
+
+fat.perf <- function(object, ...)
+  fat(object[["perf"]], object[["se"]], n.total = sum(object[["n"]]), ...)
+
+fat.mp.cv.val <- function(object, ...) 
+  fat(object$perf, ...)
+
+fat.metapred <- function(object, ...)
+  fat.mp.cv.val(subset(object, ...))
+
+funnel.perf <- function(object, ...)
+  plot(fat.perf(object, ...), ...)
+
+funnel.mp.cv.val <- function(object, ...)
+  plot(fat.mp.cv.val(object))
+
+funnel.metapred <- function(object, ...)
+  plot(fat.metapred(object, ...))
 
 
 
 
-
-#' ##############################                Performance / error functions                  ###############################
-#' # ### By convention, all performance measures:
-#' # # Arguments:
-#' # p     numeric vector of predicted probabilities
-#' # y     numeric/integer vector of observed outcome, of same length as p.
-#' # ...   for future compatibility
-#' # 
-#' # # Return:
-#' # numeric of length 1.
-#' ##############################                
-#' 
-#' # Error function: Mean Squared Error
-#' mse <- brier <- function(p, y, ...) mean((p - y)^2)
-#' 
-#' rmse <- function(p, y, ...)
-#'   sqrt(mse(p = p, y = y, ...))
-#' 
-#' 
-#' 
-#' 
-#' # Error function: Variance of prediction error
-#' var.e <- function(p, y, ...) var(p - y)
-#' 
-#' 
-#' 
-#' # Measure 1: Coefficient of variation of prediction error.
-#' coef.var.pred <- function(p, y, abs = TRUE, ...)
-#'   coef.var(x = p - y, abs = abs, ...) 
-#' 
-# #' #' @importFrom pROC auc
-#' auc <- function(p, y, ...) {
-#'   if (is.matrix(p))
-# #'     p <- p[, 1]
-#'   if (is.matrix(y))
-# #'     y <- y[, 1]
-#'   pROC::auc(response = y, predictor = p)
-#' }
-#' 
-#' 
-#' 
-#' 
-#' 
-#' ############################## Heterogeneity, generalizability, pooled performance functions ###############################
-#' # ### By convention, all generalizability measures:
-#' # # Required arguments:
-#' # x       numeric vector of performance in different strata
-#' # ...     for compatibility.
-#' #
-#' # # Possible arguments, that are always passed through successfully:
-#' # N       scalar integer, total sample size
-#' # n       named numeric/integer vector, sample size per strata. Has same length as x.
-#' # data    Full data set. Use only if other arguments are not enough.
-#' # coef    data.frame containing coefficients of stratified models. Rows are strata, columns are coefs.
-#' # coef.se data.frame containing se of coefficients of stratified models. Rows are strata, columns are coefs.
-#' #
-#' # # Possible arguments that are passed through only for certain measures:
-#' # se, TBI
-#' # 
-#' # # Return:
-#' # numeric of length 1.
-#' ##############################   
-#' 
-#' # Measure 0: mean
-#' abs.mean <- function(x, ...)
-#'   abs(mean(unlist(x)))
-#' 
-#' 
-#' # Measure 1: Coefficient of variation (=scaled sd)
-#' # In general sense, abs needs not be TRUE, but for metapred it should,
-#' # such that higher values are worse performance.
-#' coef.var <- function(x, abs = TRUE, ...) {
-#'   cv <- sd(x)/mean(x)
-#'   if (isTRUE(abs)) abs(cv) else cv
-#' }
-#' 
-#' coef.var.mean <- function(x, abs = TRUE, ...) 
-#'   coef.var(x, abs = abs) + if (abs) abs(mean(x)) else mean(x)
-#' 
-#' # Measure 2 (?): GINI coefficient
-#' # No code or import necessary
-#' # GiniMd(x, na.rm = FALSE)
-#' 
-#' 
-#' weighted.abs.mean <- function(x, n, ...)
-#'   abs.mean(x * sqrt(n - 1)) / sum(sqrt(n - 1))
-#' 
-#' 
-#' pooled.var <- function(x, n, ...) {
-#'   pm <- unlist(x)
-#'   pm
-#'   ## TODO: Extract sample size for each cluster and apply corresponding to the right performance measures
-#'   ## TODO: use rubins rules.
-#' }
-#' 
-#' rubins.rules <- function(x, n, ...)
-#'   x + var(x) * (1 + 1/n)
-#' 
-#' plotauc <- function(x, ...) {
-#'   print(x)
-#'   print(ci(x))
-#'   NULL
-#' }
-#' 
-#' 
-#' # squared.diff #a penalty equal to the mean squared differences 
-#' squared.diff <- function(x, ...)
-#'   mse(x, mean(x))
-#' 
-# #' #' @importFrom pROC ci
-#' forest.listofperf <- function(x, title, ...) {
-#'   z <- lapply(x, pROC::ci) 
-# #'   metamisc::forest(theta       = sapply(z, `[[`, 2),
-# #'                    theta.ci.lb = sapply(z, `[[`, 1),
-# #'                    theta.ci.ub = sapply(z, `[[`, 3),
-# #'                    theta.slab  = names(x),
-#'                    title = title,
-#'                    sort  = FALSE,
-#'                    xlab  = "AUC")
-#' }
-#' 
