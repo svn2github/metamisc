@@ -1,6 +1,7 @@
 context("metapred 3. S3 class and methods.")
 
 ### TODO
+# plot (see the bottom)
 # predFUN.
 # Tests for options of predict.metapred
 
@@ -56,14 +57,14 @@ test_that("metapred can handle multiple genFUN.", {
   genFUN <- list(abs.mean = "abs.mean", nf = function(x, ...) NULL)
   expect_is(mp <- metamisc:::metapred(data = td, strata = "X4", scope = f, formula = f, family = binomial, genFUN = genFUN)
             , "metapred")
-  genFUN <- list(abs.mean = "abs.mean", plot = "plot")
-
-  td3 <- rbind(td, td)
-  td3$X4[(nrow(td) + 1):nrow(td3)] <- 2 # necessary for valmeta and forestplot.
-  expect_is(
-    mp <- metamisc:::metapred(td3, strata = "X4", scope = f, formula = f, family = binomial, perfFUN = "auc", selFUN = "which.max",
-                                      genFUN = genFUN)
-            , "metapred")
+  # genFUN <- list(abs.mean = "abs.mean", plot = "plot")
+  # 
+  # td3 <- rbind(td, td)
+  # td3$X4[(nrow(td) + 1):nrow(td3)] <- 2 # necessary for valmeta and forestplot.
+  # expect_is(
+  #   mp <- metamisc:::metapred(td3, strata = "X4", scope = f, formula = f, family = binomial, perfFUN = "auc", selFUN = "which.max",
+  #                                     genFUN = genFUN)
+  #           , "metapred")
 })
 
 test_that("metapred can handle different distributions.", {
@@ -176,6 +177,24 @@ test_that("metapred S3 methods work.", {
   expect_true(is.numeric(coef(mp)))
   expect_equal(length(coef(mp)), n.cov - 1)
 })
+
+# # Tests to be added to testthat:
+# mp.mse <- metapred(DVTipd.reordered, strata = "cluster", perfFUN = "mse.with.se",
+#                    max.steps = 0)
+# cv.mse <- subset(mp.mse)
+# plot(cv.mse)
+# 
+# mp.auc <- metapred(DVTipd.reordered, strata = "cluster", perfFUN = "auc",
+#                    max.steps = 0)
+# cv.auc <- subset(mp.auc)
+# plot(cv.auc)
+# 
+# mp.slo <- metapred(DVTipd.reordered, strata = "cluster", perfFUN = "cal.slope", family = binomial,
+#                    max.steps = 0)
+# cv.slo <- subset(mp.slo)
+# plot(cv.slo)
+
+
 
 # This one can be a little annoying
 # test_that("print.metapred prints a metapred object", {
