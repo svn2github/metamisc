@@ -70,17 +70,20 @@ pred.recal <- function(p, y, estFUN, family = gaussian, which = "intercept", ...
   out
 }
 
-# gl.recal <-  metamisc:::pred.recal(predict(gl, type = "response"), gl$data$X1, "glm", binomial)
-# int.recal <- (gl.recal)[[1]][[1]]
-# all.equal(int.recal, 0) # intercept recalibration works.
-# 
-# gl.recal <- metamisc:::pred.recal(predict(gl, type = "response"), gl$data$X1, "glm", binomial, which = "slope")
-# slo.recal <- gl.recal[[1]][2]
-# all.equal(slo.recal, 1) # Perfect
-# 
-# gl.recal <- metamisc:::pred.recal(predict(gl, type = "response"), gl$data$X1, "glm", binomial, which = "add.slope")
-# slo.recal <- gl.recal[[1]][2]
-# all.equal(slo.recal, 0) #
+# Object recal object
+# parm "estimate" is the only viable obtion
+# level 
+# #' @export
+# confint.recal <- function(object, parm = "estimate", level = .95, ...) { # Works for lm. And glm?
+#   ses <- se(object, ...)
+#   coefs <- coef(object, ...)
+#   if(level < 0 || level > 1)
+#     stop("Impossible confidence level. Possible levels: 0 < level < 1")
+#   z <- qt(1 - (1 - level)/2, df = object$df.residual) # z = t distributed
+#   data.frame("ci.lb" = coefs - z * ses, "ci.ub" = coefs + z * ses)
+# }
+
+
 
 
 

@@ -110,6 +110,29 @@ test_that("recalibrate recalibrates glm accurately.", {
 # shrink(g4, d6, method = "bs") # should be negative, as d6 created with opposite coefficientss
 # shrink(g4, d5) # should be 0 < slope < 1
 
+########## pred.recal
+test_that("recalibrate recalibrates glm's accurately.", {
+  gl.recal <-  metamisc:::pred.recal(predict(g4, type = "response"), d4[, 1], "glm", binomial)
+  int.recal <- (gl.recal)[[1]][[1]]
+  se(gl.recal)
+  suppressMessages(confint(gl.recal))
+  expect_equal(int.recal, 0) # intercept recalibration works.
+  
+  gl.recal <- metamisc:::pred.recal(predict(g4, type = "response"), d4[, 1], "glm", binomial, which = "slope")
+  se(gl.recal)
+  suppressMessages(confint(gl.recal))
+  slo.recal <- gl.recal[[1]][2]
+  expect_equal(slo.recal, c(lp = 1)) # Perfect
+  
+  gl.recal <- metamisc:::pred.recal(predict(g4, type = "response"), d4[, 1], "glm", binomial, which = "add.slope")
+  se(gl.recal)
+  suppressMessages(confint(gl.recal))
+  slo.recal <- gl.recal[[1]][2]
+  expect_equal(slo.recal, c(lp = 0)) #
+})
+
+
+
 
 
 
@@ -133,3 +156,4 @@ test_that("recalibrate recalibrates glm accurately.", {
 #   y <- stats::rbinom(n, 1, p)
 #   cbind(y,data.frame(x[ , -1]))
 # }
+
