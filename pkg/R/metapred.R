@@ -891,7 +891,7 @@ mp.cv.val <- function(cv.dev, data, st.i, folds, recal.int = FALSE, two.stage = 
   # check for is.null
 
   cv.dev[["perf"]] <- data.frame(val.strata = unlist(perf.str), 
-                                 perf = unlist(sapply(perf.full, `[[`, 1)), 
+                                 estimate = unlist(sapply(perf.full, `[[`, 1)), 
                                  se = NA, var = NA, ci.lb = NA, ci.ub = NA, 
                                  measure = pfn,
                                  n = unlist(cv.dev[["nobs.val"]]),
@@ -916,7 +916,7 @@ mp.cv.val <- function(cv.dev, data, st.i, folds, recal.int = FALSE, two.stage = 
   cv.dev[["perf.full"]] <- perf.full
   row.names(cv.dev[["perf"]]) <- names(cv.dev[["cv"]])
   # cv.dev is saved for later, not used here. # But soon it is to be used here!
-  cv.dev[["perf"]][, "perf"]  <- as.numeric(cv.dev[["perf"]][, "perf"]) 
+  cv.dev[["perf"]][, "estimate"]  <- as.numeric(cv.dev[["perf"]][, "estimate"]) 
   
   # # Compute additional performance measures.
   # TBI

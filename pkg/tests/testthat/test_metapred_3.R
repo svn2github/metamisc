@@ -1,5 +1,12 @@
 context("metapred 3. S3 class and methods.")
 
+### NOTES
+# Use 
+# opt <- options(warn=2)
+# ...
+# options(opt)
+# When testing locally without testthat.
+
 ### TODO
 # plot (see the bottom)
 # predFUN.

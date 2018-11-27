@@ -190,7 +190,8 @@ get_confint <- function(object, level = 0.95, ...) {
 ############################## Heterogeneity, generalizability, pooled performance functions ###############################
 # ### By convention, all generalizability measures:
 # # Current required arguments:
-# object  data.frame containing at least a column with'perf', and preferably more statistics.
+# object  data.frame containing at least a column with 'estimate', and preferably more statistics: 
+#             se, var, ci.lb     ci.ub measure  n   class
 # # Required arguments: (OLD)
 # x       list of class "listofperf", list of performance in different strata. 
 #           Note that it has its own unlist method. Practically all (except plot) should call unlist first!
@@ -209,11 +210,11 @@ get_confint <- function(object, level = 0.95, ...) {
 
 # Measure 0: mean
 abs.mean <- function(object, ...)
-  abs(mean(object$perf)) 
+  abs(mean(object$estimate)) 
 
 ## also possible the other way around (e.g. for cal slopes and intercepts)
 mean.abs <- function(object, ...) 
-  mean(abs(object$perf))
+  mean(abs(object$estimate))
 
 # Measure 1: Coefficient of variation (=scaled sd)
 # In general sense, abs needs not be TRUE, but for metapred it should,
@@ -242,11 +243,11 @@ coef.var <- function(x, abs = TRUE, ...) {
 # }
 
 coef.var.with.se <- function(object, abs = TRUE, ...) 
-  cbind(data.frame(estimate = coef.var(object$perf)), bootstrap.se(object, coef.var))
+  cbind(data.frame(estimate = coef.var(object[["estimate"]])), bootstrap.se(object, coef.var))
 
 
 bootstrap.se <- function(object, fun, k = 2000, ...) {
-  x <- unlist(object$perf)
+  x <- unlist(object[["estimate"]])
   fun <- match.fun(fun)
   
   est <- rep(NA, k)
@@ -260,7 +261,7 @@ bootstrap.se <- function(object, fun, k = 2000, ...) {
 }
 
 coef.var.mean <- function(object, abs = TRUE, ...)  {
-  x <- unlist(object$perf)
+  x <- unlist(object[["estimate"]])
   coef.var(x, abs = abs) + if (abs) abs(mean(x)) else mean(x)
 }
   
@@ -268,17 +269,17 @@ coef.var.mean <- function(object, abs = TRUE, ...)  {
 # Measure 2 (?): GINI coefficient
 # #' @importFrom Hmisc GiniMd
 GiniMd <- function(object, ...) 
-  GiniMd(object$perf, na.rm = T)
+  GiniMd(object[["estimate"]], na.rm = T)
 
 # Also from Hmisc:
 gmd <- function(object, ...) {
-  x <- object$perf
+  x <- object[["estimate"]]
   n <- length(x)
   sum(outer(x, x, function(a, b) abs(a - b))) / n / (n - 1)
 }
 
 weighted.abs.mean <- function(object, ...) 
-  abs(mean((object$perf * object$n))) / sum(object$n)
+  abs(mean((object[["estimate"]] * object$n))) / sum(object$n)
 
 # Fixed-Effects Meta-Analysis, Inverse Variance Method.
 # NOTE: AUC is on wrong scale!!
@@ -289,7 +290,7 @@ fema <- function(object, ...) {
   # }
   # return(inv.logit(sum(unlist(x) / unlist(v)) / sum(1/unlist(v)) ))
   # else
-  x <- object$perf
+  x <- object[["estimate"]]
   v <- object$var
   sum(unlist(x) / unlist(v)) / sum(1/unlist(v))
 }
@@ -309,19 +310,19 @@ rema.tau <- function(object, ...)
 # }
 
 pooled.var <- function(object, ...) {
-  x <- unlist(object$perf)
+  x <- unlist(object[["estimate"]])
   mean(x) + var(x) * (1 + 1/length(nrow(object)))
 }
 
 # squared.diff #a penalty equal to the mean squared differences 
 squared.diff <- function(object, ...) {
-  x <- unlist(object$perf)
+  x <- unlist(object[["estimate"]])
   mse(x, mean(x))
 }
 
 # Mean of largest half of values
 mean.of.large <- function(object, ...) {
-  x <- unlist(object$perf)
+  x <- unlist(object[["estimate"]])
   mean(x[x >= median(x)])
 }
 
@@ -394,7 +395,7 @@ plot.mp.cv.val <- function(x, y, ...)
 #' @importFrom metafor rma
 rema.perf <- function(object, ...) {
   if (object$class[[1]] == "mp.perf" || object$class[[1]] == "recal") {
-    ma <- metafor::rma.uni(yi = object$perf, vi = object$var) # NOTE: DOES IT USE t or normal dist???
+    ma <- metafor::rma.uni(yi = object[["estimate"]], vi = object$var) # NOTE: DOES IT USE t or normal dist???
     pred.int <- predict(ma)
     return(list(est = ma$b,     
                 pi.lb = pred.int$cr.lb,
@@ -403,7 +404,7 @@ rema.perf <- function(object, ...) {
                 ci.ub = ma$ci.ub,
                 tau2  = ma$tau2))
   } else if (object$class[[1]] == "auc") {
-    ma <- valmeta(measure = "cstat", cstat = object$perf, cstat.95CI = as.matrix(object[, c("ci.lb", "ci.ub")]))
+    ma <- valmeta(measure = "cstat", cstat = object[["estimate"]], cstat.95CI = as.matrix(object[, c("ci.lb", "ci.ub")]))
     return(list(est = ma$est,
                 pi.lb = ma$pi.lb,
                 pi.ub = ma$pi.ub,
@@ -414,17 +415,17 @@ rema.perf <- function(object, ...) {
 }
 
 rema.mp.cv.val <- function(object, ...)
-  rema.perf(object$perf)
+  rema.perf(object[["estimate"]])
 
 forest.metapred <- function(object, ...)
   forest.mp.cv.val(subset(object))
 
 forest.mp.cv.val <- function(object, ...)
-  forest.perf(object$perf, xlab = object$perf.name, ...)
+  forest.perf(object[["estimate"]], xlab = object$perf.name, ...)
 
 forest.perf <- function(object, ...) {
   ma <- rema.perf(object)
-  fp <- metamisc::forest(theta       = object$perf,
+  fp <- metamisc::forest(theta       = object[["estimate"]],
                          theta.ci.lb = object$ci.lb,
                          theta.ci.ub = object$ci.ub,
                          theta.slab  = object$val.strata,
@@ -442,7 +443,7 @@ fat.perf <- function(object, ...)
   fat(object[["perf"]], object[["se"]], n.total = sum(object[["n"]]), ...)
 
 fat.mp.cv.val <- function(object, ...) 
-  fat(object$perf, ...)
+  fat(object[["estimate"]], ...)
 
 fat.metapred <- function(object, ...)
   fat.mp.cv.val(subset(object, ...))
@@ -455,7 +456,3 @@ funnel.mp.cv.val <- function(object, ...)
 
 funnel.metapred <- function(object, ...)
   plot(fat.metapred(object, ...))
-
-
-
-
