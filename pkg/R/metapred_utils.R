@@ -103,7 +103,7 @@ center <- function(x, center.in) {
 # y.name character, name of outcome variable
 # cluster.name character, name of cluster variable.
 centerCovs <- function(data, y.name, cluster.name) {
-  to.center <- which((!(colnames(data) == cluster.name | colnames(data) == y.name) ) & apply(data, 2, is.numeric))
+  to.center <- which((!(colnames(data) == cluster.name | colnames(data) == y.name) ) & sapply(data, is.numeric))
   cluster.vec <- data[ , cluster.name]
   
   for (col in to.center)
@@ -376,6 +376,29 @@ successive <- function(st.u, k = NULL, ...) {
 remove.na.obs <- function(df) 
   df[apply(df, 1, function(df) sum(is.na(df))) == 0, ]
 
+# Gets the predict method. # NOTE: CODE FROM BEFORE logistf compatibility was introduced. <28 nov 2018
+# fit Model fit object.
+# two.stage logical. Is the model a two-stage model?
+# predFUN Optional function, which is immediately returned
+# ... For compatibility only.
+# getPredictMethod <- function(fit, two.stage = TRUE, predFUN = NULL, ...) {
+#   # A user written function may be supplied:
+#   if (!is.null(predFUN)) {
+#     if (is.function(predFUN)) {
+#       return(predFUN)
+#     } else return(get(as.character(predFUN), mode = "function"))
+#   }
+# 
+#   # If two-stage, the fit is used only to extract the link function.
+#   # If one-stage, fit's prediction method may be used.
+#   if (two.stage) {# Preferably mp.cv.dev should not be here. But it currently has to.
+#     if (inherits(fit, c("glm", "lm", "mp.cv.dev"))) 
+#       return(predictGLM)
+#     stop("No prediction method has been implemented for this model type yet for two-stage
+#               meta-analysis. You may supply one with the predFUN argument.")
+#   } else return(predict)
+# }
+
 # Gets the predict method.
 # fit Model fit object.
 # two.stage logical. Is the model a two-stage model?
@@ -388,16 +411,18 @@ getPredictMethod <- function(fit, two.stage = TRUE, predFUN = NULL, ...) {
       return(predFUN)
     } else return(get(as.character(predFUN), mode = "function"))
   }
-
+  
   # If two-stage, the fit is used only to extract the link function.
   # If one-stage, fit's prediction method may be used.
-  if (two.stage) {# Preferably mp.cv.dev should not be here. But it currently has to.
-    if (inherits(fit, c("glm", "lm", "mp.cv.dev"))) 
+  if (two.stage) {
+    if (any(fit$stratified.fit[[1]]$stratum.class %in% c("logistf")) || inherits(fit, "logistf"))
+      return(predictlogistf)
+    if (any(fit$stratified.fit[[1]]$stratum.class %in% c("glm", "lm") || inherits(fit, c("glm", "lm")))) 
       return(predictGLM)
-    else stop("No prediction method has been implemented for this model type yet for two-stage
-              meta-analysis. You may supply one with the predFUN argument.")
+    stop("No prediction method has been implemented for this model type yet for two-stage
+         meta-analysis. You may supply one with the predFUN argument.")
   } else return(predict)
-}
+  }
 
 # Prediction function for two-stage metapred GLM objects
 # object glm model fit object
@@ -410,8 +435,8 @@ predictGLM <- function(object, newdata, b = NULL, f = NULL, type = "response", .
   if (is.null(b)) b <- coef(object)
   if (is.null(f)) f <- formula(object)
   X <- model.matrix(stats::as.formula(f), data = newdata)
-  X <<- X
-  b <<- b
+  # X <<- X
+  # b <<- b
   
   lp <- X %*% b
   
@@ -424,6 +449,25 @@ predictGLM <- function(object, newdata, b = NULL, f = NULL, type = "response", .
     return(lp)
   # if (is.null(object$family)) lp
   # else object$family$linkinv(lp)
+}
+
+
+# Prediction function for logistf from the logisf package
+# Args same as those of predictGLM()
+predictlogistf <- function(object, newdata, b = NULL, f = NULL, type = "response", ...) {
+  object$family <- binomial(link = "logit")
+  predictGLM(object, newdata, b = b, f = f, type = type)
+}
+
+#' @importFrom logistf logistf
+logistfirth <- function(formula = attr(data, "formula"), data = sys.parent(), pl = TRUE, 
+                        alpha = 0.05, control, plcontrol, firth = TRUE, init, 
+                        plconf = NULL, dataout = TRUE, ...) {
+  fit <- logistf::logistf(formula = formula, data = data, pl = pl, 
+                 alpha = alpha, control = control, plcontrol = plcontrol, 
+                 firth = firth, init = init, 
+                 plconf = plconf, dataout = dataout, ...)
+  return(recalibrate(fit, newdata = data, f = ~ 1, estFUN = glm, family = binomial))
 }
 
 # Univariate Random Effects Meta-Analysis
@@ -441,7 +485,13 @@ urma <- function(coefficients, variances, method = "DL", ...)
   
   meta.b <- meta.se <- rep(NA, ncol(coefficients))
   for (col in 1:ncol(coefficients)) {
-    r <- metafor::rma(coefficients[ , col] , variances[ , col], method = method, ...)
+    tryCatch(
+      r <- metafor::rma(coefficients[ , col] , variances[ , col], method = method, ...),
+      error = function(e) {
+        stop(paste("Error in univariate rma of variable:", names(coefficients)[col], ",as follows:", e))
+        }
+    )
+    
     meta.b[col]  <- r$beta
     meta.se[col] <- r$se
   }

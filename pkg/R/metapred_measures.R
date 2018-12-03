@@ -186,6 +186,13 @@ get_confint <- function(object, level = 0.95, ...) {
 # aucci <- pROC:::ci(m, method = "bootstrap")
 # metamisc:::confint.auc(m)
 
+# Binomial Log likelihood
+# p Numeric vector, 0 <= p <= 1, predicted probability under the model
+# y observed outcome, 0 or FALSE is no outcome, >= 1 or TRUE is outcome
+# na.rm logical. should missing values be removed?
+bin.ll <- function(p, y, na.rm = TRUE)
+  sum(log(p[y]), na.rm = na.rm) + sum(log(1 - p[-y]), na.rm = na.rm)
+
 
 ############################## Heterogeneity, generalizability, pooled performance functions ###############################
 # ### By convention, all generalizability measures:
@@ -201,8 +208,6 @@ get_confint <- function(object, level = 0.95, ...) {
 # coef    data.frame containing coefficients of stratified models. Rows are strata, columns are coefs.
 # coef.se data.frame containing se of coefficients of stratified models. Rows are strata, columns are coefs.
 #
-# # Possible arguments that are passed through only for certain measures:
-# se, TBI
 # 
 # # Return:
 # numeric of length 1.
@@ -295,7 +300,7 @@ fema <- function(object, ...) {
   sum(unlist(x) / unlist(v)) / sum(1/unlist(v))
 }
 
-rema.beta <- function(object, ...) 
+rema.beta <- rema.mean <- function(object, ...) 
   rema.perf(object, ...)$est
 
 # valmeta does not produce tau!
@@ -415,13 +420,13 @@ rema.perf <- function(object, ...) {
 }
 
 rema.mp.cv.val <- function(object, ...)
-  rema.perf(object[["estimate"]])
+  rema.perf(object[["perf"]])
 
 forest.metapred <- function(object, ...)
   forest.mp.cv.val(subset(object))
 
 forest.mp.cv.val <- function(object, ...)
-  forest.perf(object[["estimate"]], xlab = object$perf.name, ...)
+  forest.perf(object[["perf"]], xlab = object$perf.name, ...)
 
 forest.perf <- function(object, ...) {
   ma <- rema.perf(object)
@@ -440,10 +445,10 @@ forest.perf <- function(object, ...) {
 }
 
 fat.perf <- function(object, ...)
-  fat(object[["perf"]], object[["se"]], n.total = sum(object[["n"]]), ...)
+  fat(object[["estimate"]], object[["se"]], n.total = sum(object[["n"]]), ...)
 
 fat.mp.cv.val <- function(object, ...) 
-  fat(object[["estimate"]], ...)
+  fat(object[["perf"]], ...)
 
 fat.metapred <- function(object, ...)
   fat.mp.cv.val(subset(object, ...))

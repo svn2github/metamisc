@@ -170,7 +170,7 @@
 #'
 #' @export
 metapred <- function(data, strata, formula, estFUN = "glm", scope = NULL, retest = FALSE, max.steps = 1000, 
-                     center = TRUE, recal.int = FALSE, cvFUN = NULL, cv.k = NULL,  # tol = 0,
+                     center = FALSE, recal.int = FALSE, cvFUN = NULL, cv.k = NULL,  # tol = 0,
                      metaFUN = NULL, meta.method = NULL, predFUN = NULL, perfFUN = NULL, genFUN = NULL,
                      selFUN = "which.min",
                      ...) {
@@ -365,7 +365,9 @@ formula.metapred <- function(x, ...)
 family.metapred <- function(object, ...) {
   if (!is.null((f <- object$stepwise$s0$cv[[1]]$family)))
     f
-  else 
+  else if (!is.null(f <- object$family))
+    f
+  else
     NULL
 }
 
@@ -560,12 +562,9 @@ mp.fit <- function(formula, data, remaining.changes, st.i, st.u, folds, recal.in
                                current.model)
     # print("1 stage used")
   }
-    
   
   out[["stepwise"]] <- steps
   out[["step.count"]] <- step.count
-  
-  out <<- out
   out[["nobs"]] <- sum(out[["nobs.strata"]])
   class(out) <- "mp.fit"
   
@@ -714,11 +713,14 @@ print.mp.step <- function(x, show.f = TRUE, ...) {
     cat("Starting with model:\n")
     print(x[["start.formula"]])
   }
+  # x <<- x
   cat("\n")
-  Change.to.model <- names(x[["cv"]])
-  Generalizability <- sapply(x[["cv"]], `[[`, "gen")
-  # Mean.performance <- sapply(x[["cv"]], `[[`, "mean.perf")
-  print(data.frame(Change.to.model, Generalizability), row.names = FALSE) # , Mean.performance
+  cat("Generalizability:\n")
+  # Change.to.model <- names(x[["cv"]])
+  # Generalizability <- sapply(x[["cv"]], `[[`, "gen") # Old printing method. Only printed one measure.
+  # print(data.frame(Change.to.model, Generalizability), row.names = FALSE) # , Mean.performance
+  
+  print(data.frame(lapply(x[["cv"]], `[[`, "gen.all")))
 }
 
 # Turn a cross-validated model into a full or 'global' model
@@ -909,11 +911,10 @@ mp.cv.val <- function(cv.dev, data, st.i, folds, recal.int = FALSE, two.stage = 
     cv.dev[["perf"]][, c("ci.lb", "ci.ub")] <- unlist(t(sapply(perf.full, get_confint))),  
     error = function(e) print(paste("Skipping ci estimation for", class(perf.full[[1]])[[1]], sep = " ")))
   
-  perf.full <<- perf.full
-  cv.dev <<- cv.dev
+  # cv.dev <<- cv.dev
   
-  class(perf.full) <- c("listofperf", class(perf.full))
-  cv.dev[["perf.full"]] <- perf.full
+  # class(perf.full) <- c("listofperf", class(perf.full))
+  # cv.dev[["perf.full"]] <- perf.full
   row.names(cv.dev[["perf"]]) <- names(cv.dev[["cv"]])
   # cv.dev is saved for later, not used here. # But soon it is to be used here!
   cv.dev[["perf"]][, "estimate"]  <- as.numeric(cv.dev[["perf"]][, "estimate"]) 
@@ -944,7 +945,6 @@ mp.cv.val <- function(cv.dev, data, st.i, folds, recal.int = FALSE, two.stage = 
     
     gv <- genfun(cv.dev[["perf"]], coef = coef(cv.dev[["stratified.fit"]]), coef.se = se(cv.dev[["stratified.fit"]]),
                  title = paste("Model change: ~", cv.dev[["changed"]]), xlab = as.character(pfn), ...)
-    gv <<- gv
     # gv <- genfun(x = perf.full, v = lapply(perf.full, variances), data = data, N = nrow(data), n = cv.dev[["nobs.val"]],
     #              coef = coef(cv.dev[["stratified.fit"]]), coef.se = se(cv.dev[["stratified.fit"]]),
     #              title = paste("Model change: ~", cv.dev[["changed"]]), pfn = as.character(pfn), ...)
@@ -1023,8 +1023,7 @@ mp.cv.dev <- function(formula, data, st.i, st.u, folds, two.stage = TRUE,
   }
   
   out[["n.cv"]] <- length(out[["cv"]])
-  # out[["nobs.cv"]]
-  class(out) <- "mp.cv.dev"
+  class(out) <- c("mp.cv.dev") 
   out
 }
 
@@ -1080,7 +1079,7 @@ mp.1st.fit <- function(formula, data, st.i, st.u, folds, estFUN, ...) {
     out[[getclName(folds[["dev"]][[fo]])]] <- mp.stratum.fit(fit) 
   }
   
-  class(out) <- "mp.1st.fit"
+  class(out) <- "mp.1st.fit" 
   out
 }
 
@@ -1128,7 +1127,9 @@ mp.cv.meta.fit <- function(stratified.fit, folds, metaFUN = urma, meta.method = 
   for (fo in seq_along(folds[["dev.i"]]))
     out[[getclName(folds[["dev"]][[fo]])]] <- mp.meta.fit(stratified.fit = stratified.fit[folds[["dev.i"]][[fo]]],
                                                           metaFUN = metaFUN, meta.method = meta.method)
-  class(out) <- "mp.cv.meta.fit"
+  
+  class(out) <- c("mp.cv.meta.fit", stratified.fit[[1]]$stratum.class)
+  # print(c("mp.cv.meta.fit", stratified.fit[[1]]$stratum.class))
   out
 }
 
@@ -1239,12 +1240,12 @@ print.mp.stratified.fit <- function(x, ...) {
 # Returns mp.stratum.fit
 mp.stratum.fit <- function(fit) {
   out <- list()
-  
   out[["coefficients"]] <- getCoefs(fit)
   out[["variances"]]    <- getVars(fit)
   # out[["covar"]]        <- getCoVars(fit)
   out[["vcov"]]         <- vcov(fit)
   out[["nobs"]]         <- nobs(fit, use.fallback = TRUE)
+  out[["stratum.class"]]<- class(fit)
   
   class(out) <- "mp.stratum.fit"
   out

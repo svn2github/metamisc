@@ -154,7 +154,7 @@ test_that("metapred's stepwise is WAD.", {
 })
 
 # formula of glm is specific for this data, seed and test!
-mp <- metapred(data = td, strata = "X2", family = binomial(link = "log"), formula = X3 ~ X1 + X4)
+mp <- metapred(data = td, strata = "X2", family = binomial(link = "log"), formula = X3 ~ X1 + X4, center = TRUE)
 gl <- glm(formula = X3 ~ X1, data = td, family = binomial(link = "log"))
 
 test_that("metapred S3 methods work.", {
@@ -178,7 +178,7 @@ test_that("metapred S3 methods work.", {
   # This is to prevent a previous bug from reappearing
   # If the order of formla does not match that of data, it needs to be reordered internally
   # This can give issues when centering.
-  expect_is(mp <- metapred(data = td, strata = "X2", formula = X3 ~ X1 + X4, family = binomial), "metapred")
+  expect_is(mp <- metapred(data = td, strata = "X2", formula = X3 ~ X1 + X4, family = binomial, center = TRUE), "metapred")
   
   # coef
   expect_true(is.numeric(coef(mp)))
