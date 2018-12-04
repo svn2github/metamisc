@@ -422,9 +422,44 @@ rema.perf <- function(object, ...) {
 rema.mp.cv.val <- function(object, ...)
   rema.perf(object[["perf"]])
 
-forest.metapred <- function(object, ...)
-  forest.mp.cv.val(subset(object))
 
+
+#' Forest plot of a metapred fit
+#' 
+#' Draw a forest plot of the performance of an internally-externally cross-validated model. By default the final model is shown.
+#' 
+#' @author Valentijn de Jong <Valentijn.M.T.de.Jong@gmail.com>
+#' 
+#' @param object A \code{metapred} fit object.
+#' @param step Which step should be plotted? Defaults to the best step. numeric is converted to name of the step: 0 for 
+#' an unchanged model, 1 for the first change...
+#' @param model Which model change should be plotted? NULL (default, best change) or character name of variable or (integer) 
+#' index of model change.
+#' @param ... For compatibility only.
+#' 
+#' @author Valentijn de Jong <Valentijn.M.T.de.Jong@gmail.com>
+#' 
+#' @export
+forest.metapred <- function(object, step = NULL, model = NULL, ...)
+  forest.mp.cv.val(subset(object, step = step, model = model), ...)
+
+
+#' Forest plot of a validation object.
+#' 
+#' Draw a forest plot of the performance of an internally-externally cross-validated model.
+#' 
+#' @author Valentijn de Jong <Valentijn.M.T.de.Jong@gmail.com>
+#'  
+#' @param object An \code{mp.cv.val} or \code{perf} object.
+#' @param ... For compatibility only.
+#' 
+#' @aliases forest.mp.cv.val forest.perf
+#' 
+#' @author Valentijn de Jong <Valentijn.M.T.de.Jong@gmail.com>
+#' 
+#' @method forest mp.cv.val
+#' 
+#' @export
 forest.mp.cv.val <- function(object, ...)
   forest.perf(object[["perf"]], xlab = object$perf.name, ...)
 

@@ -459,16 +459,16 @@ predictlogistf <- function(object, newdata, b = NULL, f = NULL, type = "response
   predictGLM(object, newdata, b = b, f = f, type = type)
 }
 
-#' @importFrom logistf logistf
-logistfirth <- function(formula = attr(data, "formula"), data = sys.parent(), pl = TRUE, 
-                        alpha = 0.05, control, plcontrol, firth = TRUE, init, 
-                        plconf = NULL, dataout = TRUE, ...) {
-  fit <- logistf::logistf(formula = formula, data = data, pl = pl, 
-                 alpha = alpha, control = control, plcontrol = plcontrol, 
-                 firth = firth, init = init, 
-                 plconf = plconf, dataout = dataout, ...)
-  return(recalibrate(fit, newdata = data, f = ~ 1, estFUN = glm, family = binomial))
-}
+# #' @importFrom logistf logistf
+# logistfirth <- function(formula = attr(data, "formula"), data = sys.parent(), pl = TRUE, 
+#                         alpha = 0.05, control, plcontrol, firth = TRUE, init, 
+#                         plconf = NULL, dataout = TRUE, ...) {
+#   fit <- logistf::logistf(formula = formula, data = data, pl = pl, 
+#                  alpha = alpha, control = control, plcontrol = plcontrol, 
+#                  firth = firth, init = init, 
+#                  plconf = plconf, dataout = dataout, ...)
+#   return(recalibrate(fit, newdata = data, f = ~ 1, estFUN = glm, family = binomial))
+# }
 
 # Univariate Random Effects Meta-Analysis
 # coefficients data.frame or matrix, containing coef

@@ -1,3 +1,24 @@
+## Note by Valentijn: I can't seem to make it pass all the checks for  forest.numeric or forest.default 
+# (by Thomas, below) work without making a generic method. But that masks the generic from metafor. 
+# The issue is that i was trying to unmask the generic from metafor...
+
+#' Forest plot
+#' 
+#' Generate a forest plot by specifying the various effect sizes, confidence intervals and summary estimate.
+#' 
+#' @author Thomas Debray <thomas.debray@gmail.com>
+#' @author Valentijn de Jong <Valentijn.M.T.de.Jong@gmail.com>
+#' 
+#' @param \dots Additional arguments, which are currently ignored.
+#' 
+#' @details This is a generic function. See \link{forest.default} for making forest plots of summary statistics,
+#' \link{forest.metapred} for plotting \link{metapred} objects, and \link{forest.mp.cv.val} for plotting 
+#' \code{mp.cv.val} objects. 
+#' 
+#' @export forest
+forest <- function(...)
+  UseMethod("forest")
+
 #' Forest plot
 #' 
 #' Generate a forest plot by specifying the various effect sizes, confidence intervals and summary estimate.
@@ -25,8 +46,11 @@
 #' 
 #' @author Thomas Debray <thomas.debray@gmail.com>
 #' 
+#' @method forest default
+#' 
 #' @export
-forest <- function (theta, 
+# This could also be named forest.numeric
+forest.default <- function (theta, 
                     theta.ci.lb,
                     theta.ci.ub,
                     theta.slab, 

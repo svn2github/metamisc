@@ -112,5 +112,5 @@ and evaluating clinical prediction models in an individual participant data meta
 \emph{Stat Med}. 2013;32(18):3158-80.
 }
 \author{
-Valentijn de Jong
+Valentijn de Jong <Valentijn.M.T.de.Jong@gmail.com>
 }

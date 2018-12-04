@@ -87,7 +87,7 @@
 #' Generalized stepwise regression for obtaining a prediction model with adequate performance across data sets. Requires
 #' data from individuals in multiple studies.
 #' 
-#' @author Valentijn de Jong
+#' @author Valentijn de Jong <Valentijn.M.T.de.Jong@gmail.com>
 #' 
 #' @references Debray TPA, Moons KGM, Ahmed I, Koffijberg H, Riley RD. A framework for developing, implementing, 
 #' and evaluating clinical prediction models in an individual participant data meta-analysis. 
@@ -125,8 +125,8 @@
 #' (\code{perfFUN="mse"}).Other options are \code{"var.e"} (variance of prediction error), \code{"auc"} (area under the curve),
 #' \code{"cal.int"} (calibration intercept), and \code{"cal.slope"} (multiplicative calibration slope) and \code{"cal.add.slope"}
 #' (additive calibration slope).
-#' @param genFUN Function or list of (named) functions for computing generalizability of the performance. 
-#' Default: (absolute) mean (\code{genFUN="abs.mean"}). Choose \code{coef.var} for the coefficient of variation. If a list,
+#' @param genFUN Function or \code{list} of named functions for computing generalizability of the performance. 
+#' Default: (absolute) mean (\code{genFUN="abs.mean"}). Choose \code{coef.var} for the coefficient of variation. If a \code{list},
 #' only the first is used for model selection.
 #' @param selFUN Function for selecting the best method. Default: lowest value for \code{genFUN}. Should be set to
 #' "which.max" if high values for \code{genFUN} indicate a good model.
