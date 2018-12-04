@@ -58,8 +58,8 @@ function of \code{glm()} or \code{lm()}.}
 \code{"cal.int"} (calibration intercept), and \code{"cal.slope"} (multiplicative calibration slope) and \code{"cal.add.slope"}
 (additive calibration slope).}
 
-\item{genFUN}{Function or list of (named) functions for computing generalizability of the performance. 
-Default: (absolute) mean (\code{genFUN="abs.mean"}). Choose \code{coef.var} for the coefficient of variation. If a list,
+\item{genFUN}{Function or \code{list} of named functions for computing generalizability of the performance. 
+Default: (absolute) mean (\code{genFUN="abs.mean"}). Choose \code{coef.var} for the coefficient of variation. If a \code{list},
 only the first is used for model selection.}
 
 \item{selFUN}{Function for selecting the best method. Default: lowest value for \code{genFUN}. Should be set to
