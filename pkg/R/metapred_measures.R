@@ -435,13 +435,14 @@ rema.mp.cv.val <- function(object, ...)
 #' an unchanged model, 1 for the first change...
 #' @param model Which model change should be plotted? NULL (default, best change) or character name of variable or (integer) 
 #' index of model change.
+#' @param statistic Numeric. Which performance statistic should be plotted? Defaults to the first.
 #' @param ... For compatibility only.
 #' 
 #' @author Valentijn de Jong <Valentijn.M.T.de.Jong@gmail.com>
 #' 
 #' @export
-forest.metapred <- function(object, step = NULL, model = NULL, ...)
-  forest.mp.cv.val(subset(object, step = step, model = model), ...)
+forest.metapred <- function(object, statistic = 1, step = NULL, model = NULL, ...)
+  forest.mp.cv.val(subset(object, step = step, model = model), statistic = statistic, ...)
 
 
 #' Forest plot of a validation object.
@@ -451,7 +452,8 @@ forest.metapred <- function(object, step = NULL, model = NULL, ...)
 #' @author Valentijn de Jong <Valentijn.M.T.de.Jong@gmail.com>
 #'  
 #' @param object An \code{mp.cv.val} or \code{perf} object.
-#' @param ... For compatibility only.
+#' @param statistic Numeric. Which performance statistic should be plotted? Defaults to the first.
+#' @param ... Other arguments passed to plotting internals. E.g. \code{title}.
 #' 
 #' @aliases forest.mp.cv.val forest.perf
 #' 
@@ -460,8 +462,10 @@ forest.metapred <- function(object, step = NULL, model = NULL, ...)
 #' @method forest mp.cv.val
 #' 
 #' @export
-forest.mp.cv.val <- function(object, ...)
-  forest.perf(object[["perf"]], xlab = object$perf.name, ...)
+forest.mp.cv.val <- function(object, statistic = 1, ...)
+  forest.perf(object[["perf.all"]][[statistic]], 
+              xlab = if (is.character(statistic)) statistic else 
+                object[["perf.names"]][[statistic]], ...)
 
 forest.perf <- function(object, ...) {
   ma <- rema.perf(object)
@@ -478,6 +482,33 @@ forest.perf <- function(object, ...) {
   plot(fp)
   NaN # To be replaced with fp, when metapred() can handle it.
 }
+# 
+# sampleBinary <- function(n = 50, J = 1, b = rep(log(2), J), alpha = NULL, col.names = NULL ) {
+#   J <- length(b)
+#   if (is.null(alpha)) alpha <- -log(sqrt(prod(exp(b))))
+#   if (is.null(col.names)) col.names <- c("Y", paste("X", 1:J, sep = ""))
+#   coefficientss <- c(alpha, b)
+#   x  <- cbind(1, matrix(rbinom(n * J, size = 1, prob = .5), nrow = n, ncol = J))
+#   lp <- coefficientss %*% t(x)
+#   p  <- metamisc:::inv.logit(lp)
+#   y  <- stats::rbinom(length(lp), size = 1, prob = p)
+# 
+#   out <- data.frame(cbind(y,x[ , -1]))
+#   colnames(out) <- col.names
+#   out
+# }
+# 
+# da <- sampleBinary(n = 2000, J = 3)
+# da$X3[sample(seq_len(nrow(da)), size = nrow(da)/2, replace = F)] <- 3
+# 
+# mp <- metapred(da, strata = "X3", family = binomial,
+#                perfFUN = list(mse = "mse", auc = "auc", cal.slope = "cal.slope"))
+# cv <- subset(mp)
+# # perf0 <- cv$perf.all[[2]]
+# 
+# forest(cv, statistic = 3)
+# forest(mp, statistic = "mse", title = "Hallo")
+# # metamisc:::forest.perf(perf0)
 
 fat.perf <- function(object, ...)
   fat(object[["estimate"]], object[["se"]], n.total = sum(object[["n"]]), ...)

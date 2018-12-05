@@ -508,7 +508,6 @@ mp.fit <- function(formula, data, remaining.changes, st.i, st.u, folds, recal.in
   current.model <- mp.step.get.best(steps[[1]])
   current.model[["remaining.changes"]] <- remaining.changes
   gen.diff <- Inf # TBI
-
   
   if (!identical(length(remaining.changes), 0L))
     repeat {
@@ -861,66 +860,78 @@ mp.cv.val <- function(cv.dev, data, st.i, folds, recal.int = FALSE, two.stage = 
                       genFUN = abs.mean, plot = F, ...) {
   # dots <- list(...)
   pfn <- if (is.character(perfFUN)) perfFUN else "Performance"
-  cv.dev[["perf.name"]] <- pfn
-  # print(pfn)
-  perfFUN <- match.fun(perfFUN)
+  cv.dev[["perf.name"]] <- pfn # To be removed!??!!?
+  # perfFUN <- match.fun(perfFUN)
   
   # Recalibrate?
   if (isTRUE(recal.int))
     cv.dev <- mp.cv.recal(cv.dev = cv.dev, newdata = data, estFUN = estFUN, folds = folds)
   
   # Predict outcome
-  p <- fitted.mp.cv.dev(object = cv.dev, data = data, folds = folds, st.i = st.i, predFUN = predFUN) # TBI
+  p <- fitted.mp.cv.dev(object = cv.dev, data = data, folds = folds, st.i = st.i, predFUN = predFUN)
   cv.dev[["nobs.val"]] <- sapply(p, length)
   
   # Necessary for performance computation
   outcome <- f2o(formula(cv.dev))
   
+  # Performance
+  if (!is.list(perfFUN)) 
+    perfFUN <- list(perfFUN)
   
-  # # New, experimental
-  # Compute performance for predictor selection
-  # perFUN receives args that might be useful, but not necessary for defaults
-  perf.full <- perf.str <- list()
-
-  for (i in seq_len(cv.dev[["n.cv"]])) {
-    perf.str[[length(perf.str) + 1]]   <- getclName(folds[["val"]][[i]])
-    perf.full[[length(perf.full) + 1]] <- perfFUN(p[[i]], data[folds[["val"]][[i]] == st.i, outcome], data = data,
-                                                fit = cv.dev[["cv"]][[i]], estFUN = estFUN, ...)
+  # Names of Performance measures
+  if (identical(length(names(perfFUN)), length(perfFUN))) {
+    perf.names <- names(perfFUN)
+  } else if (all(sapply(perfFUN, is.character))) {
+    perf.names <- unlist(perfFUN)
+  } else
+    perf.names <- as.character(seq_along(perfFUN))
+  cv.dev[["perf.names"]] <- perf.names
+  
+  # Multiple performance measures may be calculated.
+  perf.metapred <- function(perfFUN, cv.dev, folds, outcome, st.i, data, estFUN, p) {
+    perfFUN <- match.fun(perfFUN)
+    
+    perf.full <- perf.str <- list()
+    
+    for (i in seq_len(cv.dev[["n.cv"]])) {
+      perf.str[[length(perf.str) + 1]]   <- getclName(folds[["val"]][[i]])
+      perf.full[[length(perf.full) + 1]] <- perfFUN(p[[i]], data[folds[["val"]][[i]] == st.i, outcome], data = data,
+                                                    fit = cv.dev[["cv"]][[i]], estFUN = estFUN, ...)
+    }
+    names(perf.full) <- apply(as.matrix(folds[["val"]]), 1, getclName)
+    
+    out <- data.frame(val.strata = unlist(perf.str), 
+                                   estimate = unlist(sapply(perf.full, `[[`, 1)), 
+                                   se = NA, var = NA, ci.lb = NA, ci.ub = NA, 
+                                   measure = pfn,
+                                   n = unlist(cv.dev[["nobs.val"]]),
+                                   class = unlist(lapply(lapply(perf.full, class), '[[', 1)))
+    
+    tryCatch(
+      out[["var"]] <- unlist(lapply(perf.full, variances)),  
+      error = function(e) print(paste("Skipping variance estimation for", class(perf.full[[1]])[[1]], sep = " ")))
+    tryCatch(
+      out[["se"]] <- sqrt(out[["var"]]),
+      error = function(e) print(paste("Skipping se estimation for", class(perf.full[[1]])[[1]], sep = " ")))
+    tryCatch(
+      out[, c("ci.lb", "ci.ub")] <- unlist(t(sapply(perf.full, get_confint))),  
+      error = function(e) print(paste("Skipping ci estimation for", class(perf.full[[1]])[[1]], sep = " ")))
+    
+    row.names(out) <- names(cv.dev[["cv"]])
+    out[, "estimate"]  <- as.numeric(out[, "estimate"]) 
+    class(out) <- c("perf", class(out))
+    out # cv.dev[["perf"]] = out
   }
-  names(perf.full) <- apply(as.matrix(folds[["val"]]), 1, getclName)
-  # call ci in genFUN
-  # write ci.default or whatever that returns null
-  # check for is.null
+    
+  perf.all <- list()
+  for (fun.id in seq_along(perfFUN)) # Single brackets intended!
+    perf.all[[fun.id]] <- perf.metapred(perfFUN[[fun.id]], cv.dev = cv.dev, folds = folds, outcome = outcome, 
+                                        st.i = st.i, data = data, estFUN = estFUN, p = p)
 
-  cv.dev[["perf"]] <- data.frame(val.strata = unlist(perf.str), 
-                                 estimate = unlist(sapply(perf.full, `[[`, 1)), 
-                                 se = NA, var = NA, ci.lb = NA, ci.ub = NA, 
-                                 measure = pfn,
-                                 n = unlist(cv.dev[["nobs.val"]]),
-                                 class = unlist(lapply(lapply(perf.full, class), '[[', 1)))
-
-  tryCatch(
-    cv.dev[["perf"]][["var"]] <- unlist(lapply(perf.full, variances)),  
-    error = function(e) print(paste("Skipping variance estimation for", class(perf.full[[1]])[[1]], sep = " ")))
-
-  tryCatch(
-    cv.dev[["perf"]][["se"]] <- sqrt(cv.dev[["perf"]][["var"]]),
-    error = function(e) print(paste("Skipping se estimation for", class(perf.full[[1]])[[1]], sep = " ")))
-
-  tryCatch(
-    cv.dev[["perf"]][, c("ci.lb", "ci.ub")] <- unlist(t(sapply(perf.full, get_confint))),  
-    error = function(e) print(paste("Skipping ci estimation for", class(perf.full[[1]])[[1]], sep = " ")))
-  
+  names(perf.all) <- perf.names
+  cv.dev[["perf.all"]] <- perf.all   # Future compatibility  
+  cv.dev[["perf"]] <- perf.all[[1]]  # Backwards compatibility
   # cv.dev <<- cv.dev
-  
-  # class(perf.full) <- c("listofperf", class(perf.full))
-  # cv.dev[["perf.full"]] <- perf.full
-  row.names(cv.dev[["perf"]]) <- names(cv.dev[["cv"]])
-  # cv.dev is saved for later, not used here. # But soon it is to be used here!
-  cv.dev[["perf"]][, "estimate"]  <- as.numeric(cv.dev[["perf"]][, "estimate"]) 
-  
-  # # Compute additional performance measures.
-  # TBI
   
   # Generalizibility
   if (!is.list(genFUN)) 
@@ -939,16 +950,9 @@ mp.cv.val <- function(cv.dev, data, st.i, folds, recal.int = FALSE, two.stage = 
   
   for (fun.id in seq_along(genFUN)) { # Single brackets intended!
     genfun <- match.fun(genFUN[[fun.id]])
-    # gv <- genfun(x = perf.val, data = data, N = nrow(data), n = cv.dev[["nobs.val"]], #old plot title
-    #              coef = coef(cv.dev[["stratified.fit"]]), coef.se = se(cv.dev[["stratified.fit"]]),
-    #              title = paste("Model: ~", as.character(formula(cv.dev))[3]), perfFUN.name = perfFUN.name, ...)
-    
     gv <- genfun(cv.dev[["perf"]], coef = coef(cv.dev[["stratified.fit"]]), coef.se = se(cv.dev[["stratified.fit"]]),
                  title = paste("Model change: ~", cv.dev[["changed"]]), xlab = as.character(pfn), ...)
-    # gv <- genfun(x = perf.full, v = lapply(perf.full, variances), data = data, N = nrow(data), n = cv.dev[["nobs.val"]],
-    #              coef = coef(cv.dev[["stratified.fit"]]), coef.se = se(cv.dev[["stratified.fit"]]),
-    #              title = paste("Model change: ~", cv.dev[["changed"]]), pfn = as.character(pfn), ...)
-    gen.all[[fun.id]] <- if (is.null(gv)) NaN else gv # foo[[bar]] <- NULL is not allowed
+    gen.all[[fun.id]] <- if (is.null(gv)) NaN else gv # As 'foo[[bar]] <- NULL' is not allowed
   }
 
   names(gen.all) <- gen.names
