@@ -1418,3 +1418,65 @@ ci.mse <- function(object, conf = .95, ...) {
 }
 
 
+#' Generalizability estimates
+#' 
+#' Obtain generalizability estimates from a model fit.
+#' 
+#' @aliases gen generalizability
+#' 
+#' @author Valentijn de Jong
+#' 
+#' @usage gen(object, ...)
+#' generalizability(object, ...)
+#' 
+#' @param object A model fit object, either a \link{metapred} or \code{subset(metapred)} object.
+#' @param ... By default, the final model is selected. This parameter allows other arguments passed 
+#' to \link{subset.metapred} such that the generalizability estimates of other steps/models may be
+#' returned.. 
+#' 
+#' @export
+gen <- function(object, ...) 
+  UseMethod("gen")
+
+#' @export
+generalizability <- gen
+
+#' @export
+gen.metapred <- function(object, stat = 1, ...) 
+  gen(subset(object, ...), stat = stat, ...)
+
+#' @export
+gen.mp.cv.val <- function(object, stat = 1, ...)
+  object$gen.all[[stat]]
+
+
+#' Performance estimates
+#' 
+#' Obtain performance estimates from a model fit.
+#' 
+#' @aliases perf performance 
+#' 
+#' @author Valentijn de Jong
+#' 
+#' @usage perf(object, ...)
+#' performance(object, ...)
+#' 
+#' @param object A model fit object, either a \link{metapred} or \code{subset(metapred)} object.
+#' @param ... By default, the final model is selected. This parameter allows other arguments passed 
+#' to \link{subset.metapred} such that the performance estimates of other steps/models may be
+#' returned.. 
+#' 
+#' @export
+perf <- function(object, ...) 
+  UseMethod("perf")
+
+#' @export
+performance <- perf
+
+#' @export
+perf.metapred <- function(object, stat = 1, ...) 
+  perf(subset(object, ...), stat = stat, ...)
+
+#' @export
+perf.mp.cv.val <- function(object, stat = 1, ...)
+  object[["perf.all"]][[stat]]

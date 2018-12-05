@@ -435,14 +435,12 @@ rema.mp.cv.val <- function(object, ...)
 #' an unchanged model, 1 for the first change...
 #' @param model Which model change should be plotted? NULL (default, best change) or character name of variable or (integer) 
 #' index of model change.
-#' @param statistic Numeric. Which performance statistic should be plotted? Defaults to the first.
+#' @param stat Numeric. Which performance statistic should be plotted? Defaults to the first.
 #' @param ... For compatibility only.
 #' 
-#' @author Valentijn de Jong <Valentijn.M.T.de.Jong@gmail.com>
-#' 
 #' @export
-forest.metapred <- function(object, statistic = 1, step = NULL, model = NULL, ...)
-  forest.mp.cv.val(subset(object, step = step, model = model), statistic = statistic, ...)
+forest.metapred <- function(object, stat = 1, step = NULL, model = NULL, ...)
+  forest.mp.cv.val(subset(object, step = step, model = model), stat = stat, ...)
 
 
 #' Forest plot of a validation object.
@@ -452,20 +450,24 @@ forest.metapred <- function(object, statistic = 1, step = NULL, model = NULL, ..
 #' @author Valentijn de Jong <Valentijn.M.T.de.Jong@gmail.com>
 #'  
 #' @param object An \code{mp.cv.val} or \code{perf} object.
-#' @param statistic Numeric. Which performance statistic should be plotted? Defaults to the first.
+#' @param stat Numeric. Which performance statistic should be plotted? Defaults to the first.
 #' @param ... Other arguments passed to plotting internals. E.g. \code{title}.
 #' 
 #' @aliases forest.mp.cv.val forest.perf
-#' 
-#' @author Valentijn de Jong <Valentijn.M.T.de.Jong@gmail.com>
+
 #' 
 #' @method forest mp.cv.val
 #' 
 #' @export
-forest.mp.cv.val <- function(object, statistic = 1, ...)
-  forest.perf(object[["perf.all"]][[statistic]], 
-              xlab = if (is.character(statistic)) statistic else 
-                object[["perf.names"]][[statistic]], ...)
+# forest.mp.cv.val <- function(object, statistic = 1, ...)
+#   forest.perf(object[["perf.all"]][[statistic]],
+#               xlab = if (is.character(statistic)) statistic else
+#                 object[["perf.names"]][[statistic]], ...)
+
+forest.mp.cv.val <- function(object, stat = 1, ...) 
+  forest.perf(perf(object, stat = stat, ...),
+              xlab = if (is.character(stat)) stat else
+                object$perf.names[[stat]], ...)
 
 forest.perf <- function(object, ...) {
   ma <- rema.perf(object)
