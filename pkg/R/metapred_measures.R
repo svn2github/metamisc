@@ -47,7 +47,7 @@ var.with.se <- function(x, ...) {
   est <- var(x)
   v <-  2 * sigma4(x) / (length(x) - 1)
   out <- data.frame(estimate = est, se = sqrt(v), variances = v, n = length(x))
-  class(out) <- "mp.perf"
+  class(out) <- c("mp.perf", class(out))
   out
 }
 # Measure 1: Coefficient of variation of prediction error.
@@ -66,6 +66,9 @@ auc <- AUC <- AUROC <-  function(p, y, ...) {
 
 calibration.intercept <- cal.int <- function(p, y, estFUN, family, ...)
   pred.recal(p = p, y = y, estFUN = estFUN, family = family, which = "intercept")
+
+bin.cal.int <- function(p, y, ...)
+  pred.recal(p = p, y = y, estFUN = "glm", family = binomial, which = "intercept")
 
 # Slope.only is a trick to make this functin work for metapred.
 # Slope.only should otherwise always be false! Also: this messes up the variances,
@@ -168,16 +171,23 @@ get_confint <- function(object, level = 0.95, ...) {
   ci.bounds <- confint(object = object, level = level, ...)
   out <- data.frame(ci.lb = NA, ci.ub = NA)
   
-  if (any(names(ci.bounds) == "ci.lb"))
+  if (any(names(ci.bounds) == "ci.lb")) # as in metamisc and metafor (?)
     out$ci.lb <- ci.bounds[["ci.lb"]]
-  else if (any(names(ci.bounds) == "2.5 %"))
+  else if (any(names(ci.bounds) == "2.5 %")) # as in glm
     out$ci.lb <- ci.bounds[["2.5 %"]]
+  else if (any(names(ci.bounds) == "lower 0.95")) # as in logistf
+    out$ci.lb <- ci.bounds[["lower 0.95"]]
+  else if (any(names(as.data.frame(ci.bounds)) == "Lower 95%"))  # as in confint(logistf(...))
+    out$ci.lb <- as.data.frame(ci.bounds)[["Lower 95%"]]
   
-  if (any(names(ci.bounds) == "ci.ub"))
+  if (any(names(ci.bounds) == "ci.ub")) # as in metamisc and metafor (?)
     out$ci.ub <- ci.bounds[["ci.ub"]]
-  else if (any(names(ci.bounds) == "2.5 %"))
-    out$ci.ub <- ci.bounds[["2.5 %"]]
-  
+  else if (any(names(ci.bounds) == "97.5 %")) # as in glm
+    out$ci.ub <- ci.bounds[["97.5 %"]]
+  else if (any(names(ci.bounds) == "upper 0.95")) # as in logistf
+    out$ci.ub <- ci.bounds[["upper 0.95"]]
+  else if (any(names(as.data.frame(ci.bounds)) == "Upper 95%"))  # as in confint(logistf(...))
+    out$ci.ub <- as.data.frame(ci.bounds)[["Upper 95%"]]
   out
 }
 
@@ -454,7 +464,6 @@ forest.metapred <- function(object, stat = 1, step = NULL, model = NULL, ...)
 #' @param ... Other arguments passed to plotting internals. E.g. \code{title}.
 #' 
 #' @aliases forest.mp.cv.val forest.perf
-
 #' 
 #' @method forest mp.cv.val
 #' 

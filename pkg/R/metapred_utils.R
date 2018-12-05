@@ -459,16 +459,30 @@ predictlogistf <- function(object, newdata, b = NULL, f = NULL, type = "response
   predictGLM(object, newdata, b = b, f = f, type = type)
 }
 
-# #' @importFrom logistf logistf
-# logistfirth <- function(formula = attr(data, "formula"), data = sys.parent(), pl = TRUE, 
-#                         alpha = 0.05, control, plcontrol, firth = TRUE, init, 
-#                         plconf = NULL, dataout = TRUE, ...) {
-#   fit <- logistf::logistf(formula = formula, data = data, pl = pl, 
-#                  alpha = alpha, control = control, plcontrol = plcontrol, 
-#                  firth = firth, init = init, 
-#                  plconf = plconf, dataout = dataout, ...)
-#   return(recalibrate(fit, newdata = data, f = ~ 1, estFUN = glm, family = binomial))
-# }
+
+### Note: cal.int does not work with this function. Use bin.cal.int instead.
+# normal.int logical Should the intercept be recalibrated, such that Firth's correction
+# is removed from it?
+#' @importFrom logistf logistf
+logistfirth <- function(formula = attr(data, "formula"), data = sys.parent(), pl = TRUE,
+                        alpha = 0.05, control, plcontrol, firth = TRUE, init,
+                        plconf = NULL, dataout = TRUE, ...) {
+  if(is.null(normal.int <- list(...)$normal.int) ) normal.int <- FALSE
+  if(is.null(fallback   <- list(...)$fallback)   ) fallback <- TRUE
+
+  if (fallback && length(f2tl(formula)) < 1) 
+    pl <- FALSE
+    
+  fit <- logistf::logistf(formula = formula, data = data, pl = pl,
+                 alpha = alpha, control = control, plcontrol = plcontrol,
+                 firth = firth, init = init,
+                 plconf = plconf, dataout = dataout, ...)
+  
+  fit$family <- binomial()
+  if (normal.int)
+    return(fit)
+  return(recalibrate(fit, newdata = data, f = ~ 1, estFUN = glm, family = binomial))
+}
 
 # Univariate Random Effects Meta-Analysis
 # coefficients data.frame or matrix, containing coef

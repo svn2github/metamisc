@@ -6,7 +6,7 @@ Date: 2018-05-26
 Authors@R: c(person(given = "Thomas", family = "Debray", role = c("aut", "cre"), email = "thomas.debray@gmail.com", comment="http://orcid.org/0000-0002-1790-2719"), 
    person(given = "Valentijn", family = "de Jong", role = "aut"))
 Description: Meta-analysis of diagnostic and prognostic modeling studies. Summarize estimates of prognostic factors, diagnostic test accuracy and prediction model performance. Validate, update and combine published prediction models. Develop new prediction models with data from multiple studies. 
-Imports: metafor (>= 2.0.0), mvtnorm,  lme4, plyr, methods, pROC, ggplot2
+Imports: metafor (>= 2.0.0), mvtnorm,  lme4, plyr, methods, pROC, ggplot2, logistf
 Depends: R (>= 3.2.0), stats, graphics
 Suggests: runjags, rjags, testthat (>= 1.0.2)
 License: GPL-3

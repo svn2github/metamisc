@@ -10,6 +10,8 @@
 ########### CHANGE args for gv <- genfun(...) ##############################
 ########### CHANGE args for gv <- genfun(...) ##############################
 ########### CHANGE args for gv <- genfun(...) ##############################
+# perfFUN = "cal.int" does not work for estFUN = "logistf", as logistf cannot take intercept only models
+#     possible fix: use logistfirth intstead, and fix intercept-only models for that function.
 
 # Bug when no family is specified for calibration slope:
 # mp.slo <- metapred(DVTipd.reordered, strata = "cluster", perfFUN = "cal.slope", max.steps = 0)
@@ -858,7 +860,7 @@ print.mp.cv <- function(x, ...) {
 mp.cv.val <- function(cv.dev, data, st.i, folds, recal.int = FALSE, two.stage = TRUE,
                       estFUN = glm, predFUN = NULL, perfFUN = mse, 
                       genFUN = abs.mean, plot = F, ...) {
-  # dots <- list(...)
+  dots <- list(...)
   pfn <- if (is.character(perfFUN)) perfFUN else "Performance"
   cv.dev[["perf.name"]] <- pfn # To be removed!??!!?
   # perfFUN <- match.fun(perfFUN)
@@ -906,7 +908,7 @@ mp.cv.val <- function(cv.dev, data, st.i, folds, recal.int = FALSE, two.stage = 
                                    measure = pfn,
                                    n = unlist(cv.dev[["nobs.val"]]),
                                    class = unlist(lapply(lapply(perf.full, class), '[[', 1)))
-    
+    perf.full <<- perf.full
     tryCatch(
       out[["var"]] <- unlist(lapply(perf.full, variances)),  
       error = function(e) print(paste("Skipping variance estimation for", class(perf.full[[1]])[[1]], sep = " ")))
@@ -947,11 +949,22 @@ mp.cv.val <- function(cv.dev, data, st.i, folds, recal.int = FALSE, two.stage = 
   
   # Computation of generalizability
   gen.all <- rep(NA, length(genFUN))
-  
-  for (fun.id in seq_along(genFUN)) { # Single brackets intended!
+
+    for (fun.id in seq_along(genFUN)) { # Single brackets intended!
     genfun <- match.fun(genFUN[[fun.id]])
-    gv <- genfun(cv.dev[["perf"]], coef = coef(cv.dev[["stratified.fit"]]), coef.se = se(cv.dev[["stratified.fit"]]),
-                 title = paste("Model change: ~", cv.dev[["changed"]]), xlab = as.character(pfn), ...)
+    args <- c(list(object = cv.dev[["perf"]],
+                   coef = coef(cv.dev[["stratified.fit"]]),
+                   coef.se = se(cv.dev[["stratified.fit"]]),
+                   title = paste("Model change: ~", cv.dev[["changed"]]),
+                   xlab = as.character(pfn)
+    ), dots)
+    if (!is.null(fam <- cv.dev$family))
+      args$family <- fam
+    
+    gv <- do.call(genfun, args = args )
+                   
+    # gv <- genfun(cv.dev[["perf"]], coef = coef(cv.dev[["stratified.fit"]]), coef.se = se(cv.dev[["stratified.fit"]]),
+                 # title = paste("Model change: ~", cv.dev[["changed"]]), xlab = as.character(pfn), ...)
     gen.all[[fun.id]] <- if (is.null(gv)) NaN else gv # As 'foo[[bar]] <- NULL' is not allowed
   }
 
@@ -1316,6 +1329,10 @@ variances.default <- function(object, ...) {
     return(v)
   return(diag(vcov(object, ...))) # nrow and ncol are optional arguments! Ignore warning.
 }
+
+#' @export
+variances.mp.perf <- function(object, ...)
+  object$variances
 
 #' @export
 variances.metapred <- function(object, ...)
