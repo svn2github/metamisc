@@ -5,12 +5,14 @@
 \alias{forest.perf}
 \title{Forest plot of a validation object.}
 \usage{
-\method{forest}{mp.cv.val}(object, ...)
+\method{forest}{mp.cv.val}(object, statistic = 1, ...)
 }
 \arguments{
 \item{object}{An \code{mp.cv.val} or \code{perf} object.}
 
-\item{...}{For compatibility only.}
+\item{statistic}{Numeric. Which performance statistic should be plotted? Defaults to the first.}
+
+\item{...}{Other arguments passed to plotting internals. E.g. \code{title}.}
 }
 \description{
 Draw a forest plot of the performance of an internally-externally cross-validated model.

@@ -4,10 +4,13 @@
 \alias{forest.metapred}
 \title{Forest plot of a metapred fit}
 \usage{
-\method{forest}{metapred}(object, step = NULL, model = NULL, ...)
+\method{forest}{metapred}(object, statistic = 1, step = NULL,
+  model = NULL, ...)
 }
 \arguments{
 \item{object}{A \code{metapred} fit object.}
+
+\item{statistic}{Numeric. Which performance statistic should be plotted? Defaults to the first.}
 
 \item{step}{Which step should be plotted? Defaults to the best step. numeric is converted to name of the step: 0 for 
 an unchanged model, 1 for the first change...}
