@@ -279,7 +279,6 @@ ccalc <- function(cstat, cstat.se, cstat.cilb, cstat.ciub, cstat.cilv, sd.LP, N,
     ds <- data.frame(theta=theta, theta.se=sqrt(theta.var), theta.cilb=theta.cil, theta.ciub=theta.ciu, 
                      theta.source=theta.source, theta.se.source=theta.var.source)
   
-    
     if(is.null(slab) & !no.data) {
       slab <- rownames(data)
       rownames(ds) <- slab

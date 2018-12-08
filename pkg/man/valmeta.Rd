@@ -5,7 +5,7 @@
 \title{Meta-analysis of prediction model performance}
 \usage{
 valmeta(measure = "cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.se,
-  OE.95CI, citl, citl.se, N, O, E, Po, Po.se, Pe, method = "REML",
+  OE.95CI, citl, citl.se, N, O, E, Po, Po.se, Pe, data, method = "REML",
   test = "knha", ret.fit = FALSE, verbose = FALSE, slab,
   n.chains = 4, pars, ...)
 }
@@ -49,6 +49,8 @@ of the 95\% confidence interval of the total O:E ratios}
 
 \item{Pe}{Optional vector with the (cumulative) expected event probability for each validation
 (if specified, during time \code{t.val})}
+
+\item{data}{optional data frame containing the variables given to the arguments above.}
 
 \item{method}{Character string specifying whether a fixed- or a random-effects model should be fitted. 
 A fixed-effects model is fitted when using \code{method="FE"}. Random-effects models are fitted by setting method 
@@ -166,17 +168,16 @@ fit <- with(EuroSCORE, valmeta(cstat=c.index, cstat.se=se.c.index,
 plot(fit)
 
 # Nearly identical results when we need to estimate the SE
-with(EuroSCORE, valmeta(cstat=c.index,  N=n, O=n.events, slab=Study))
+valmeta(cstat=c.index,  N=n, O=n.events, slab=Study, data=EuroSCORE)
 
 # Two-stage meta-analysis of the total O:E ratio (random effects)
-with(EuroSCORE, valmeta(measure="OE", O=n.events, E=e.events, N=n))    
-with(EuroSCORE, valmeta(measure="OE", O=n.events, E=e.events))        
-with(EuroSCORE, valmeta(measure="OE", Po=Po, Pe=Pe, N=n))
+valmeta(measure="OE", O=n.events, E=e.events, N=n,data=EuroSCORE)    
+valmeta(measure="OE", O=n.events, E=e.events, data=EuroSCORE)       
+valmeta(measure="OE", Po=Po, Pe=Pe, N=n, data=EuroSCORE)
 
 \dontrun{
 # One-stage meta-analysis of the total O:E ratio (random effects)
-with(EuroSCORE, valmeta(measure="OE", O=n.events, E=e.events, method="ML",
-                        pars=list(model.oe="poisson/log")))
+valmeta(measure="OE", O=n.events, E=e.events, data=EuroSCORE, method="ML", pars=list(model.oe="poisson/log"))
 
 # Bayesian random effects meta-analysis of the c-statistic
 fit2 <- with(EuroSCORE, valmeta(cstat=c.index, cstat.se=se.c.index, 

@@ -362,24 +362,28 @@ plot.listofperf <- function(x, pfn, ...) { # xlab tbi from perfFUN
   z <- ci.listofperf(object = x, ...)
   # z <<- z
   # print("meta-analyze performance:")
+  
+  # Thomas: I changed the implementation to uvmeta to ensure our prediction intervals are bsaed on Student T distribution
+  # and to ensure we are using REML everywhere.
   if (inherits(x[[1]], "auc")) { # To be replaced by child function.
     # print("by valmeta")
-    ma <- valmeta(measure = "cstat", cstat = z$theta, cstat.95CI = z[, c("theta.ci.lb", "theta.ci.ub")])
+    ma <- valmeta(measure = "cstat", cstat = z$theta, cstat.cilb = z[,"theta.ci.lb"], 
+                  cstat.ciub=z[,"theta.ci.ub"], cstat.cilv=0.95, method = "REML")
     est <- ma$est
     pi.lb <- ma$pi.lb
     pi.ub <- ma$pi.ub
   } else if (inherits(x[[1]], c("lm"))) { # 
     # print("by rma.uni")
-    ma <- predict(metafor::rma.uni(yi = sapply(x, coef), vi = sapply(x, variances))) # NOTE: DOES IT USE t or normal dist???
-    est <- ma$pred
-    pi.lb <- ma$cr.lb
-    pi.ub <- ma$cr.ub
+    ma <- uvmeta(r = sapply(x, coef), r.vi = sapply(x, variances), method = "REML") 
+    est <- ma$est
+    pi.lb <- ma$pi.lb
+    pi.ub <- ma$pi.ub
   } else if (inherits(x[[1]], "mse")) {
   #   # print("by rma.uni")
-    ma <- predict(metafor::rma.uni(yi = sapply(x, `[[`, "estimate"), vi = sapply(x, variances))) # NOTE: DOES IT USE t or normal dist???
-    est <- ma$pred
-    pi.lb <- ma$cr.lb
-    pi.ub <- ma$cr.ub
+    ma <- uvmeta(r = sapply(x, `[[`, "estimate"), r.vi = sapply(x, variances), method = "REML")
+    est <- ma$est
+    pi.lb <- ma$pi.lb
+    pi.ub <- ma$pi.ub
   }
   # This is the same for both methods:
   ci.lb <- ma$ci.lb
@@ -410,16 +414,17 @@ plot.mp.cv.val <- function(x, y, ...)
 #' @importFrom metafor rma
 rema.perf <- function(object, ...) {
   if (object$class[[1]] == "mp.perf" || object$class[[1]] == "recal") {
-    ma <- metafor::rma.uni(yi = object[["estimate"]], vi = object$var) # NOTE: DOES IT USE t or normal dist???
-    pred.int <- predict(ma)
-    return(list(est = ma$b,     
-                pi.lb = pred.int$cr.lb,
-                pi.ub = pred.int$cr.ub,
+    ma <- uvmeta(r = object[["estimate"]], r.vi = object$var) # NOTE: DOES IT USE t or normal dist???
+    return(list(est = ma$est,     
+                pi.lb = ma$pi.lb,
+                pi.ub = ma$pi.ub,
                 ci.lb = ma$ci.lb,
                 ci.ub = ma$ci.ub,
                 tau2  = ma$tau2))
   } else if (object$class[[1]] == "auc") {
-    ma <- valmeta(measure = "cstat", cstat = object[["estimate"]], cstat.95CI = as.matrix(object[, c("ci.lb", "ci.ub")]))
+    ma <- valmeta(measure = "cstat", cstat = object[["estimate"]], 
+                  cstat.cilb = object[,"ci.lb"], cstat.ciub = object[,"ci.ub"],
+                  cstat.cilv = 0.95)
     return(list(est = ma$est,
                 pi.lb = ma$pi.lb,
                 pi.ub = ma$pi.ub,

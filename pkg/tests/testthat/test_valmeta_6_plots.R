@@ -7,7 +7,8 @@ test_that("Class of forest plot", {
   
   # Call to plot.valmeta()
   fit <- with(EuroSCORE, valmeta(cstat=c.index, cstat.se=se.c.index, 
-                                 cstat.95CI=cbind(c.index.95CIl,c.index.95CIu), 
+                                 cstat.cilb = c.index.95CIl, cstat.ciub = c.index.95CIu,
+                                 cstat.cilv = 0.95,
                                  N=n, O=n.events, slab=Study))
   fig1 <- plot(fit)
   expect_is(fig1, "ggplot")
