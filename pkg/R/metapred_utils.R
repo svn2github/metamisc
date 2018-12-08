@@ -463,7 +463,6 @@ predictlogistf <- function(object, newdata, b = NULL, f = NULL, type = "response
 ### Note: cal.int does not work with this function. Use bin.cal.int instead.
 # normal.int logical Should the intercept be recalibrated, such that Firth's correction
 # is removed from it?
-#' @importFrom logistf logistf
 logistfirth <- function(formula = attr(data, "formula"), data = sys.parent(), pl = TRUE,
                         alpha = 0.05, control, plcontrol, firth = TRUE, init,
                         plconf = NULL, dataout = TRUE, ...) {
@@ -472,6 +471,11 @@ logistfirth <- function(formula = attr(data, "formula"), data = sys.parent(), pl
 
   if (fallback && length(f2tl(formula)) < 1) 
     pl <- FALSE
+  
+  # Test if optional 'logistf' package is installed
+  if (!requireNamespace("logistf", quietly = TRUE)) {
+    stop("The package 'logistf' is currently not installed!")
+  } 
     
   fit <- logistf::logistf(formula = formula, data = data, pl = pl,
                  alpha = alpha, control = control, plcontrol = plcontrol,
