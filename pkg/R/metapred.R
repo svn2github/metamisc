@@ -103,14 +103,14 @@
 #' the outcome and all remaining columns (except \code{strata}) predictors. See \link[stats]{formula} for formulas in general.
 #' @param estFUN Function for estimating the model in the first stage. Currently "lm" and "glm" are supported.
 #' @param scope \code{formula}. The difference between \code{formula} and \code{scope} defines the range of models examined in the 
-#' stepwise search. Defaults to NULL, which leads to the intercept-only model. If \code{scope} is nested in \code{formula}, 
+#' stepwise search. Defaults to NULL, which leads to the intercept-only model. If \code{scope} is not nested in \code{formula}, 
 #' this implies backwards selection will be applied (default). If \code{scope} is nested in \code{formula}, this implies forward 
 #' selection will be applied. If equal, no stepwise selection is applied. 
 #' @param retest Logical. Should added (removed) terms be retested for removal (addition)? \code{TRUE} implies bi-directional 
 #' stepwise search.
 #' @param max.steps Integer. Maximum number of steps (additions or removals of terms) to take. Defaults to 1000, which is
 #' essentially as many as it takes. 0 implies no stepwise selection.
-#' @param center logical. Should numeric predictors be centered?
+#' @param center logical. Should numeric predictors be centered around the cluster mean?
 #' @param recal.int Logical. Should the intercept be recalibrated in each validation?
 #' @param cvFUN Cross-validation method, on the study (i.e. cluster or stratum) level. "l1o" for leave-one-out cross-validation 
 #' (default). "bootstrap" for bootstrap. Or "fixed", for one or more data sets which are only used for validation. A user written 
@@ -146,11 +146,37 @@
 #' 
 #' @examples 
 #' data(DVTipd)
-#' DVTipd$cluster <- letters[1:4] # Add a fictional clustering to the data.
-#' #f <- dvt ~ sex + vein + malign
-#' f <- dvt ~ histdvt + ddimdich
-#' # Leaving scope empty implies backwards selection
-#' mp <- metapred(DVTipd, strata = "cluster", formula = f, family = binomial)
+#' 
+#' set.seed(12345)
+#' 
+#' # Create 4 clusters with heterogeneous case-mix
+#' DVTipd$cluster <- NA
+#' p.study1 <- with(DVTipd, 1/(1+exp(1.5+0.3*sex-0.4*malign-0.5*ddimdich-0.2*leg-0.2*histdvt)))
+#' DVTipd$cluster[p.study1 > runif(nrow(DVTipd))] <- "a"
+#' p.study2 <- with(DVTipd, 1/(1+exp(1.0+0.3*tend-0.4*notraum-0.2*ddimdich-0.2*pit-
+#'                                   0.2*dvt+0.3*ddimdich*tend)))
+#' DVTipd$cluster[p.study2 > runif(nrow(DVTipd)) & is.na(DVTipd$cluster)] <- "b"
+#' p.study3 <- with(DVTipd[is.na(DVTipd$cluster),], 
+#'                  1/(1+exp(0.3*altdiagn-0.4*vein-0.2*sex-0.2*malign-0.6*dvt+0.4*dvt*vein)))
+#' DVTipd$cluster[is.na(DVTipd$cluster)][(p.study3 > runif(sum(is.na(DVTipd$cluster))))] <- "c"
+#' DVTipd$cluster[is.na(DVTipd$cluster)] <- "d"
+#' DVTipd$cluster <- as.factor(DVTipd$cluster)
+#' 
+#'\dontrun{
+#' # Explore heterogeneity in intercept and assocation of 'ddimdich'
+#' glmer(dvt ~ 0 + cluster + (ddimdich|cluster), family=binomial(), data=DVTipd)
+#'}
+#' 
+#' # Scope
+#' f <- dvt ~ histdvt + ddimdich + sex + notraum
+#' 
+#' # Internal-external cross-validation of a pre-specified model 'f'
+#' metapred(DVTipd, strata = "cluster", formula = f, scope = f, family = binomial)
+#' 
+#' # Let's try to simplify model 'f' in order to improve its external validity
+#' metapred(DVTipd, strata = "cluster", formula = f, family = binomial)
+#' 
+#' # We can also try to build a generalizable model from scratch
 #' 
 #'\dontrun{
 #' # Some additional examples:
