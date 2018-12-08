@@ -4,10 +4,10 @@
 \alias{valmeta}
 \title{Meta-analysis of prediction model performance}
 \usage{
-valmeta(measure = "cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.se,
-  OE.95CI, citl, citl.se, N, O, E, Po, Po.se, Pe, data, method = "REML",
-  test = "knha", ret.fit = FALSE, verbose = FALSE, slab,
-  n.chains = 4, pars, ...)
+valmeta(measure = "cstat", cstat, cstat.se, cstat.cilb, cstat.ciub,
+  cstat.cilv, sd.LP, OE, OE.se, OE.cilb, OE.ciub, OE.cilv, citl, citl.se,
+  N, O, E, Po, Po.se, Pe, data, method = "REML", test = "knha",
+  ret.fit = FALSE, verbose = FALSE, slab, n.chains = 4, pars, ...)
 }
 \arguments{
 \item{measure}{A character string indicating which summary performance measure should be calculated. Options are
@@ -18,8 +18,12 @@ valmeta(measure = "cstat", cstat, cstat.se, cstat.95CI, sd.LP, OE, OE.se,
 
 \item{cstat.se}{Optional vector with the standard error of the estimated c-statistics}
 
-\item{cstat.95CI}{Optional 2-dimensional array with the lower (first column) and upper (second column) boundary 
-of the 95\% confidence interval of the estimated c-statistics}
+\item{cstat.cilb}{vector to specify the lower limits of the confidence interval.}
+
+\item{cstat.ciub}{vector to specify the upper limits of the confidence interval.}
+
+\item{cstat.cilv}{vector to specify the levels of aformentioned confidence interval limits. 
+(default: 0.95, which corresponds to the 95\% confidence interval).}
 
 \item{sd.LP}{Optional vector with the standard deviation of the linear predictor (prognostic index)}
 
@@ -27,8 +31,12 @@ of the 95\% confidence interval of the estimated c-statistics}
 
 \item{OE.se}{Optional vector with the standard errors of the estimated O:E ratios}
 
-\item{OE.95CI}{Optional 2-dimensional array with the lower (first column) and upper (second column) boundary 
-of the 95\% confidence interval of the total O:E ratios}
+\item{OE.cilb}{vector to specify the lower limits of the confidence interval for \code{OE}.}
+
+\item{OE.ciub}{vector to specify the upper limits of the confidence interval for \code{OE}.}
+
+\item{OE.cilv}{vector to specify the levels of aformentioned confidence interval limits. 
+(default: 0.95, which corresponds to the 95\% confidence interval).}
 
 \item{citl}{Optional vector with the estimated calibration-in-the-large for each valiation}
 
@@ -162,27 +170,28 @@ using \code{level} in the \code{pars} argument (defaults to 0.95).
 data(EuroSCORE)
 
 # Meta-analysis of the c-statistic (random effects)
-fit <- with(EuroSCORE, valmeta(cstat=c.index, cstat.se=se.c.index, 
-                               cstat.95CI=cbind(c.index.95CIl,c.index.95CIu), 
-                               N=n, O=n.events, slab=Study))
+fit <- valmeta(cstat=c.index, cstat.se=se.c.index, cstat.cilb=c.index.95CIl, 
+               cstat.ciub=c.index.95CIu, cstat.cilv=0.95, N=n, O=n.events, 
+               slab=Study, data=EuroSCORE)
 plot(fit)
 
 # Nearly identical results when we need to estimate the SE
 valmeta(cstat=c.index,  N=n, O=n.events, slab=Study, data=EuroSCORE)
 
 # Two-stage meta-analysis of the total O:E ratio (random effects)
-valmeta(measure="OE", O=n.events, E=e.events, N=n,data=EuroSCORE)    
+valmeta(measure="OE", O=n.events, E=e.events, N=n, data=EuroSCORE)    
 valmeta(measure="OE", O=n.events, E=e.events, data=EuroSCORE)       
 valmeta(measure="OE", Po=Po, Pe=Pe, N=n, data=EuroSCORE)
 
 \dontrun{
 # One-stage meta-analysis of the total O:E ratio (random effects)
-valmeta(measure="OE", O=n.events, E=e.events, data=EuroSCORE, method="ML", pars=list(model.oe="poisson/log"))
+valmeta(measure="OE", O=n.events, E=e.events, data=EuroSCORE, method="ML", 
+        pars=list(model.oe="poisson/log"))
 
 # Bayesian random effects meta-analysis of the c-statistic
-fit2 <- with(EuroSCORE, valmeta(cstat=c.index, cstat.se=se.c.index, 
-                                cstat.95CI=cbind(c.index.95CIl,c.index.95CIu),
-                                N=n, O=n.events, method="BAYES", slab=Study))
+fit2 <- valmeta(cstat=c.index, cstat.se=se.c.index, cstat.cilb=c.index.95CIl,
+                cstat.ciub=c.index.95CIu, cstat.cilb=0.95, N=n, O=n.events, 
+                data=EuroSCORE, method="BAYES", slab=Study)
 
 # Bayesian one-stage random effects meta-analysis of the total O:E ratio
 # Consider that some (but not all) studies do not provide information on N
@@ -194,7 +203,7 @@ pars <- list(hp.tau.dist="dhalft",   # Prior for the between-study standard devi
              hp.tau.sigma=1.5,       # Standard deviation for 'hp.tau.dist'
              hp.tau.df=3,            # Degrees of freedom for 'hp.tau.dist'
              hp.tau.max=10)          # Maximum value for the between-study standard deviation
-fit3 <- with(EuroSCORE.new, valmeta(measure="OE", O=n.events, E=e.events, N=n, 
+fit3 <- valmeta(measure="OE", O=n.events, E=e.events, N=n, data=EuroSCORE.new,
         method="BAYES", slab=Study, pars=pars, ret.fit = T))
 plot(fit3)
 print(fit3$fit$model) # Inspect the JAGS model
@@ -205,7 +214,7 @@ print(fit3$fit$data)  # Inspect the JAGS data
 data(Framingham)
 
 # Meta-analysis of total O:E ratio after 10 years of follow-up
-with(Framingham, valmeta(measure="OE", Po=Po, Pe=Pe, N=n))
+valmeta(measure="OE", Po=Po, Pe=Pe, N=n, data=Framingham)
 
 }
 \references{

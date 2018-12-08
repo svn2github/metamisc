@@ -47,4 +47,10 @@ test_that("Test whether changing the parameters works", {
                                  pars=list(model.oe=fit.model)))
   
   expect_equal(fit$model, fit.model)
+  
+  fit.model <- "normal/identity"
+  fit <- with(EuroSCORE, valmeta(measure="OE", O=n.events, E=e.events,
+                                 pars=list(model.oe=fit.model)))
+  
+  expect_equal(fit$model, fit.model)
 })

@@ -19,8 +19,10 @@
 #' @param sd.LP Optional vector with the standard deviation of the linear predictor (prognostic index)
 #' @param OE Optional vector with the estimated ratio of total observed versus total expected events
 #' @param OE.se Optional vector with the standard errors of the estimated O:E ratios
-#' @param OE.95CI Optional 2-dimensional array with the lower (first column) and upper (second column) boundary 
-#' of the 95\% confidence interval of the total O:E ratios
+#' @param OE.cilb vector to specify the lower limits of the confidence interval for \code{OE}.
+#' @param OE.ciub vector to specify the upper limits of the confidence interval for \code{OE}.
+#' @param OE.cilv vector to specify the levels of aformentioned confidence interval limits. 
+#' (default: 0.95, which corresponds to the 95\% confidence interval).
 #' @param citl Optional vector with the estimated calibration-in-the-large for each valiation
 #' @param citl.se Optional vector with the standard error of the estimated calibration-in-the-large statistics
 #' @param N Optional vector with the total number of participants for each valiation
@@ -140,15 +142,16 @@
 #' data(EuroSCORE)
 #' 
 #' # Meta-analysis of the c-statistic (random effects)
-#' fit <- valmeta(cstat=c.index, cstat.se=se.c.index, cstat.cilb=c.index.95CIl, cstat.ciub=c.index.95CIu, 
-#'                cstat.cilv=0.95, N=n, O=n.events, slab=Study, data=EuroSCORE)
+#' fit <- valmeta(cstat=c.index, cstat.se=se.c.index, cstat.cilb=c.index.95CIl, 
+#'                cstat.ciub=c.index.95CIu, cstat.cilv=0.95, N=n, O=n.events, 
+#'                slab=Study, data=EuroSCORE)
 #' plot(fit)
 #' 
 #' # Nearly identical results when we need to estimate the SE
 #' valmeta(cstat=c.index,  N=n, O=n.events, slab=Study, data=EuroSCORE)
 #' 
 #' # Two-stage meta-analysis of the total O:E ratio (random effects)
-#' valmeta(measure="OE", O=n.events, E=e.events, N=n,data=EuroSCORE)    
+#' valmeta(measure="OE", O=n.events, E=e.events, N=n, data=EuroSCORE)    
 #' valmeta(measure="OE", O=n.events, E=e.events, data=EuroSCORE)       
 #' valmeta(measure="OE", Po=Po, Pe=Pe, N=n, data=EuroSCORE)
 #' 
@@ -159,7 +162,7 @@
 #' 
 #' # Bayesian random effects meta-analysis of the c-statistic
 #' fit2 <- valmeta(cstat=c.index, cstat.se=se.c.index, cstat.cilb=c.index.95CIl,
-#'                 cstat.ciub=c.index.95CIu, cstat.cilb=0.95 N=n, O=n.events, 
+#'                 cstat.ciub=c.index.95CIu, cstat.cilb=0.95, N=n, O=n.events, 
 #'                 data=EuroSCORE, method="BAYES", slab=Study)
 #' 
 #' # Bayesian one-stage random effects meta-analysis of the total O:E ratio
@@ -196,7 +199,7 @@
 #' predict vcov as.formula formula model.frame model.frame.default update.formula family
 
 valmeta <- function(measure="cstat", cstat, cstat.se, cstat.cilb, cstat.ciub, cstat.cilv,
-                    sd.LP, OE, OE.se, OE.95CI, citl, citl.se, N, O, E, Po, Po.se, Pe, data, 
+                    sd.LP, OE, OE.se, OE.cilb, OE.ciub, OE.cilv, citl, citl.se, N, O, E, Po, Po.se, Pe, data, 
                     method="REML", test="knha", ret.fit = FALSE, verbose=FALSE, slab, n.chains = 4, pars, ...) {
   
   pars.default <- .initiateDefaultPars(pars)
@@ -239,6 +242,12 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.cilb, cstat.ciub, cs
   OE            <- eval(mf.OE, data, enclos=sys.frame(sys.parent()))
   mf.OE.se      <- mf[[match("OE.se", names(mf))]]
   OE.se         <- eval(mf.OE.se, data, enclos=sys.frame(sys.parent()))
+  mf.OE.cilb    <- mf[[match("OE.cilb", names(mf))]]
+  OE.cilb       <- eval(mf.OE.cilb, data, enclos=sys.frame(sys.parent()))
+  mf.OE.ciub    <- mf[[match("OE.ciub", names(mf))]]
+  OE.ciub       <- eval(mf.OE.ciub, data, enclos=sys.frame(sys.parent()))
+  mf.OE.cilv    <- mf[[match("OE.cilv", names(mf))]]
+  OE.cilv       <- eval(mf.OE.cilv, data, enclos=sys.frame(sys.parent()))
   mf.citl       <- mf[[match("citl", names(mf))]]
   citl          <- eval(mf.citl, data, enclos=sys.frame(sys.parent()))
   mf.citl.se    <- mf[[match("citl.se", names(mf))]]
@@ -303,6 +312,10 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.cilb, cstat.ciub, cs
       k <- length(OE)
     } else if (!is.null(OE.se)) {
       k <- length(OE.se)
+    } else if (!is.null(OE.cilb)) {
+      k <- length(OE.cilb)
+    } else if (!is.null(OE.ciub)) {
+      k <- length(OE.ciub)
     } else if (!is.null(E)) {
       k <- length(E)
     } else if (!is.null(O)) {
@@ -329,57 +342,24 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.cilb, cstat.ciub, cs
   }
   
   if(is.null(cstat)) cstat <- rep(NA, times=k)
-  if (is.null(cstat.se)) cstat.se <- rep(NA, length=k)
-  if (is.null(cstat.cilb)) cstat.cilb <- rep(NA, length=k)
-  if (is.null(cstat.ciub)) cstat.ciub <- rep(NA, length=k)
-  if (is.null(cstat.cilv)) cstat.cilv <- rep(0.95, length=k)
- 
-  
-  if (is.null(O)) {
-    O <- rep(NA, length=k)
-  }
-  if (is.null(Po)) {
-    Po <- rep(NA, length=k)
-  }
-  if (is.null(N)) {
-    N <- rep(NA, length=k)
-  }
-  if (is.null(sd.LP)) {
-    sd.LP <- rep(NA, length=k)
-  }
-  if (is.null(OE)) {
-    OE <- rep(NA, length=k)
-  }
-  if (is.null(OE.se)) {
-    OE.se <- rep(NA, length=k)
-  }
-  
-  if (is.null(E)) {
-    E <- rep(NA, length=k)
-  }
-  if (is.null(Po.se)) {
-    Po.se <- rep(NA, length=k)
-  }
-  if (is.null(Pe)) {
-    Pe <- rep(NA, length=k)
-  }
-  if (missing(citl)) {
-    citl <- rep(NA, length=k)
-  }
-  if (is.null(citl.se)) {
-    citl.se <- rep(NA, length=k)
-  }
-  if (missing(OE.95CI)) {
-    OE.95CI <- array(NA, dim=c(k,2))
-  }
-  if (is.null(dim(OE.95CI))) {
-    warning("Invalid dimension for 'OE.95CI', argument ignored.")
-    OE.95CI <- array(NA, dim=c(k,2))
-  }
-  if (dim(OE.95CI)[2] != 2 | dim(OE.95CI)[1] != k) {
-    warning("Invalid dimension for 'OE.95CI', argument ignored.")
-    OE.95CI <- array(NA, dim=c(k,2))
-  }
+  if (is.null(cstat.se)) cstat.se <- rep(NA, times=k)
+  if (is.null(cstat.cilb)) cstat.cilb <- rep(NA, times=k)
+  if (is.null(cstat.ciub)) cstat.ciub <- rep(NA, times=k)
+  if (is.null(cstat.cilv)) cstat.cilv <- rep(0.95, times=k)
+  if (is.null(O)) O <- rep(NA, times=k)
+  if (is.null(Po)) Po <- rep(NA, times=k)
+  if (is.null(N)) N <- rep(NA, times=k)
+  if (is.null(sd.LP)) sd.LP <- rep(NA, times=k)
+  if (is.null(OE)) OE <- rep(NA, times=k)
+  if (is.null(OE.se)) OE.se <- rep(NA, times=k)
+  if(is.null(OE.cilb)) OE.cilb <- rep(NA, times=k)
+  if(is.null(OE.ciub)) OE.ciub <- rep(NA, times=k)
+  if(is.null(OE.cilv)) OE.cilv <- rep(0.95, times=k) # Assume 95% CI by default 
+  if (is.null(E)) E <- rep(NA, times=k)
+  if (is.null(Po.se)) Po.se <- rep(NA, times=k)
+  if (is.null(Pe)) Pe <- rep(NA, times=k)
+  if (missing(citl)) citl <- rep(NA, times=k)
+  if (is.null(citl.se)) citl.se <- rep(NA, times=k)
   
   #######################################################################################
   # Prepare results
@@ -555,9 +535,9 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.cilb, cstat.ciub, cs
     }
     
     ds <- oecalc(OE = OE, OE.se = OE.se,
-                 OE.cilb = OE.95CI[,1],
-                 OE.ciub = OE.95CI[,2],
-                 OE.cilv = 0.95,
+                 OE.cilb = OE.cilb,
+                 OE.ciub = OE.ciub,
+                 OE.cilv = OE.cilv,
                  citl = citl, 
                  citl.se = citl.se,
                  N = N,
