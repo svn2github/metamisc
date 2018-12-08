@@ -389,6 +389,7 @@ valmeta <- function(measure="cstat", cstat, cstat.se, cstat.cilb, cstat.ciub, cs
       g <- NULL
     } else if (out$model=="normal/logit") {
       g <- "log(cstat/(1-cstat))"
+      #TODO: Specify inverse function inv.g
     } else {
       stop (paste("Meta-analysis model currently not supported: '", out$model, '"', sep=""))
     }
@@ -836,8 +837,8 @@ print.valmeta <- function(x, ...) {
 #' 
 #' @examples 
 #' data(EuroSCORE)
-#' fit <- with(EuroSCORE, valmeta(cstat=c.index, cstat.se=se.c.index, 
-#'             cstat.95CI=cbind(c.index.95CIl,c.index.95CIu), N=n, O=n.events))
+#' fit <- valmeta(cstat=c.index, cstat.se=se.c.index, cstat.cilb=c.index.95CIl,
+#'                cstat.ciub=c.index.95CIu, N=n, O=n.events, data=EuroSCORE)
 #' plot(fit)
 #' 
 #' library(ggplot2)

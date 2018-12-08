@@ -414,7 +414,7 @@ plot.mp.cv.val <- function(x, y, ...)
 #' @importFrom metafor rma
 rema.perf <- function(object, ...) {
   if (object$class[[1]] == "mp.perf" || object$class[[1]] == "recal") {
-    ma <- uvmeta(r = object[["estimate"]], r.vi = object$var) # NOTE: DOES IT USE t or normal dist???
+    ma <- uvmeta(r = object[["estimate"]], r.vi = object$var) # uvmeta uses a Student T distribution, in contrast to metafor
     return(list(est = ma$est,     
                 pi.lb = ma$pi.lb,
                 pi.ub = ma$pi.ub,
@@ -429,7 +429,7 @@ rema.perf <- function(object, ...) {
                 pi.lb = ma$pi.lb,
                 pi.ub = ma$pi.ub,
                 ci.lb = ma$ci.lb,
-                ci.ub = ma$ci.ub)) # valmeta does not produce tau!
+                ci.ub = ma$ci.ub)) # valmeta does not produce tau! (but can be obtained from ma$fit if "ret.fit=T")
   }
   stop("class not recognized")
 }

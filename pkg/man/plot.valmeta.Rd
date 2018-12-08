@@ -27,8 +27,8 @@ A 95\% prediction interval is added by default for random-effects models,  the d
 }
 \examples{
 data(EuroSCORE)
-fit <- with(EuroSCORE, valmeta(cstat=c.index, cstat.se=se.c.index, 
-            cstat.95CI=cbind(c.index.95CIl,c.index.95CIu), N=n, O=n.events))
+fit <- valmeta(cstat=c.index, cstat.se=se.c.index, cstat.cilb=c.index.95CIl,
+               cstat.ciub=c.index.95CIu, N=n, O=n.events, data=EuroSCORE)
 plot(fit)
 
 library(ggplot2)

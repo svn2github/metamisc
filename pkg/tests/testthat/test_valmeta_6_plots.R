@@ -8,10 +8,14 @@ test_that("Class of forest plot", {
   # Call to plot.valmeta()
   fit <- with(EuroSCORE, valmeta(cstat=c.index, cstat.se=se.c.index, 
                                  cstat.cilb = c.index.95CIl, cstat.ciub = c.index.95CIu,
-                                 cstat.cilv = 0.95,
-                                 N=n, O=n.events, slab=Study))
+                                 cstat.cilv = 0.95, N=n, O=n.events, slab=Study))
   fig1 <- plot(fit)
   expect_is(fig1, "ggplot")
+  
+  fit2 <- valmeta(cstat=c.index, cstat.se=se.c.index, cstat.cilb=c.index.95CIl,
+                  cstat.ciub=c.index.95CIu, N=n, O=n.events, data=EuroSCORE)
+  fig2 <- plot(fit2)
+  expect_is(fig2, "ggplot")
   
   # Direct call to forest()
   oe.ad <- oecalc(N=n, O=n.events, E=e.events, slab=Study, data=EuroSCORE)
