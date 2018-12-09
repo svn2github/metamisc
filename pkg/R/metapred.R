@@ -61,6 +61,8 @@
 
 # TODO 6:
 # predict.metapred: allow to generate predictions if y is not specified. 
+#                   Currently, an error it thrown if setting dvt=NA in the example. This error traces back to the use 
+#                   of model.matrix, which calls the function model.frame() that fails.
 # predict.metapred: Allow so specify study for generating study-specific predictions 
 # (as our IECV approach will yield a study-specific intercept term and regression coefficients)
 # If no study is specified in the data frame, then predictions are based on the pooled coefficients.

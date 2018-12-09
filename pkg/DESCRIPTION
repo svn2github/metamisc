@@ -2,7 +2,7 @@ Package: metamisc
 Type: Package
 Title: Diagnostic and Prognostic Meta-Analysis
 Version: 0.2.0
-Date: 2018-12-8
+Date: 2018-12-9
 Authors@R: c(person(given = "Thomas", family = "Debray", role = c("aut", "cre"), 
                     email = "thomas.debray@gmail.com", comment="http://orcid.org/0000-0002-1790-2719"), 
             person(given = "Valentijn", family = "de Jong", role = "aut", 
