@@ -310,13 +310,13 @@ fema <- function(object, ...) {
   sum(unlist(x) / unlist(v)) / sum(1/unlist(v))
 }
 
-rema.beta <- rema.mean <- function(object, ...) 
-  rema.perf(object, ...)$est
+rema.beta <- rema.mean <- function(object, method = "REML", ...) 
+  rema.perf(object, method = method, ...)$est
 
 # valmeta does not produce tau!
 # so rema.tau cannot be used on auc!
-rema.tau <- function(object, ...)
-  rema.perf(object, ...)$tau # Note: Intentionally selects tau2 if only that one is available.
+rema.tau <- function(object, method = "REML", ...)
+  rema.perf(object, method = method, ...)$tau # Note: Intentionally selects tau2 if only that one is available.
 
 # pooled.var <- function(x, n, ...) {
 #   x <- unlist(x)
@@ -411,10 +411,9 @@ plot.listofperf <- function(x, pfn, ...) { # xlab tbi from perfFUN
 plot.mp.cv.val <- function(x, y, ...)
   plot.listofperf(x$perf.full, x$perf.name, ...)
 
-#' @importFrom metafor rma
-rema.perf <- function(object, ...) {
+rema.perf <- function(object, method = "REML", ...) {
   if (object$class[[1]] == "mp.perf" || object$class[[1]] == "recal") {
-    ma <- uvmeta(r = object[["estimate"]], r.vi = object$var) # uvmeta uses a Student T distribution, in contrast to metafor
+    ma <- uvmeta(r = object[["estimate"]], r.vi = object$var, method = method) # uvmeta uses a Student T distribution, in contrast to metafor
     return(list(est = ma$est,     
                 pi.lb = ma$pi.lb,
                 pi.ub = ma$pi.ub,
@@ -424,7 +423,7 @@ rema.perf <- function(object, ...) {
   } else if (object$class[[1]] == "auc") {
     ma <- valmeta(measure = "cstat", cstat = object[["estimate"]], 
                   cstat.cilb = object[,"ci.lb"], cstat.ciub = object[,"ci.ub"],
-                  cstat.cilv = 0.95)
+                  cstat.cilv = 0.95, method = method)
     return(list(est = ma$est,
                 pi.lb = ma$pi.lb,
                 pi.ub = ma$pi.ub,
@@ -434,8 +433,8 @@ rema.perf <- function(object, ...) {
   stop("class not recognized")
 }
 
-rema.mp.cv.val <- function(object, ...)
-  rema.perf(object[["perf"]])
+rema.mp.cv.val <- function(object, method = "REML", ...)
+  rema.perf(object[["perf"]], method = method)
 
 
 
@@ -451,11 +450,25 @@ rema.mp.cv.val <- function(object, ...)
 #' @param model Which model change should be plotted? NULL (default, best change) or character name of variable or (integer) 
 #' index of model change.
 #' @param stat Numeric. Which performance statistic should be plotted? Defaults to the first.
+#' @param method character string specifying whether a fixed- or a random-effects model should be used to summarize the
+#' prediction model performance. A fixed-effects model is fitted when using method="FE". Random-effects models are fitted 
+#' by setting method equal to one of the following: "DL", "HE", "SJ", "ML", "REML", "EB", "HS", or "GENQ". Default is "REML".
 #' @param ... For compatibility only.
 #' 
+#' @examples 
+#' data(DVTipd)
+#' 
+#' # Internal-external cross-validation of a pre-specified model 'f'
+#' f <- dvt ~ histdvt + ddimdich + sex + notraum
+#' fit <- metapred(DVTipd, strata = "study", formula = f, scope = f, family = binomial)
+#' 
+#' # Display the model's external performance (expressed as mean squared error by default) 
+#' # for each study
+#' forest(fit)
+#' 
 #' @export
-forest.metapred <- function(object, stat = 1, step = NULL, model = NULL, ...)
-  forest.mp.cv.val(subset(object, step = step, model = model), stat = stat, ...)
+forest.metapred <- function(object, stat = 1, step = NULL, method = "REML", model = NULL, ...)
+  forest.mp.cv.val(subset(object, step = step, model = model), stat = stat, method = method, ...)
 
 
 #' Forest plot of a validation object.
@@ -466,6 +479,9 @@ forest.metapred <- function(object, stat = 1, step = NULL, model = NULL, ...)
 #'  
 #' @param object An \code{mp.cv.val} or \code{perf} object.
 #' @param stat Numeric. Which performance statistic should be plotted? Defaults to the first.
+#' @param method character string specifying whether a fixed- or a random-effects model should be used to summarize the
+#' prediction model performance. A fixed-effects model is fitted when using method="FE". Random-effects models are fitted 
+#' by setting method equal to one of the following: "DL", "HE", "SJ", "ML", "REML", "EB", "HS", or "GENQ". Default is "REML".
 #' @param ... Other arguments passed to plotting internals. E.g. \code{title}.
 #' 
 #' @aliases forest.mp.cv.val forest.perf
@@ -478,13 +494,13 @@ forest.metapred <- function(object, stat = 1, step = NULL, model = NULL, ...)
 #               xlab = if (is.character(statistic)) statistic else
 #                 object[["perf.names"]][[statistic]], ...)
 
-forest.mp.cv.val <- function(object, stat = 1, ...) 
+forest.mp.cv.val <- function(object, stat = 1, method = "REML", ...) 
   forest.perf(perf(object, stat = stat, ...),
               xlab = if (is.character(stat)) stat else
-                object$perf.names[[stat]], ...)
+                object$perf.names[[stat]], method = method, ...)
 
-forest.perf <- function(object, ...) {
-  ma <- rema.perf(object)
+forest.perf <- function(object, method = "REML", ...) {
+  ma <- rema.perf(object, method = method)
   fp <- metamisc::forest(theta       = object[["estimate"]],
                          theta.ci.lb = object$ci.lb,
                          theta.ci.ub = object$ci.ub,
@@ -527,7 +543,7 @@ forest.perf <- function(object, ...) {
 # # metamisc:::forest.perf(perf0)
 
 fat.perf <- function(object, ...)
-  fat(object[["estimate"]], object[["se"]], n.total = sum(object[["n"]]), ...)
+  fat(b = object[["estimate"]], b.se = object[["se"]], n.total = sum(object[["n"]]), ...)
 
 fat.mp.cv.val <- function(object, ...) 
   fat(object[["perf"]], ...)

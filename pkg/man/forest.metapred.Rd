@@ -5,7 +5,7 @@
 \title{Forest plot of a metapred fit}
 \usage{
 \method{forest}{metapred}(object, stat = 1, step = NULL,
-  model = NULL, ...)
+  method = "REML", model = NULL, ...)
 }
 \arguments{
 \item{object}{A \code{metapred} fit object.}
@@ -15,6 +15,10 @@
 \item{step}{Which step should be plotted? Defaults to the best step. numeric is converted to name of the step: 0 for 
 an unchanged model, 1 for the first change...}
 
+\item{method}{character string specifying whether a fixed- or a random-effects model should be used to summarize the
+prediction model performance. A fixed-effects model is fitted when using method="FE". Random-effects models are fitted 
+by setting method equal to one of the following: "DL", "HE", "SJ", "ML", "REML", "EB", "HS", or "GENQ". Default is "REML".}
+
 \item{model}{Which model change should be plotted? NULL (default, best change) or character name of variable or (integer) 
 index of model change.}
 
@@ -22,6 +26,18 @@ index of model change.}
 }
 \description{
 Draw a forest plot of the performance of an internally-externally cross-validated model. By default the final model is shown.
+}
+\examples{
+data(DVTipd)
+
+# Internal-external cross-validation of a pre-specified model 'f'
+f <- dvt ~ histdvt + ddimdich + sex + notraum
+fit <- metapred(DVTipd, strata = "study", formula = f, scope = f, family = binomial)
+
+# Display the model's external performance (expressed as mean squared error by default) 
+# for each study
+forest(fit)
+
 }
 \author{
 Valentijn de Jong <Valentijn.M.T.de.Jong@gmail.com>

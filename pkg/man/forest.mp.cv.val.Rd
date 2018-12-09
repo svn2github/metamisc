@@ -5,12 +5,16 @@
 \alias{forest.perf}
 \title{Forest plot of a validation object.}
 \usage{
-\method{forest}{mp.cv.val}(object, stat = 1, ...)
+\method{forest}{mp.cv.val}(object, stat = 1, method = "REML", ...)
 }
 \arguments{
 \item{object}{An \code{mp.cv.val} or \code{perf} object.}
 
 \item{stat}{Numeric. Which performance statistic should be plotted? Defaults to the first.}
+
+\item{method}{character string specifying whether a fixed- or a random-effects model should be used to summarize the
+prediction model performance. A fixed-effects model is fitted when using method="FE". Random-effects models are fitted 
+by setting method equal to one of the following: "DL", "HE", "SJ", "ML", "REML", "EB", "HS", or "GENQ". Default is "REML".}
 
 \item{...}{Other arguments passed to plotting internals. E.g. \code{title}.}
 }

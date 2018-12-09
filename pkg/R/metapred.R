@@ -59,6 +59,13 @@
 # , cl.name in modelStep
 # Remove Reduce() from perfStep, and make perfStep() compatible with multiple data sets (for cvFUN = fixed, or cvFUN = bs)
 
+# TODO 6:
+# predict.metapred: allow to generate predictions if y is not specified. 
+# predict.metapred: Allow so specify study for generating study-specific predictions 
+# (as our IECV approach will yield a study-specific intercept term and regression coefficients)
+# If no study is specified in the data frame, then predictions are based on the pooled coefficients.
+
+
 ###### Outline
 ### Top: high-level functions
 #
@@ -147,51 +154,36 @@
 #' @examples 
 #' data(DVTipd)
 #' 
-#' set.seed(12345)
-#' 
-#' # Create 4 clusters with heterogeneous case-mix
-#' DVTipd$cluster <- NA
-#' p.study1 <- with(DVTipd, 1/(1+exp(1.5+0.3*sex-0.4*malign-0.5*ddimdich-0.2*leg-0.2*histdvt)))
-#' DVTipd$cluster[p.study1 > runif(nrow(DVTipd))] <- "a"
-#' p.study2 <- with(DVTipd, 1/(1+exp(1.0+0.3*tend-0.4*notraum-0.2*ddimdich-0.2*pit-
-#'                                   0.2*dvt+0.3*ddimdich*tend)))
-#' DVTipd$cluster[p.study2 > runif(nrow(DVTipd)) & is.na(DVTipd$cluster)] <- "b"
-#' p.study3 <- with(DVTipd[is.na(DVTipd$cluster),], 
-#'                  1/(1+exp(0.3*altdiagn-0.4*vein-0.2*sex-0.2*malign-0.6*dvt+0.4*dvt*vein)))
-#' DVTipd$cluster[is.na(DVTipd$cluster)][(p.study3 > runif(sum(is.na(DVTipd$cluster))))] <- "c"
-#' DVTipd$cluster[is.na(DVTipd$cluster)] <- "d"
-#' DVTipd$cluster <- as.factor(DVTipd$cluster)
-#' 
 #'\dontrun{
 #' # Explore heterogeneity in intercept and assocation of 'ddimdich'
-#' glmer(dvt ~ 0 + cluster + (ddimdich|cluster), family=binomial(), data=DVTipd)
+#' glmer(dvt ~ 0 + cluster + (ddimdich|study), family=binomial(), data=DVTipd)
 #'}
 #' 
 #' # Scope
 #' f <- dvt ~ histdvt + ddimdich + sex + notraum
 #' 
 #' # Internal-external cross-validation of a pre-specified model 'f'
-#' metapred(DVTipd, strata = "cluster", formula = f, scope = f, family = binomial)
+#' fit <- metapred(DVTipd, strata = "study", formula = f, scope = f, family = binomial)
+#' fit
 #' 
 #' # Let's try to simplify model 'f' in order to improve its external validity
-#' metapred(DVTipd, strata = "cluster", formula = f, family = binomial)
+#' metapred(DVTipd, strata = "study", formula = f, family = binomial)
 #' 
 #' # We can also try to build a generalizable model from scratch
 #' 
 #'\dontrun{
 #' # Some additional examples:
-#' metapred(DVTipd, strata = "cluster", formula = dvt ~ 1, scope = f, family = binomial) # Forwards
-#' metapred(DVTipd, strata = "cluster", formula = f, scope = f, family = binomial) # no selection
-#' metapred(DVTipd, strata = "cluster", formula = f, max.steps = 0, family = binomial) # no selection
-#' metapred(DVTipd, strata = "cluster", formula = f, recal.int = TRUE, family = binomial)
-#' metapred(DVTipd, strata = "cluster", formula = f, meta.method = "REML", family = binomial)
+#' metapred(DVTipd, strata = "study", formula = dvt ~ 1, scope = f, family = binomial) # Forwards
+#' metapred(DVTipd, strata = "study", formula = f, scope = f, family = binomial) # no selection
+#' metapred(DVTipd, strata = "study", formula = f, max.steps = 0, family = binomial) # no selection
+#' metapred(DVTipd, strata = "study", formula = f, recal.int = TRUE, family = binomial)
+#' metapred(DVTipd, strata = "study", formula = f, meta.method = "REML", family = binomial)
 #'}
 #' # By default, metapred assumes the first column is the outcome.
-#' DVTipd.reordered <- DVTipd[c("dvt", "ddimdich", "histdvt", "cluster")]
-#' mp <- metapred(DVTipd.reordered, strata = "cluster", family = binomial)
-#' fitted <- predict(mp, newdata = DVTipd.reordered)
+#' newdat <- data.frame(dvt=0, histdvt=0, ddimdich=0, sex=1, notraum=0)
+#' fitted <- predict(fit, newdata = newdat)
 #' 
-#' 
+#' @seealso  \code{\link{forest.metapred}}  for generating a forest plot of prediction model performance
 #' @import stats
 #'
 #' @importFrom stats formula var
