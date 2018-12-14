@@ -17,7 +17,7 @@
 #' @param test Optional character string when \code{method!="BAYES"} to specify how test statistics and confidence intervals 
 #' for the fixed effects should be computed. By default (\code{test="knha"}), the method by Knapp and Hartung (2003) is used for adjusting test statistics 
 #' and confidence intervals.  Type '\code{?rma}' for more details.
-#' @param labels Vector of characters containing the labels for the studies
+#' @param labels Optional vector of characters containing the labels for the studies
 #' @param na.action A function which indicates what should happen when the data contain NAs. 
 #' Defaults to \code{"na.fail"}, other options are \code{"na.omit"}, \code{"na.exclude"} or \code{"na.pass"}.
 #' @param n.chains Optional numeric specifying the number of chains to use in the Gibbs sampler (\code{method="BAYES"}). 
