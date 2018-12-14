@@ -12,16 +12,16 @@
 #' (meta-analysis of the total observed-expected ratio). See `Details' for more information.
 #' @param cstat Optional vector with the estimated c-statistic for each valiation
 #' @param cstat.se Optional vector with the standard error of the estimated c-statistics
-#' @param cstat.cilb vector to specify the lower limits of the confidence interval.
-#' @param cstat.ciub vector to specify the upper limits of the confidence interval.
-#' @param cstat.cilv vector to specify the levels of aformentioned confidence interval limits. 
+#' @param cstat.cilb Optional vector to specify the lower limits of the confidence interval.
+#' @param cstat.ciub Optional vector to specify the upper limits of the confidence interval.
+#' @param cstat.cilv Optional vector to specify the levels of aformentioned confidence interval limits. 
 #' (default: 0.95, which corresponds to the 95\% confidence interval).
 #' @param sd.LP Optional vector with the standard deviation of the linear predictor (prognostic index)
 #' @param OE Optional vector with the estimated ratio of total observed versus total expected events
 #' @param OE.se Optional vector with the standard errors of the estimated O:E ratios
-#' @param OE.cilb vector to specify the lower limits of the confidence interval for \code{OE}.
-#' @param OE.ciub vector to specify the upper limits of the confidence interval for \code{OE}.
-#' @param OE.cilv vector to specify the levels of aformentioned confidence interval limits. 
+#' @param OE.cilb Optional vector to specify the lower limits of the confidence interval for \code{OE}.
+#' @param OE.ciub Optional vector to specify the upper limits of the confidence interval for \code{OE}.
+#' @param OE.cilv Optional vector to specify the levels of aformentioned confidence interval limits. 
 #' (default: 0.95, which corresponds to the 95\% confidence interval).
 #' @param citl Optional vector with the estimated calibration-in-the-large for each valiation
 #' @param citl.se Optional vector with the standard error of the estimated calibration-in-the-large statistics
