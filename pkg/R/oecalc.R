@@ -4,24 +4,24 @@
 #' corresponding sampling variance. 
 #' 
 #' @param OE vector with the estimated ratio of total observed versus total expected events
-#' @param OE.se vector with the standard errors of the estimated O:E ratios
-#' @param OE.cilb vector to specify the lower limits of the confidence interval for \code{OE}.
-#' @param OE.ciub vector to specify the upper limits of the confidence interval for \code{OE}.
-#' @param OE.cilv vector to specify the levels of aformentioned confidence interval limits. 
+#' @param OE.se Optional vector with the standard errors of the estimated O:E ratios
+#' @param OE.cilb Optional vector to specify the lower limits of the confidence interval for \code{OE}.
+#' @param OE.ciub Optional vector to specify the upper limits of the confidence interval for \code{OE}.
+#' @param OE.cilv Optional vector to specify the levels of aformentioned confidence interval limits. 
 #' (default: 0.95, which corresponds to the 95\% confidence interval).
-#' @param EO vector with the estimated ratio of total expected versus total observed events
-#' @param EO.se vector with the standard errors of the estimated E:O ratios
-#' @param citl vector with the estimated calibration-in-the-large statistics
-#' @param citl.se vector with the standard error of the calibration-in-the-large statistics
-#' @param N vector to specify the sample/group sizes.
-#' @param O vector to specify the total number of observed events.
-#' @param E vector to specify the total number of expected events
-#' @param Po vector to specify the (cumulative) observed event probabilities.
-#' @param Po.se vector with the standard errors of \code{Po}.
-#' @param Pe vector to specify the (cumulative) expected event probabilites
+#' @param EO Optional vector with the estimated ratio of total expected versus total observed events
+#' @param EO.se Optional vector with the standard errors of the estimated E:O ratios
+#' @param citl Optional vector with the estimated calibration-in-the-large statistics
+#' @param citl.se Optional vector with the standard error of the calibration-in-the-large statistics
+#' @param N Optional vector to specify the sample/group sizes.
+#' @param O Optional vector to specify the total number of observed events.
+#' @param E Optional vector to specify the total number of expected events
+#' @param Po Optional vector to specify the (cumulative) observed event probabilities.
+#' @param Po.se Optional vector with the standard errors of \code{Po}.
+#' @param Pe Optional vector to specify the (cumulative) expected event probabilites
 #' (if specified, during time \code{t.val})
-#' @param data optional data frame containing the variables given to the arguments above.
-#' @param slab optional vector with labels for the studies.
+#' @param data Optional data frame containing the variables given to the arguments above.
+#' @param slab Optional vector with labels for the studies.
 #' @param add a non-negative number indicating the amount to add to zero counts. See `Details'
 #' @param g a quoted string that is the function to transform estimates of the total O:E ratio; see the details below.
 #' @param level level for confidence interval, default \code{0.95}.
