@@ -3,20 +3,20 @@
 #' The function calculates (transformed versions of) the concordance (c-) statistic with the corresponding sampling variance. 
 #' 
 #' @param cstat vector to specify the estimated c-statistics.
-#' @param cstat.se vector to specify the corresponding standard errors.
-#' @param cstat.cilb vector to specify the lower limits of the confidence interval.
-#' @param cstat.ciub vector to specify the upper limits of the confidence interval.
-#' @param cstat.cilv vector to specify the levels of aformentioned confidence interval limits. 
+#' @param cstat.se Optional vector to specify the corresponding standard errors.
+#' @param cstat.cilb Optional vector to specify the lower limits of the confidence interval.
+#' @param cstat.ciub Optional vector to specify the upper limits of the confidence interval.
+#' @param cstat.cilv Optional vector to specify the levels of aformentioned confidence interval limits. 
 #' (default: 0.95, which corresponds to the 95\% confidence interval).
-#' @param sd.LP vector to specify the standard deviations of the linear predictor (prognostic index).
-#' @param N vector to specify the sample/group sizes.
-#' @param O vector to specify the total number of observed events.
-#' @param Po vector to specify the observed event probabilities.
-#' @param data optional data frame containing the variables given to the arguments above.
-#' @param slab optional vector with labels for the studies.
-#' @param subset optional vector indicating the subset of studies that should be used. This can be a logical vector or a numeric vector indicating the indices of the studies to include.
+#' @param sd.LP Optional vector to specify the standard deviations of the linear predictor (prognostic index).
+#' @param N Optional vector to specify the sample/group sizes.
+#' @param O Optional vector to specify the total number of observed events.
+#' @param Po Optional vector to specify the observed event probabilities.
+#' @param data Optional data frame containing the variables given to the arguments above.
+#' @param slab Optional vector with labels for the studies.
+#' @param subset Optional vector indicating the subset of studies that should be used. This can be a logical vector or a numeric vector indicating the indices of the studies to include.
 #' @param g a quoted string that is the function to transform estimates of the c-statistic; see the details below.
-#' @param level level for confidence interval, default \code{0.95}.
+#' @param level Optional numeric to specify the level for the confidence interval, default \code{0.95}.
 #' @param approx.se.method integer specifying which method should be used for estimating the standard error of the
 #' c-statistic (Newcombe, 2006). So far, only method \code{2} and method \code{4} (default) have been implemented.
 #' @param \ldots Additional arguments.
