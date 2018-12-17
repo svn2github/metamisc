@@ -434,7 +434,7 @@ getPredictMethod <- function(fit, two.stage = TRUE, predFUN = NULL, ...) {
 predictGLM <- function(object, newdata, b = NULL, f = NULL, type = "response", ...) {
   if (is.null(b)) b <- coef(object)
   if (is.null(f)) f <- formula(object)
-  X <- model.matrix(stats::as.formula(f), data = newdata)
+  X <- model.matrix(f2rhsf(stats::as.formula(f)), data = newdata)
   # X <<- X
   # b <<- b
   

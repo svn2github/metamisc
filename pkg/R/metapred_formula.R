@@ -40,3 +40,9 @@ f2o <- function(f)
 # Returns formula, with only intercept on the right hand side.
 f2iof <- function(f)
   formula(paste(f2o(f), "~ 1"))
+
+# Get right hand side of formula from a formula
+# f formula
+# returns formula as: ~ right + hand + side
+f2rhsf <- function(f)
+  formula(paste(as.character(f)[1], as.character(f)[3]))
