@@ -46,3 +46,20 @@ f2iof <- function(f)
 # returns formula as: ~ right + hand + side
 f2rhsf <- function(f)
   formula(paste(as.character(f)[1], as.character(f)[3]))
+
+# Add two formulas up: sum of two formulas # NOTE: does not handle - 1
+# f formula
+# g formula
+# Returns formula with left hand side of f, and both right hand sides.
+addg2f <- function(f, g, terms = NULL) 
+  formula(paste(f2o(f), "~", paste(c(union(f2tl(f), f2tl(g)), terms), collapse = " + ")))
+
+# f <- y ~ x + z
+# g <- y ~ x + a + I(a^2)
+# h <- q ~ x + b - 1 + a*z
+# 
+# metamisc:::getFormulaDiffAsChar(f, g)
+# metamisc:::f2o(f)
+# metamisc:::addg2f(f, g)
+# metamisc:::addg2f(f, h)
+# metamisc:::addg2f(f, h, "studyid")

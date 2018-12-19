@@ -11,10 +11,10 @@ metapred(data, strata, formula, estFUN = "glm", scope = NULL,
   genFUN = NULL, selFUN = "which.min", ...)
 }
 \arguments{
-\item{data}{data.frame containing the data. Note that \code{metapred} removes observations with missing data \emph{listwise},
-to ensure that the same data is used in each model.}
+\item{data}{data.frame containing the data. Note that \code{metapred} removes observations with missing data \emph{listwise}
+for all variables in \code{formula} and \code{scope}, to ensure that the same data is used in each model in each step.}
 
-\item{strata}{Name of the strata (e.g. studies or clusters) variable, as character.}
+\item{strata}{Character to specify the name of the strata (e.g. studies or clusters) variable}
 
 \item{formula}{\code{formula} of the first model to be evaluated. \code{metapred} will start at \code{formula} and update it
 using terms of \code{scope}. Defaults to full main effects model, where the first column in \code{data} is assumed to be

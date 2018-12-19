@@ -68,7 +68,9 @@
 # predict.metapred: Allow so specify study for generating study-specific predictions 
 # (as our IECV approach will yield a study-specific intercept term and regression coefficients)
 # If no study is specified in the data frame, then predictions are based on the pooled coefficients.
-
+# Change listwise deletion of missing data: add options to turn on/off, only remove observations with missing data within
+# formula / scope.. 
+# metapred currently cannot handle -1 in scope I think.
 
 ###### Outline
 ### Top: high-level functions
@@ -106,8 +108,8 @@
 #' and evaluating clinical prediction models in an individual participant data meta-analysis. 
 #' \emph{Stat Med}. 2013;32(18):3158-80. 
 #'
-#' @param data data.frame containing the data. Note that \code{metapred} removes observations with missing data \emph{listwise},
-#' to ensure that the same data is used in each model.
+#' @param data data.frame containing the data. Note that \code{metapred} removes observations with missing data \emph{listwise}
+#' for all variables in \code{formula} and \code{scope}, to ensure that the same data is used in each model in each step.
 #' @param strata Character to specify the name of the strata (e.g. studies or clusters) variable
 #' @param formula \code{formula} of the first model to be evaluated. \code{metapred} will start at \code{formula} and update it
 #' using terms of \code{scope}. Defaults to full main effects model, where the first column in \code{data} is assumed to be
@@ -199,18 +201,24 @@ metapred <- function(data, strata, formula, estFUN = "glm", scope = NULL, retest
                      selFUN = "which.min",
                      ...) {
   call <- match.call()
-  data <- remove.na.obs(as.data.frame(data))
-  if(is.null(stratified <- list(...)$stratified) ) stratified <- TRUE
-  
+
+  # Formula
   if (missing(formula) || is.null(formula)) formula <- stats::formula(data[ , -which(colnames(data) == strata)])  
   if (is.null(scope)) scope <- f2iof(formula)
   updates <- getFormulaDiffAsChar(formula, scope)
   
+  # Data
+  data <- get_all_vars(formula = addg2f(formula, scope, terms = strata), data = data) # drop unnecessary vars
+  data <- remove.na.obs(as.data.frame(data))                          # drop observations with missings in remaining vars.
+  
+  # Stratification and centering
+  if(is.null(stratified <- list(...)$stratified) ) stratified <- TRUE
   strata.i <- as.vector(data[, strata])
   strata.u <- sort(unique(strata.i))
   if (center)
     data <- centerCovs(data = data, y.name = f2o(formula), cluster.name = strata)
   
+  # Functions
   if (is.null(cvFUN))   cvFUN   <- l1o
   if (is.null(metaFUN)) metaFUN <- urma
   if (is.null(perfFUN)) perfFUN <- "mse"
@@ -229,10 +237,12 @@ metapred <- function(data, strata, formula, estFUN = "glm", scope = NULL, retest
   # genFUN.add <- dots[["genFUN.add"]] 
   # dots[["genFUN.add"]] <- NULL
   
+  # Folds
   folds <- cvFUN(strata.u, k = cv.k)
   if (!isTRUE(length(folds[["dev"]]) > 0) || !isTRUE(length(folds[["dev"]][[1]]) > 0))
     stop("At least 1 cluster must be used for development.")
   
+  # Fitting
   fit <- mp.fit(formula = formula, data = data, remaining.changes = updates, st.i = strata.i, st.u = strata.u, folds = folds,
                 recal.int = recal.int, retest = retest, max.steps = max.steps, tol = 0,
                 estFUN = estFUN, metaFUN = metaFUN, meta.method = meta.method, predFUN = predFUN, perfFUN = perfFUN,
