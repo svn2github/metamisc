@@ -12,7 +12,8 @@ metapred(data, strata, formula, estFUN = "glm", scope = NULL,
 }
 \arguments{
 \item{data}{data.frame containing the data. Note that \code{metapred} removes observations with missing data \emph{listwise}
-for all variables in \code{formula} and \code{scope}, to ensure that the same data is used in each model in each step.}
+for all variables in \code{formula} and \code{scope}, to ensure that the same data is used in each model in each step. The
+outcome variable should be \code{numeric} or coercible to numeric by \link[base]{as.numeric}.}
 
 \item{strata}{Character to specify the name of the strata (e.g. studies or clusters) variable}
 

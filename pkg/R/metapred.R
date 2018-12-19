@@ -109,7 +109,8 @@
 #' \emph{Stat Med}. 2013;32(18):3158-80. 
 #'
 #' @param data data.frame containing the data. Note that \code{metapred} removes observations with missing data \emph{listwise}
-#' for all variables in \code{formula} and \code{scope}, to ensure that the same data is used in each model in each step.
+#' for all variables in \code{formula} and \code{scope}, to ensure that the same data is used in each model in each step. The
+#' outcome variable should be \code{numeric} or coercible to numeric by \link[base]{as.numeric}.
 #' @param strata Character to specify the name of the strata (e.g. studies or clusters) variable
 #' @param formula \code{formula} of the first model to be evaluated. \code{metapred} will start at \code{formula} and update it
 #' using terms of \code{scope}. Defaults to full main effects model, where the first column in \code{data} is assumed to be
@@ -209,8 +210,11 @@ metapred <- function(data, strata, formula, estFUN = "glm", scope = NULL, retest
   
   # Data
   data <- get_all_vars(formula = addg2f(formula, scope, terms = strata), data = data) # drop unnecessary vars
-  data <- remove.na.obs(as.data.frame(data))                          # drop observations with missings in remaining vars.
+  data <- droplevels(remove.na.obs(as.data.frame(data)))  # drop observations with missings in remaining vars
   
+  if (is.factor(data[, f2o(formula)]))
+    data[ , f2o(formula)] <- as.numeric(data[ , f2o(formula)])
+    
   # Stratification and centering
   if(is.null(stratified <- list(...)$stratified) ) stratified <- TRUE
   strata.i <- as.vector(data[, strata])
@@ -648,9 +652,9 @@ summary.mp.fit <- function(object, ...) {
 mp.which.best.change <- function(cvs, selFUN = which.min, ...)
   selFUN(sapply(cvs, `[[`, "gen"))
 
-mp.step.get.best <- function(step, selFUN = which.min, ...)
+mp.step.get.best <- function(step, selFUN = which.min, ...) 
   step[["cv"]][[mp.which.best.change(step[["cv"]], selFUN = selFUN, ...)]]
-
+  
 mp.step.get.change <- function(step, ...)
   mp.step.get.best(step)[["changed"]]
 
@@ -746,7 +750,6 @@ print.mp.step <- function(x, show.f = TRUE, ...) {
     cat("Starting with model:\n")
     print(x[["start.formula"]])
   }
-  # x <<- x
   cat("\n")
   cat("Generalizability:\n")
   # Change.to.model <- names(x[["cv"]])
@@ -940,7 +943,6 @@ mp.cv.val <- function(cv.dev, data, st.i, folds, recal.int = FALSE, two.stage = 
                                    measure = pfn,
                                    n = unlist(cv.dev[["nobs.val"]]),
                                    class = unlist(lapply(lapply(perf.full, class), '[[', 1)))
-    perf.full <<- perf.full
     tryCatch(
       out[["var"]] <- unlist(lapply(perf.full, variances)),  
       error = function(e) print(paste("Skipping variance estimation for", class(perf.full[[1]])[[1]], sep = " ")))
@@ -965,7 +967,6 @@ mp.cv.val <- function(cv.dev, data, st.i, folds, recal.int = FALSE, two.stage = 
   names(perf.all) <- perf.names
   cv.dev[["perf.all"]] <- perf.all   # Future compatibility  
   cv.dev[["perf"]] <- perf.all[[1]]  # Backwards compatibility
-  # cv.dev <<- cv.dev
   
   # Generalizibility
   if (!is.list(genFUN)) 
