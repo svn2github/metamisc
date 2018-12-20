@@ -402,7 +402,7 @@ plot.listofperf <- function(x, pfn, ...) { # xlab tbi from perfFUN
                          xlab  = xlab,
                          ...)
   plot(fp)
-  NaN
+  invisible(NaN)
 }
 
 # x mp.cv.val object
@@ -449,11 +449,11 @@ rema.mp.cv.val <- function(object, method = "REML", ...)
 #' an unchanged model, 1 for the first change...
 #' @param model Which model change should be plotted? NULL (default, best change) or character name of variable or (integer) 
 #' index of model change.
-#' @param stat Numeric. Which performance statistic should be plotted? Defaults to the first.
+#' @param perfFUN Numeric or character. Which performance statistic should be plotted? Defaults to the first.
 #' @param method character string specifying whether a fixed- or a random-effects model should be used to summarize the
 #' prediction model performance. A fixed-effects model is fitted when using method="FE". Random-effects models are fitted 
 #' by setting method equal to one of the following: "DL", "HE", "SJ", "ML", "REML", "EB", "HS", or "GENQ". Default is "REML".
-#' @param ... For compatibility only.
+#' @param ...  Other arguments passed to plotting internals. E.g. \code{title}. See \link{forest.default} for details.
 #' 
 #' @examples 
 #' data(DVTipd)
@@ -467,8 +467,8 @@ rema.mp.cv.val <- function(object, method = "REML", ...)
 #' forest(fit)
 #' 
 #' @export
-forest.metapred <- function(object, stat = 1, step = NULL, method = "REML", model = NULL, ...)
-  forest.mp.cv.val(subset(object, step = step, model = model), stat = stat, method = method, ...)
+forest.metapred <- function(object, perfFUN = 1, step = NULL, method = "REML", model = NULL, ...)
+  forest.mp.cv.val(subset(object, step = step, model = model), perfFUN = perfFUN, method = method, ...)
 
 
 #' Forest plot of a validation object.
@@ -478,11 +478,11 @@ forest.metapred <- function(object, stat = 1, step = NULL, method = "REML", mode
 #' @author Valentijn de Jong <Valentijn.M.T.de.Jong@gmail.com>
 #'  
 #' @param object An \code{mp.cv.val} or \code{perf} object.
-#' @param stat Numeric. Which performance statistic should be plotted? Defaults to the first.
+#' @param perfFUN Numeric or character. Which performance statistic should be plotted? Defaults to the first.
 #' @param method character string specifying whether a fixed- or a random-effects model should be used to summarize the
 #' prediction model performance. A fixed-effects model is fitted when using method="FE". Random-effects models are fitted 
 #' by setting method equal to one of the following: "DL", "HE", "SJ", "ML", "REML", "EB", "HS", or "GENQ". Default is "REML".
-#' @param ... Other arguments passed to plotting internals. E.g. \code{title}.
+#' @param ... Other arguments passed to plotting internals. E.g. \code{title}. See \link{forest.default} for details.
 #' 
 #' @aliases forest.mp.cv.val forest.perf
 #' 
@@ -494,17 +494,17 @@ forest.metapred <- function(object, stat = 1, step = NULL, method = "REML", mode
 #               xlab = if (is.character(statistic)) statistic else
 #                 object[["perf.names"]][[statistic]], ...)
 
-forest.mp.cv.val <- function(object, stat = 1, method = "REML", ...) 
-  forest.perf(perf(object, stat = stat, ...),
-              xlab = if (is.character(stat)) stat else
-                object$perf.names[[stat]], method = method, ...)
+forest.mp.cv.val <- function(object, perfFUN = 1, method = "REML", ...) 
+  forest.perf(perf(object, stat = perfFUN, ...),
+              xlab = if (is.character(perfFUN)) perfFUN else
+                object$perf.names[[perfFUN]], method = method, ...)
 
 forest.perf <- function(object, method = "REML", ...) {
   ma <- rema.perf(object, method = method)
   fp <- metamisc::forest(theta       = object[["estimate"]],
                          theta.ci.lb = object$ci.lb,
                          theta.ci.ub = object$ci.ub,
-                         theta.slab  = object$val.strata,
+                         theta.slab  = as.character(object$val.strata),
                          theta.summary       = ma$est,
                          theta.summary.ci.lb = ma$ci.lb,
                          theta.summary.ci.ub = ma$ci.ub,
@@ -512,7 +512,7 @@ forest.perf <- function(object, method = "REML", ...) {
                          theta.summary.pi.ub = ma$pi.ub,
                          ...)
   plot(fp)
-  NaN # To be replaced with fp, when metapred() can handle it.
+  invisible(NaN) # To be replaced with fp, when metapred() can handle it.
 }
 # 
 # sampleBinary <- function(n = 50, J = 1, b = rep(log(2), J), alpha = NULL, col.names = NULL ) {

@@ -4,13 +4,13 @@
 \alias{forest.metapred}
 \title{Forest plot of a metapred fit}
 \usage{
-\method{forest}{metapred}(object, stat = 1, step = NULL,
+\method{forest}{metapred}(object, perfFUN = 1, step = NULL,
   method = "REML", model = NULL, ...)
 }
 \arguments{
 \item{object}{A \code{metapred} fit object.}
 
-\item{stat}{Numeric. Which performance statistic should be plotted? Defaults to the first.}
+\item{perfFUN}{Numeric or character. Which performance statistic should be plotted? Defaults to the first.}
 
 \item{step}{Which step should be plotted? Defaults to the best step. numeric is converted to name of the step: 0 for 
 an unchanged model, 1 for the first change...}
@@ -22,7 +22,7 @@ by setting method equal to one of the following: "DL", "HE", "SJ", "ML", "REML",
 \item{model}{Which model change should be plotted? NULL (default, best change) or character name of variable or (integer) 
 index of model change.}
 
-\item{...}{For compatibility only.}
+\item{...}{Other arguments passed to plotting internals. E.g. \code{title}. See \link{forest.default} for details.}
 }
 \description{
 Draw a forest plot of the performance of an internally-externally cross-validated model. By default the final model is shown.
